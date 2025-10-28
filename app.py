@@ -30,15 +30,21 @@ roasts_collection = db.roasts
 @app.route('/')
 def index():
     """Dashboard - list of all roasts"""
-    roasts = list(roasts_collection.find().sort('roast_date', -1))
+    roasts = list(roasts_collection.find({'archived': {'$ne': True}}).sort('roast_date', -1))
 
     # Get bean names and calculate metrics for each roast
     for roast in roasts:
         if roast.get('bean_id'):
             bean = beans_collection.find_one({'_id': ObjectId(roast['bean_id'])})
-            roast['bean_name'] = bean['name'] if bean else 'Unknown Bean'
+            if bean:
+                roast['bean_name'] = bean['name']
+                roast['bean_color'] = bean.get('color', '#6B8E6F')
+            else:
+                roast['bean_name'] = 'Unknown Bean'
+                roast['bean_color'] = '#6B8E6F'
         else:
             roast['bean_name'] = 'Not Set'
+            roast['bean_color'] = '#6B8E6F'
 
         # Calculate total roast duration
         if roast.get('roast_start_time') and roast.get('roast_end_time'):
@@ -61,7 +67,7 @@ def index():
 @app.route('/beans')
 def beans_list():
     """List of all beans"""
-    beans = list(beans_collection.find().sort('name', 1))
+    beans = list(beans_collection.find({'archived': {'$ne': True}}).sort('name', 1))
     return render_template('beans_list.html', beans=beans)
 
 
@@ -74,7 +80,7 @@ def beans_add_form():
 @app.route('/beans/edit/<bean_id>')
 def beans_edit_form(bean_id):
     """Show edit bean form"""
-    bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
+    bean = beans_collection.find_one({'_id': ObjectId(bean_id), 'archived': {'$ne': True}})
     if not bean:
         return "Bean not found", 404
     return render_template('beans_form.html', bean=bean, is_edit=True)
@@ -91,18 +97,18 @@ def roast_new():
 @app.route('/roast/live/<roast_id>')
 def roast_live(roast_id):
     """Live roasting interface"""
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+    roast = roasts_collection.find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
     if not roast:
         return "Roast not found", 404
 
-    beans = list(beans_collection.find().sort('name', 1))
+    beans = list(beans_collection.find({'archived': {'$ne': True}}).sort('name', 1))
     return render_template('roast_live.html', roast=roast, beans=beans)
 
 
 @app.route('/roast/detail/<roast_id>')
 def roast_detail(roast_id):
     """View roast details"""
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+    roast = roasts_collection.find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
     if not roast:
         return "Roast not found", 404
 
@@ -124,11 +130,11 @@ def roast_detail(roast_id):
 @app.route('/roast/edit/<roast_id>')
 def roast_edit_form(roast_id):
     """Edit roast form"""
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+    roast = roasts_collection.find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
     if not roast:
         return "Roast not found", 404
 
-    beans = list(beans_collection.find().sort('name', 1))
+    beans = list(beans_collection.find({'archived': {'$ne': True}}).sort('name', 1))
     return render_template('roast_edit.html', roast=roast, beans=beans)
 
 
@@ -156,8 +162,14 @@ def api_beans_edit(bean_id):
 
 @app.route('/api/beans/delete/<bean_id>', methods=['POST'])
 def api_beans_delete(bean_id):
-    """Delete bean"""
-    beans_collection.delete_one({'_id': ObjectId(bean_id)})
+    """Archive bean (soft delete)"""
+    beans_collection.update_one(
+        {'_id': ObjectId(bean_id)},
+        {'$set': {
+            'archived': True,
+            'updated_at': datetime.now()
+        }}
+    )
     return redirect(url_for('beans_list'))
 
 
@@ -298,7 +310,7 @@ def api_roast_update(roast_id):
 
 @app.route('/api/roast/delete/<roast_id>', methods=['POST'])
 def api_roast_delete(roast_id):
-    """Delete roast and restore bean stock"""
+    """Archive roast (soft delete) and restore bean stock"""
     roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
 
     # Restore bean stock if applicable
@@ -308,7 +320,14 @@ def api_roast_delete(roast_id):
             {'$inc': {'stock_grams': roast['original_weight_grams']}}
         )
 
-    roasts_collection.delete_one({'_id': ObjectId(roast_id)})
+    # Archive the roast instead of deleting
+    roasts_collection.update_one(
+        {'_id': ObjectId(roast_id)},
+        {'$set': {
+            'archived': True,
+            'updated_at': datetime.now()
+        }}
+    )
     return redirect(url_for('index'))
 
 
@@ -319,7 +338,8 @@ def api_roast_add_review(roast_id):
 
     review = {
         '_id': ObjectId(),
-        'rating': int(data['rating']),
+        'overall_score': int(data.get('overall_score', 3)),
+        'extraction_method': data.get('extraction_method', ''),
         'notes': data.get('notes', ''),
         'review_date': datetime.now(),
         'created_at': datetime.now(),
@@ -330,6 +350,48 @@ def api_roast_add_review(roast_id):
         {'_id': ObjectId(roast_id)},
         {
             '$push': {'reviews': review},
+            '$set': {'updated_at': datetime.now()}
+        }
+    )
+
+    if request.is_json:
+        return jsonify({'success': True, 'review_id': str(review['_id'])})
+    else:
+        return redirect(url_for('roast_detail', roast_id=roast_id))
+
+
+@app.route('/api/roast/update_review/<roast_id>/<review_id>', methods=['POST'])
+def api_roast_update_review(roast_id, review_id):
+    """Update an existing review"""
+    data = request.get_json() or request.form.to_dict()
+
+    # Build the update for the specific review in the array
+    update_fields = {
+        'reviews.$.overall_score': int(data.get('overall_score', 3)),
+        'reviews.$.extraction_method': data.get('extraction_method', ''),
+        'reviews.$.notes': data.get('notes', ''),
+        'reviews.$.updated_at': datetime.now(),
+        'updated_at': datetime.now()
+    }
+
+    roasts_collection.update_one(
+        {'_id': ObjectId(roast_id), 'reviews._id': ObjectId(review_id)},
+        {'$set': update_fields}
+    )
+
+    if request.is_json:
+        return jsonify({'success': True})
+    else:
+        return redirect(url_for('roast_detail', roast_id=roast_id))
+
+
+@app.route('/api/roast/delete_review/<roast_id>/<review_id>', methods=['POST'])
+def api_roast_delete_review(roast_id, review_id):
+    """Delete a review from the roast"""
+    roasts_collection.update_one(
+        {'_id': ObjectId(roast_id)},
+        {
+            '$pull': {'reviews': {'_id': ObjectId(review_id)}},
             '$set': {'updated_at': datetime.now()}
         }
     )

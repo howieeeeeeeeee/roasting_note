@@ -2,6 +2,10 @@
 
 {% block title %}{{ roast.title }} - RoastLogger{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <h1>{{ roast.title }}</h1>
@@ -20,6 +24,9 @@
             </div>
             <div class="detail-item">
                 <strong>Roast Date:</strong> {{ roast.roast_date | format_date }}
+            </div>
+            <div class="detail-item">
+                <strong>Roaster:</strong> {{ roast.roaster or 'Not specified' }}
             </div>
             <div class="detail-item">
                 <strong>Temperature Method:</strong> {{ roast.temp_measurement_method or 'Not specified' }}
@@ -145,27 +152,23 @@
     {% if roast.general_notes %}
     <section class="detail-section">
         <h2>General Notes</h2>
-        <div class="notes-content">
-            {{ roast.general_notes }}
-        </div>
+        <div class="notes-content markdown-content" id="generalNotes" data-markdown="{{ roast.general_notes }}"></div>
     </section>
     {% endif %}
 
     <section class="detail-section">
         <h2>Reviews</h2>
         {% if roast.reviews %}
-        <div class="reviews-list">
+        <div class="reviews-overview">
             {% for review in roast.reviews %}
-            <div class="review-card">
-                <div class="review-header">
+            <div class="review-overview-card" onclick="showReviewModal('{{ review._id }}', 'view')">
+                <div class="review-overview-header">
                     <div class="review-rating">
-                        {% for i in range(review.rating) %}★{% endfor %}
-                        {% for i in range(5 - review.rating) %}☆{% endfor %}
+                        {% set score = review.overall_score if review.overall_score else review.get('rating', 3) %}
+                        {% for i in range(score) %}★{% endfor %}
+                        {% for i in range(5 - score) %}☆{% endfor %}
                     </div>
-                    <span class="review-date">{{ review.review_date | format_date }}</span>
-                </div>
-                <div class="review-body">
-                    {{ review.notes }}
+                    <span class="review-date">{{ review.review_date.strftime('%Y-%m-%d') if review.review_date else 'N/A' }}</span>
                 </div>
             </div>
             {% endfor %}
@@ -174,41 +177,267 @@
         <p>No reviews yet.</p>
         {% endif %}
 
-        <button class="btn btn-primary" onclick="showReviewForm()">Add Review</button>
-
-        <div id="reviewForm" style="display: none; margin-top: 1rem;">
-            <form action="{{ url_for('api_roast_add_review', roast_id=roast._id) }}" method="POST" class="form">
-                <div class="form-group">
-                    <label for="rating">Rating (1-5)</label>
-                    <select id="rating" name="rating" required>
-                        <option value="">Select rating</option>
-                        <option value="1">1 - Poor</option>
-                        <option value="2">2 - Fair</option>
-                        <option value="3">3 - Good</option>
-                        <option value="4">4 - Very Good</option>
-                        <option value="5">5 - Excellent</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="notes">Tasting Notes</label>
-                    <textarea id="notes" name="notes" rows="4" placeholder="Flavor profile, brew method, etc."></textarea>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Submit Review</button>
-                    <button type="button" class="btn btn-secondary" onclick="hideReviewForm()">Cancel</button>
-                </div>
-            </form>
-        </div>
+        <button class="btn btn-primary btn-full-width" onclick="showReviewModal(null, 'create')">Add Review</button>
     </section>
 </div>
 
+<!-- Review Modal -->
+<div id="reviewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Review</h2>
+            <span class="modal-close" onclick="closeReviewModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="viewMode" style="display: none;">
+                <div class="review-detail">
+                    <div class="detail-item">
+                        <strong>Overall Score:</strong>
+                        <div class="review-rating-display" id="viewOverallScore"></div>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Extraction Method:</strong>
+                        <span id="viewExtractionMethod"></span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Date:</strong>
+                        <span id="viewDate"></span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Notes:</strong>
+                        <div class="notes-content" id="viewNotes"></div>
+                    </div>
+                    <div class="detail-item" id="viewUpdatedAtContainer" style="display: none;">
+                        <strong>Last Updated:</strong>
+                        <span id="viewUpdatedAt"></span>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary btn-full-width" onclick="switchToEditMode()">Edit</button>
+                    <button class="btn btn-danger btn-full-width" onclick="deleteReview()">Delete</button>
+                </div>
+            </div>
+
+            <div id="formMode" style="display: none;">
+                <form id="reviewForm" onsubmit="submitReview(event)">
+                    <div class="form-group">
+                        <label for="overall_score">Overall Score <span style="color: red;">*</span></label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="overall_score" value="1" required>
+                                <span class="radio-custom">1 ★</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="overall_score" value="2">
+                                <span class="radio-custom">2 ★★</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="overall_score" value="3">
+                                <span class="radio-custom">3 ★★★</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="overall_score" value="4">
+                                <span class="radio-custom">4 ★★★★</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="overall_score" value="5">
+                                <span class="radio-custom">5 ★★★★★</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="extraction_method">Extraction Method <span style="color: red;">*</span></label>
+                        <select id="extraction_method" name="extraction_method" required>
+                            <option value="">Select method</option>
+                            <option value="espresso">Espresso</option>
+                            <option value="pourover">Pourover</option>
+                            <option value="ice_drop">Ice Drop</option>
+                            <option value="cold_brew">Cold Brew</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" name="notes" rows="4" placeholder="Flavor profile, tasting notes, brew details, etc."></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary btn-full-width">Save</button>
+                        <button type="button" class="btn btn-secondary btn-full-width" onclick="closeReviewModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    function showReviewForm() {
-        document.getElementById('reviewForm').style.display = 'block';
+    const roastId = '{{ roast._id }}';
+    let currentReviewId = null;
+    let currentMode = null;
+
+    // Store reviews data for JavaScript access
+    const reviewsData = {
+        {% for review in roast.reviews %}
+        '{{ review._id }}': {
+            overall_score: {{ review.overall_score if review.overall_score else review.get('rating', 3) }},
+            extraction_method: '{{ review.get('extraction_method', '') }}',
+            notes: {{ review.notes | tojson }},
+            review_date: '{{ review.review_date.strftime('%Y-%m-%d %H:%M') if review.review_date else '' }}',
+            updated_at: '{{ review.updated_at.strftime('%Y-%m-%d %H:%M') if review.get('updated_at') and review.updated_at != review.created_at else '' }}'
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    function showReviewModal(reviewId, mode) {
+        currentReviewId = reviewId;
+        currentMode = mode;
+
+        const modal = document.getElementById('reviewModal');
+        const viewMode = document.getElementById('viewMode');
+        const formMode = document.getElementById('formMode');
+        const modalTitle = document.getElementById('modalTitle');
+
+        if (mode === 'view' && reviewId) {
+            const review = reviewsData[reviewId];
+            modalTitle.textContent = 'Review Details';
+
+            // Populate view mode
+            document.getElementById('viewOverallScore').innerHTML = '★'.repeat(review.overall_score) + '☆'.repeat(5 - review.overall_score) + ' (' + review.overall_score + ' / 5)';
+            document.getElementById('viewExtractionMethod').textContent = formatExtractionMethod(review.extraction_method);
+            document.getElementById('viewDate').textContent = review.review_date;
+            document.getElementById('viewNotes').textContent = review.notes || 'No notes';
+
+            if (review.updated_at) {
+                document.getElementById('viewUpdatedAt').textContent = review.updated_at;
+                document.getElementById('viewUpdatedAtContainer').style.display = 'block';
+            } else {
+                document.getElementById('viewUpdatedAtContainer').style.display = 'none';
+            }
+
+            viewMode.style.display = 'block';
+            formMode.style.display = 'none';
+        } else if (mode === 'create') {
+            modalTitle.textContent = 'Add Review';
+            document.getElementById('reviewForm').reset();
+            viewMode.style.display = 'none';
+            formMode.style.display = 'block';
+        } else if (mode === 'edit' && reviewId) {
+            modalTitle.textContent = 'Edit Review';
+            const review = reviewsData[reviewId];
+
+            // Populate form with existing data
+            document.querySelector(`input[name="overall_score"][value="${review.overall_score}"]`).checked = true;
+            document.getElementById('extraction_method').value = review.extraction_method;
+            document.getElementById('notes').value = review.notes;
+
+            viewMode.style.display = 'none';
+            formMode.style.display = 'block';
+        }
+
+        modal.style.display = 'block';
     }
 
-    function hideReviewForm() {
-        document.getElementById('reviewForm').style.display = 'none';
+    function closeReviewModal() {
+        document.getElementById('reviewModal').style.display = 'none';
+        currentReviewId = null;
+        currentMode = null;
     }
+
+    function switchToEditMode() {
+        showReviewModal(currentReviewId, 'edit');
+    }
+
+    async function submitReview(event) {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const data = {
+            overall_score: parseInt(formData.get('overall_score')),
+            extraction_method: formData.get('extraction_method'),
+            notes: formData.get('notes')
+        };
+
+        try {
+            let url, method;
+            if (currentMode === 'create') {
+                url = `/api/roast/add_review/${roastId}`;
+                method = 'POST';
+            } else if (currentMode === 'edit') {
+                url = `/api/roast/update_review/${roastId}/${currentReviewId}`;
+                method = 'POST';
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to save review');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while saving the review');
+        }
+    }
+
+    async function deleteReview() {
+        if (!confirm('Are you sure you want to delete this review?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/roast/delete_review/${roastId}/${currentReviewId}`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to delete review');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the review');
+        }
+    }
+
+    function formatExtractionMethod(method) {
+        const methods = {
+            'espresso': 'Espresso',
+            'pourover': 'Pourover',
+            'ice_drop': 'Ice Drop',
+            'cold_brew': 'Cold Brew',
+            'other': 'Other'
+        };
+        return methods[method] || method || 'Not specified';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('reviewModal');
+        if (event.target === modal) {
+            closeReviewModal();
+        }
+    }
+
+    // Render markdown for general notes
+    document.addEventListener('DOMContentLoaded', function() {
+        const generalNotesDiv = document.getElementById('generalNotes');
+        if (generalNotesDiv && typeof marked !== 'undefined') {
+            const markdownText = generalNotesDiv.getAttribute('data-markdown');
+            if (markdownText) {
+                generalNotesDiv.innerHTML = marked.parse(markdownText);
+            }
+        }
+    });
 </script>
 {% endblock %}

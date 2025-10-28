@@ -42,6 +42,8 @@ Stores information about each type of green coffee bean in your inventory.
   "unit_price_per_kg": "Decimal128", // (Calculated, optional)
   "stock_grams": "Integer", // Current available stock in grams
   "notes": "String", // Tasting notes, website description, etc.
+  "color": "String", // Hex color code for visual identification (e.g., "#6B8E6F"), defaults to "#6B8E6F" (muted green)
+  "archived": "Boolean", // Default false. True = soft deleted
   "created_at": "Date",
   "updated_at": "Date"
 }
@@ -57,14 +59,15 @@ Stores all data related to a single roasting session. This model embeds the temp
   "bean_id": "ObjectId", // Reference to an _id in the 'beans' collection
   "title": "String", // e.g., "Roast #23 - Yirgacheffe", defaults to "Untitled Roast"
   "roast_date": "Date", // The date of the roast
-  
+
   // ----- Weights & Loss -----
   "original_weight_grams": "Integer",
   "roasted_weight_grams": "Integer", // Can be null until entered post-roast
   "weight_loss_percentage": "Float", // (Calculated) (original - roasted) / original
 
   // ----- Roast Profile -----
-  "temp_measurement_method": "String", // e.g., "K-Type (Bean)", "IR Gun (Drum)"
+  "temp_measurement_method": "String", // e.g., "K-Type (Bean)", "IR Gun (Drum)", defaults to "IR Gun"
+  "roaster": "String", // e.g., "Freshroast SR800", "Behmor 1600", defaults to "Freshroast SR800"
   "roast_start_time": "Date", // Timestamp when "Start" is clicked
   "roast_end_time": "Date", // Timestamp when "End" is clicked
   "roast_duration_seconds": "Integer", // (Calculated)
@@ -86,22 +89,24 @@ Stores all data related to a single roasting session. This model embeds the temp
       "power_setting": "Integer" // e.g., 1-10 or 1-100%
     }
   ],
-  
+
   "general_notes": "String", // General notes for the whole roast
-  
+
   // ----- Reviews (Embedded) -----
   "reviews": [
     // Array of embedded review documents
     {
       "_id": "ObjectId", // Unique ID for the review
-      "rating": "Integer", // e.g., 1-5
-      "notes": "String", // Tasting notes, brew method, etc.
+      "overall_score": "Integer", // Overall score 1-5
+      "extraction_method": "String", // One of: "espresso", "pourover", "ice_drop", "cold_brew", "other"
+      "notes": "String", // Tasting notes, brew method details, etc.
       "review_date": "Date",
       "created_at": "Date",
       "updated_at": "Date"
     }
   ],
-  
+
+  "archived": "Boolean", // Default false. True = soft deleted
   "created_at": "Date",
   "updated_at": "Date"
 }
@@ -129,9 +134,15 @@ Stores all data related to a single roasting session. This model embeds the temp
 * **Stock Management (Backend Logic):**
   * **On Roast Create:** When a new roast is saved with an `original_weight_grams`, the backend must find the corresponding `bean` (by `bean_id`) and **decrement** its `stock_grams` by that amount.
     * ` db.beans.updateOne({_id: bean_id}, {$inc: {stock_grams: -original_weight}}) `
-  * **On Roast Delete:** When a roast is deleted, the backend must find the `bean` and **increment** (restore) its `stock_grams` by the roast's `original_weight_grams`.
+  * **On Roast Archive:** When a roast is archived (soft deleted), the backend must find the `bean` and **increment** (restore) its `stock_grams` by the roast's `original_weight_grams`. The roast is not actually deleted, but marked with `archived: true`.
     * `db.beans.updateOne({_id: bean_id}, {$inc: {stock_grams: original_weight}})`
+    * `db.roasts.updateOne({_id: roast_id}, {$set: {archived: true}})`
   * **On Roast Edit:** If a roast's `original_weight_grams` is *changed*, the backend must calculate the *difference* from the old weight and apply that difference to the `bean`'s stock.
+* **Soft Deletion:**
+  * Both beans and roasts use soft deletion via an `archived` boolean field
+  * When "deleted", items are marked with `archived: true` instead of being removed from the database
+  * All queries filter out archived items by default using `{archived: {$ne: true}}`
+  * This preserves historical data and allows for potential recovery if needed
 
 #### **4.3. Roast Management (Dashboard)**
 
@@ -220,15 +231,17 @@ A suggested structure for the Flask routes.
 
 * `POST /api/beans/add`: Process "add bean" form data.
 * `POST /api/beans/edit/<bean_id>`: Process "edit bean" form data.
-* `POST /api/beans/delete/<bean_id>`: Delete a bean.
+* `POST /api/beans/delete/<bean_id>`: Archive a bean (soft delete - sets `archived: true`).
 * `POST /api/roast/create`: Create a new *draft* roast. Returns `{ "new_roast_id": "..." }`.
-* `POST /api/roast/delete/<roast_id>`: Delete a roast (triggers stock-return logic).
+* `POST /api/roast/delete/<roast_id>`: Archive a roast (soft delete - sets `archived: true` and restores bean stock).
 * `POST /api/roast/update/<roast_id>`: Save all data from the "Edit Roast" page.
 * `POST /api/roast/start/<roast_id>`: Set the `roast_start_time`.
 * `POST /api/roast/end/<roast_id>`: Set the `roast_end_time`.
 * `POST /api/roast/add_timing/<roast_id>`: `$push` new event to `key_timings`.
 * `POST /api/roast/add_event/<roast_id>`: `$push` new event to `temp_curve`.
 * `POST /api/roast/add_review/<roast_id>`: `$push` new review to `reviews`.
+* `POST /api/roast/update_review/<roast_id>/<review_id>`: Update an existing review.
+* `POST /api/roast/delete_review/<roast_id>/<review_id>`: Delete a review from `reviews` array.
 
 -----
 
