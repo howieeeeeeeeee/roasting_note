@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}{{ roast.title }} - RoastLogger{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ roast.title }}</h1>
+    <div class="header-actions">
+        <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="btn btn-primary">Edit Roast</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="roast-detail">
+    <section class="detail-section">
+        <h2>Basic Information</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <strong>Bean:</strong> {{ roast.bean_name }}
+            </div>
+            <div class="detail-item">
+                <strong>Roast Date:</strong> {{ roast.roast_date | format_date }}
+            </div>
+            <div class="detail-item">
+                <strong>Temperature Method:</strong> {{ roast.temp_measurement_method or 'Not specified' }}
+            </div>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <h2>Weights & Loss</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <strong>Green Weight:</strong> {{ roast.original_weight_grams or 'Not set' }}{% if roast.original_weight_grams %}g{% endif %}
+            </div>
+            <div class="detail-item">
+                <strong>Roasted Weight:</strong> {{ roast.roasted_weight_grams or 'Not set' }}{% if roast.roasted_weight_grams %}g{% endif %}
+            </div>
+            <div class="detail-item">
+                <strong>Weight Loss:</strong> {{ roast.weight_loss_percentage or 'N/A' }}{% if roast.weight_loss_percentage %}%{% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <h2>Roast Duration</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <strong>Start Time:</strong> {{ roast.roast_start_time | format_date if roast.roast_start_time else 'Not started' }}
+            </div>
+            <div class="detail-item">
+                <strong>End Time:</strong> {{ roast.roast_end_time | format_date if roast.roast_end_time else 'Not ended' }}
+            </div>
+            <div class="detail-item">
+                <strong>Duration:</strong> {{ roast.roast_duration_seconds | format_seconds if roast.roast_duration_seconds else 'N/A' }}
+            </div>
+        </div>
+    </section>
+
+    {% if roast.key_timings or roast.temp_curve %}
+    <section class="detail-section">
+        <h2>Roast Events</h2>
+        <div class="table-wrapper">
+            <table class="data-table combined-events-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Event / Note</th>
+                        <th>Temp (°C)</th>
+                        <th>Fan</th>
+                        <th>Power</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set all_events = [] %}
+
+                    {# Collect key timings #}
+                    {% for timing in roast.key_timings %}
+                        {% set _ = all_events.append({
+                            'time': timing.time_seconds,
+                            'type': 'key',
+                            'event_name': timing.event_name,
+                            'temperature': timing.get('temperature'),
+                            'fan_setting': timing.get('fan_setting'),
+                            'power_setting': timing.get('power_setting')
+                        }) %}
+                    {% endfor %}
+
+                    {# Collect temperature curve events #}
+                    {% for event in roast.temp_curve %}
+                        {% set _ = all_events.append({
+                            'time': event.time_seconds,
+                            'type': 'temp',
+                            'note': event.get('note', ''),
+                            'temperature': event.temperature,
+                            'fan_setting': event.fan_setting,
+                            'power_setting': event.power_setting
+                        }) %}
+                    {% endfor %}
+
+                    {# Sort all events by time #}
+                    {% for event in all_events | sort(attribute='time') %}
+                    <tr class="{% if event.type == 'key' %}event-row-key{% else %}event-row-temp{% endif %}">
+                        <td class="event-time">{{ event.time | format_seconds }}</td>
+                        <td class="event-description">
+                            {% if event.type == 'key' %}
+                                <strong class="key-event-name">{{ event.event_name }}</strong>
+                            {% else %}
+                                {% if event.note %}
+                                    <span class="temp-note">{{ event.note }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.temperature %}
+                                {{ event.temperature }}°C
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.fan_setting is not none %}
+                                {{ event.fan_setting }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.power_setting is not none %}
+                                {{ event.power_setting }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if roast.general_notes %}
+    <section class="detail-section">
+        <h2>General Notes</h2>
+        <div class="notes-content">
+            {{ roast.general_notes }}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="detail-section">
+        <h2>Reviews</h2>
+        {% if roast.reviews %}
+        <div class="reviews-list">
+            {% for review in roast.reviews %}
+            <div class="review-card">
+                <div class="review-header">
+                    <div class="review-rating">
+                        {% for i in range(review.rating) %}★{% endfor %}
+                        {% for i in range(5 - review.rating) %}☆{% endfor %}
+                    </div>
+                    <span class="review-date">{{ review.review_date | format_date }}</span>
+                </div>
+                <div class="review-body">
+                    {{ review.notes }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No reviews yet.</p>
+        {% endif %}
+
+        <button class="btn btn-primary" onclick="showReviewForm()">Add Review</button>
+
+        <div id="reviewForm" style="display: none; margin-top: 1rem;">
+            <form action="{{ url_for('api_roast_add_review', roast_id=roast._id) }}" method="POST" class="form">
+                <div class="form-group">
+                    <label for="rating">Rating (1-5)</label>
+                    <select id="rating" name="rating" required>
+                        <option value="">Select rating</option>
+                        <option value="1">1 - Poor</option>
+                        <option value="2">2 - Fair</option>
+                        <option value="3">3 - Good</option>
+                        <option value="4">4 - Very Good</option>
+                        <option value="5">5 - Excellent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Tasting Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Flavor profile, brew method, etc."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideReviewForm()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+<script>
+    function showReviewForm() {
+        document.getElementById('reviewForm').style.display = 'block';
+    }
+
+    function hideReviewForm() {
+        document.getElementById('reviewForm').style.display = 'none';
+    }
+</script>
+{% endblock %}

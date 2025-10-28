@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Roast - {{ roast.title }} - RoastLogger{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Edit Roast</h1>
+</div>
+
+<form action="{{ url_for('api_roast_update', roast_id=roast._id) }}" method="POST" class="form">
+    <section class="form-section">
+        <h2>Basic Information</h2>
+
+        <div class="form-group">
+            <label for="title">Roast Title *</label>
+            <input type="text" id="title" name="title" required value="{{ roast.title }}" placeholder="e.g., Roast #23 - Yirgacheffe">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="bean_id">Bean *</label>
+                <select id="bean_id" name="bean_id" required>
+                    <option value="">Select a bean...</option>
+                    {% for bean in beans %}
+                    <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id == bean._id %}selected{% endif %}>
+                        {{ bean.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="roast_date">Roast Date</label>
+                <input type="date" id="roast_date" name="roast_date" value="{{ roast.roast_date.strftime('%Y-%m-%d') if roast.roast_date else '' }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="temp_measurement_method">Temperature Measurement Method</label>
+            <input type="text" id="temp_measurement_method" name="temp_measurement_method" value="{{ roast.temp_measurement_method or '' }}" placeholder="e.g., K-Type (Bean), IR Gun (Drum)">
+        </div>
+    </section>
+
+    <section class="form-section">
+        <h2>Weights</h2>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="original_weight_grams">Green Weight (grams) *</label>
+                <input type="number" id="original_weight_grams" name="original_weight_grams" required value="{{ roast.original_weight_grams or '' }}" min="0" onchange="calculateWeightLoss()">
+            </div>
+
+            <div class="form-group">
+                <label for="roasted_weight_grams">Roasted Weight (grams)</label>
+                <input type="number" id="roasted_weight_grams" name="roasted_weight_grams" value="{{ roast.roasted_weight_grams or '' }}" min="0" onchange="calculateWeightLoss()">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Weight Loss Percentage</label>
+            <div id="weight_loss_display" class="calc-display">
+                {% if roast.weight_loss_percentage %}
+                    {{ roast.weight_loss_percentage }}%
+                {% else %}
+                    Enter both weights to calculate
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <h2>Notes</h2>
+        <div class="form-group">
+            <label for="general_notes">General Notes</label>
+            <textarea id="general_notes" name="general_notes" rows="6" placeholder="Observations, outcomes, things to try next time...">{{ roast.general_notes or '' }}</textarea>
+        </div>
+    </section>
+
+    {% if roast.key_timings or roast.temp_curve %}
+    <section class="form-section">
+        <h2>Roast Data</h2>
+        <p class="info-text">Note: Currently, editing individual timing and temperature events is not supported in this version. To modify these, you would need to delete and re-roast.</p>
+
+        {% if roast.key_timings %}
+        <h3>Key Timings</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for timing in roast.key_timings %}
+                <tr>
+                    <td>{{ timing.event_name }}</td>
+                    <td>{{ timing.time_seconds | format_seconds }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if roast.temp_curve %}
+        <h3>Temperature Curve (First 10 entries)</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Temperature</th>
+                    <th>Fan</th>
+                    <th>Power</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in roast.temp_curve[:10] %}
+                <tr>
+                    <td>{{ event.time_seconds | format_seconds }}</td>
+                    <td>{{ event.temperature }}°</td>
+                    <td>{{ event.fan_setting }}</td>
+                    <td>{{ event.power_setting }}</td>
+                </tr>
+                {% endfor %}
+                {% if roast.temp_curve|length > 10 %}
+                <tr>
+                    <td colspan="4" class="text-center">... and {{ roast.temp_curve|length - 10 }} more entries</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('roast_detail', roast_id=roast._id) }}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+<script>
+    function calculateWeightLoss() {
+        const originalWeight = parseFloat(document.getElementById('original_weight_grams').value);
+        const roastedWeight = parseFloat(document.getElementById('roasted_weight_grams').value);
+        const display = document.getElementById('weight_loss_display');
+
+        if (originalWeight && roastedWeight && originalWeight > 0) {
+            const weightLoss = ((originalWeight - roastedWeight) / originalWeight) * 100;
+            display.textContent = weightLoss.toFixed(2) + '%';
+        } else {
+            display.textContent = 'Enter both weights to calculate';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Live Roast - {{ roast.title }} - RoastLogger{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Live Roasting: {{ roast.title }}</h1>
+</div>
+
+<div class="live-roast-container">
+    <!-- Pre-roast Setup -->
+    <section class="setup-section">
+        <h2>Setup</h2>
+        <div class="form-group">
+            <label for="roast_title">Roast Name</label>
+            <input type="text" id="roast_title" name="roast_title" value="{{ roast.title }}" placeholder="e.g., Ethiopia Yirgacheffe - Light Roast">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="bean_id">Select Bean</label>
+                <select id="bean_id" name="bean_id" class="modern-select">
+                    <option value="">Select a bean...</option>
+                    {% for bean in beans %}
+                    <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id == bean._id %}selected{% endif %}>
+                        {{ bean.name }} ({{ bean.stock_grams }}g available)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="original_weight">Green Weight (grams)</label>
+                <input type="number" id="original_weight" name="original_weight" min="0" value="{{ roast.original_weight_grams or '' }}" placeholder="e.g., 250">
+            </div>
+        </div>
+    </section>
+
+    <!-- Timer Display -->
+    <section class="timer-section">
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="timer-controls">
+            <button id="startBtn" class="btn btn-success btn-lg">Start Roast</button>
+            <button id="endBtn" class="btn btn-danger btn-lg" style="display: none;">End Roast</button>
+        </div>
+    </section>
+
+    <!-- Combined Event Logging -->
+    <section class="data-entry-section">
+        <h2>Log Event</h2>
+
+        <!-- Quick Key Events -->
+        <div class="form-group">
+            <label>Quick Key Events <span class="helper-text">(Will capture current temp/fan/power below)</span></label>
+            <div class="event-buttons">
+                <button class="btn btn-secondary event-btn" data-event="Yellowing" disabled>Yellowing</button>
+                <button class="btn btn-secondary event-btn" data-event="First Crack Start" disabled>FC Start</button>
+                <button class="btn btn-secondary event-btn" data-event="First Crack End" disabled>FC End</button>
+                <button class="btn btn-secondary event-btn" data-event="Second Crack Start" disabled>SC Start</button>
+                <button class="btn btn-secondary event-btn" data-event="Drop" disabled>Drop</button>
+            </div>
+        </div>
+
+        <!-- Temperature & Settings -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="temperature">Temperature (°C)</label>
+                <input type="number" step="0.1" id="temperature" name="temperature" placeholder="e.g., 190.5">
+            </div>
+            <div class="form-group">
+                <label for="fan_setting">Fan Setting</label>
+                <input type="number" id="fan_setting" name="fan_setting" min="0" placeholder="e.g., 3">
+            </div>
+            <div class="form-group">
+                <label for="power_setting">Power Setting</label>
+                <input type="number" id="power_setting" name="power_setting" min="0" placeholder="e.g., 8">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="event_note">Event Note (Optional)</label>
+            <input type="text" id="event_note" name="event_note" placeholder="e.g., Increased heat, Nice caramelization">
+        </div>
+
+        <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Temperature & Settings</button>
+    </section>
+
+    <!-- Unified Timeline -->
+    <section class="timeline-section">
+        <h2>Roast Timeline</h2>
+        <div id="timelineList" class="timeline-list">
+            {% set all_events = [] %}
+
+            {% for timing in roast.key_timings %}
+                {% set _ = all_events.append({'time': timing.time_seconds, 'type': 'key', 'data': timing}) %}
+            {% endfor %}
+
+            {% for event in roast.temp_curve %}
+                {% set _ = all_events.append({'time': event.time_seconds, 'type': 'temp', 'data': event}) %}
+            {% endfor %}
+
+            {% if all_events %}
+                {% for event in all_events | sort(attribute='time') %}
+                    {% if event.type == 'key' %}
+                    <div class="timeline-item timeline-key">
+                        <div class="timeline-time">{{ event.time | format_seconds }}</div>
+                        <div class="timeline-content">
+                            <strong class="timeline-label">{{ event.data.event_name }}</strong>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item timeline-temp">
+                        <div class="timeline-time">{{ event.time | format_seconds }}</div>
+                        <div class="timeline-content">
+                            <span class="timeline-temp-value">{{ event.data.temperature }}°C</span>
+                            <span class="timeline-settings">Fan: {{ event.data.fan_setting }} | Power: {{ event.data.power_setting }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+            <p class="empty-log">No events logged yet</p>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<script>
+    let timerInterval = null;
+    let seconds = 0;
+    let isRunning = false;
+    const roastId = '{{ roast._id }}';
+
+    // Remember last values
+    let lastTemp = null;
+    let lastFan = null;
+    let lastPower = null;
+
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const endBtn = document.getElementById('endBtn');
+    const eventButtons = document.querySelectorAll('.event-btn');
+    const addEventBtn = document.getElementById('addEventBtn');
+    const timelineList = document.getElementById('timelineList');
+    const roastTitleInput = document.getElementById('roast_title');
+
+    // Format seconds as MM:SS
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // Update timer display
+    function updateTimer() {
+        seconds++;
+        timerDisplay.textContent = formatTime(seconds);
+    }
+
+    // Save roast title
+    roastTitleInput.addEventListener('blur', async () => {
+        const title = roastTitleInput.value || 'Untitled Roast';
+        try {
+            await fetch(`/api/roast/update_title/${roastId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ title: title })
+            });
+        } catch (error) {
+            console.error('Error updating title:', error);
+        }
+    });
+
+    // Start roast
+    startBtn.addEventListener('click', async () => {
+        const beanId = document.getElementById('bean_id').value;
+        const originalWeight = document.getElementById('original_weight').value;
+
+        if (!beanId || !originalWeight) {
+            alert('Please select a bean and enter the green weight before starting.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/roast/start/${roastId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bean_id: beanId,
+                    original_weight_grams: originalWeight
+                })
+            });
+
+            if (response.ok) {
+                isRunning = true;
+                timerInterval = setInterval(updateTimer, 1000);
+                startBtn.style.display = 'none';
+                endBtn.style.display = 'inline-block';
+                eventButtons.forEach(btn => btn.disabled = false);
+                addEventBtn.disabled = false;
+                document.getElementById('bean_id').disabled = true;
+                document.getElementById('original_weight').disabled = true;
+            } else {
+                alert('Error starting roast. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error starting roast. Please try again.');
+        }
+    });
+
+    // End roast
+    endBtn.addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to end this roast?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/roast/end/${roastId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                eventButtons.forEach(btn => btn.disabled = true);
+                addEventBtn.disabled = true;
+
+                // Redirect to edit page
+                window.location.href = `/roast/edit/${roastId}`;
+            } else {
+                alert('Error ending roast. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error ending roast. Please try again.');
+        }
+    });
+
+    // Log key timing event (IMMEDIATELY saves with current temp/fan/power values)
+    // Workflow: Enter temp/fan/power first, then click the key event button
+    eventButtons.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const eventName = btn.getAttribute('data-event');
+
+            // Capture current temp/fan/power values at this exact moment
+            const tempInput = document.getElementById('temperature');
+            const fanInput = document.getElementById('fan_setting');
+            const powerInput = document.getElementById('power_setting');
+
+            // Get values - if fan/power are empty, use last known values
+            const temperature = tempInput.value ? parseFloat(tempInput.value) : null;
+            const fanSetting = fanInput.value ? parseInt(fanInput.value) : (lastFan || null);
+            const powerSetting = powerInput.value ? parseInt(powerInput.value) : (lastPower || null);
+
+            console.log(`Logging ${eventName} with Temp: ${temperature}, Fan: ${fanSetting}, Power: ${powerSetting}`);
+
+            try {
+                const response = await fetch(`/api/roast/add_timing/${roastId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        event_name: eventName,
+                        time_seconds: seconds,
+                        temperature: temperature,
+                        fan_setting: fanSetting,
+                        power_setting: powerSetting
+                    })
+                });
+
+                if (response.ok) {
+                    // Remember last fan/power values if they were provided
+                    if (fanSetting !== null) lastFan = fanSetting;
+                    if (powerSetting !== null) lastPower = powerSetting;
+
+                    // Add to unified timeline
+                    const emptyLog = timelineList.querySelector('.empty-log');
+                    if (emptyLog) emptyLog.remove();
+
+                    const timelineItem = document.createElement('div');
+                    timelineItem.className = 'timeline-item timeline-key';
+                    let displayText = `<strong class="timeline-label">${eventName}</strong>`;
+                    if (temperature) {
+                        displayText += `<span class="timeline-temp-value"> ${temperature}°C</span>`;
+                    }
+                    if (fanSetting !== null || powerSetting !== null) {
+                        displayText += `<span class="timeline-settings"> Fan: ${fanSetting || 0} | Power: ${powerSetting || 0}</span>`;
+                    }
+
+                    timelineItem.innerHTML = `
+                        <div class="timeline-time">${formatTime(seconds)}</div>
+                        <div class="timeline-content">
+                            ${displayText}
+                        </div>
+                    `;
+                    timelineList.appendChild(timelineItem);
+
+                    // Visual feedback - button glows green briefly
+                    btn.style.backgroundColor = 'var(--success-color)';
+                    btn.style.color = 'white';
+                    setTimeout(() => {
+                        btn.style.backgroundColor = '';
+                        btn.style.color = '';
+                    }, 500);
+
+                    // Clear temperature input after key event, keep fan/power for next time
+                    tempInput.value = '';
+
+                    // Update fan/power inputs to show last values
+                    fanInput.value = lastFan || '';
+                    powerInput.value = lastPower || '';
+                } else {
+                    alert('Error logging event. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error logging event. Please try again.');
+            }
+        });
+    });
+
+    // Add temperature/settings event
+    addEventBtn.addEventListener('click', async () => {
+        const tempInput = document.getElementById('temperature');
+        const fanInput = document.getElementById('fan_setting');
+        const powerInput = document.getElementById('power_setting');
+        const noteInput = document.getElementById('event_note');
+
+        const temperature = tempInput.value;
+        const fanSetting = fanInput.value || lastFan || 0;
+        const powerSetting = powerInput.value || lastPower || 0;
+        const note = noteInput.value || '';
+
+        if (!temperature) {
+            alert('Please enter a temperature value.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/roast/add_event/${roastId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    time_seconds: seconds,
+                    temperature: parseFloat(temperature),
+                    fan_setting: parseInt(fanSetting),
+                    power_setting: parseInt(powerSetting),
+                    note: note
+                })
+            });
+
+            if (response.ok) {
+                // Remember values for next time
+                lastTemp = parseFloat(temperature);
+                lastFan = parseInt(fanSetting);
+                lastPower = parseInt(powerSetting);
+
+                // Add to unified timeline
+                const emptyLog = timelineList.querySelector('.empty-log');
+                if (emptyLog) emptyLog.remove();
+
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item timeline-temp';
+                timelineItem.innerHTML = `
+                    <div class="timeline-time">${formatTime(seconds)}</div>
+                    <div class="timeline-content">
+                        <span class="timeline-temp-value">${temperature}°C</span>
+                        <span class="timeline-settings">Fan: ${fanSetting} | Power: ${powerSetting}</span>
+                        ${note ? `<span class="timeline-note">${note}</span>` : ''}
+                    </div>
+                `;
+                timelineList.appendChild(timelineItem);
+
+                // Set defaults to last values, clear temperature
+                tempInput.value = '';
+                fanInput.value = lastFan;
+                powerInput.value = lastPower;
+                noteInput.value = '';
+
+                // Focus back on temperature input
+                tempInput.focus();
+            } else {
+                alert('Error logging data. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error logging data. Please try again.');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Read(//Users/howieee/Library/Containers/at.EternalStorms.Yoink/Data/Documents/YoinkPromisedFiles.noIndex/yoinkFilePromiseCreationFolderBC41E80D-FBB4-4BC5-8A5C-738BCC57B45F/addBC41E80D-FBB4-4BC5-8A5C-738BCC57B45F/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
