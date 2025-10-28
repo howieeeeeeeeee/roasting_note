@@ -20,6 +20,8 @@ def create_bean(beans_collection, bean_data):
         'process': bean_data.get('process', ''),
         'supplier': bean_data.get('supplier', ''),
         'notes': bean_data.get('notes', ''),
+        'color': bean_data.get('color', '#6B8E6F'),  # Default: muted green
+        'archived': False,
         'created_at': datetime.now(),
         'updated_at': datetime.now()
     }
@@ -83,6 +85,7 @@ def update_bean(beans_collection, bean_id, bean_data):
         'process': bean_data.get('process', ''),
         'supplier': bean_data.get('supplier', ''),
         'notes': bean_data.get('notes', ''),
+        'color': bean_data.get('color', '#6B8E6F'),
         'updated_at': datetime.now()
     }
 

@@ -27,7 +27,7 @@
 
     <div class="form-group">
         <label for="supplier">Supplier</label>
-        <input type="text" id="supplier" name="supplier" value="{{ bean.supplier if bean else '' }}" placeholder="e.g., Sweet Maria's">
+        <input type="text" id="supplier" name="supplier" value="{{ bean.supplier if bean else 'Sweet Maria\\'s' }}" placeholder="e.g., Sweet Maria's">
     </div>
 
     <div class="form-row">
@@ -59,9 +59,28 @@
         <textarea id="notes" name="notes" rows="4" placeholder="Tasting notes, website description, etc.">{{ bean.notes if bean else '' }}</textarea>
     </div>
 
+    <div class="form-group">
+        <label for="color">Label Color</label>
+        <div class="color-picker-wrapper">
+            <input type="color" id="color" name="color" value="{{ bean.color if bean and bean.color else '#6B8E6F' }}" class="color-picker-input">
+            <span class="color-preview" id="colorPreview">{{ bean.color if bean and bean.color else '#6B8E6F' }}</span>
+        </div>
+        <p class="helper-text">Choose a color to visually identify this bean on the roast list</p>
+    </div>
+
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">{% if is_edit %}Update{% else %}Add{% endif %} Bean</button>
         <a href="{{ url_for('beans_list') }}" class="btn btn-secondary">Cancel</a>
     </div>
 </form>
+
+<script>
+    // Update color preview when color changes
+    const colorInput = document.getElementById('color');
+    const colorPreview = document.getElementById('colorPreview');
+
+    colorInput.addEventListener('input', function() {
+        colorPreview.textContent = this.value.toUpperCase();
+    });
+</script>
 {% endblock %}

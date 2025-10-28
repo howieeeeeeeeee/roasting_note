@@ -864,6 +864,25 @@ select.modern-select:hover,
     min-width: 200px;
 }
 
+.bean-name-with-color {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.bean-color-indicator {
+    width: 12px;
+    height: 12px;
+    min-width: 12px;
+    border-radius: 50%;
+    margin-top: 0.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.bean-name-info {
+    flex: 1;
+}
+
 .date-cell {
     color: var(--text-light);
     font-size: 0.875rem;
@@ -1099,6 +1118,395 @@ select.modern-select:hover,
 }
 
 /* ============================================
+   Modal Styles
+   ============================================ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.modal-close {
+    color: var(--text-light);
+    font-size: 2rem;
+    font-weight: 300;
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+    color: var(--text-color);
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+/* ============================================
+   Full-Width Button
+   ============================================ */
+.btn-full-width {
+    width: 100%;
+    display: block;
+}
+
+/* ============================================
+   Radio Group Styles
+   ============================================ */
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.radio-label {
+    position: relative;
+    cursor: pointer;
+    flex: 1;
+    min-width: fit-content;
+}
+
+.radio-label input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.radio-custom {
+    display: block;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--card-bg);
+    text-align: center;
+    transition: all 0.2s;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.radio-label:hover .radio-custom {
+    border-color: var(--secondary-color);
+    background-color: var(--bg-color);
+}
+
+.radio-label input[type="radio"]:checked + .radio-custom {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.radio-label input[type="radio"]:focus + .radio-custom {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(107, 91, 77, 0.2);
+}
+
+/* ============================================
+   Review Overview Cards
+   ============================================ */
+.reviews-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.review-overview-card {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.review-overview-card:hover {
+    border-color: var(--primary-color);
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.review-overview-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.review-rating-display {
+    color: #FFD700;
+    font-size: 1.25rem;
+}
+
+.review-detail .detail-item {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.review-detail .detail-item:last-child {
+    border-bottom: none;
+}
+
+/* ============================================
+   Responsive Modal Styles
+   ============================================ */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+
+    .modal-header {
+        padding: 1rem 1.5rem;
+    }
+
+    .modal-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .radio-group {
+        flex-direction: column;
+    }
+
+    .radio-label {
+        flex: auto;
+        width: 100%;
+    }
+
+    .reviews-overview {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+/* Touch-friendly radio buttons for mobile */
+@media (hover: none) and (pointer: coarse) {
+    .radio-custom {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* ============================================
+   Color Picker Styles
+   ============================================ */
+.color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.color-picker-input {
+    width: 80px;
+    height: 40px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.color-picker-input:hover {
+    border-color: var(--primary-color);
+}
+
+.color-preview {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+/* ============================================
+   Bean Label / Tag Styles
+   ============================================ */
+.bean-label {
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.bean-label:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Markdown Content Styles
+   ============================================ */
+.markdown-content {
+    line-height: 1.7;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+    color: var(--primary-color);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.markdown-content h1 { font-size: 1.75rem; }
+.markdown-content h2 { font-size: 1.5rem; }
+.markdown-content h3 { font-size: 1.25rem; }
+.markdown-content h4 { font-size: 1.1rem; }
+
+.markdown-content p {
+    margin-bottom: 1rem;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.markdown-content li {
+    margin-bottom: 0.5rem;
+}
+
+.markdown-content code {
+    background-color: #f5f5f5;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: var(--primary-color);
+}
+
+.markdown-content pre {
+    background-color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.markdown-content pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+.markdown-content blockquote {
+    border-left: 4px solid var(--primary-color);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+.markdown-content a {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.markdown-content a:hover {
+    color: var(--primary-hover);
+}
+
+.markdown-content hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 1.5rem 0;
+}
+
+.markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.markdown-content table th,
+.markdown-content table td {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    text-align: left;
+}
+
+.markdown-content table th {
+    background-color: var(--bg-color);
+    font-weight: 600;
+}
+
+.markdown-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+
+/* ============================================
    Print Styles
    ============================================ */
 @media print {
@@ -1108,6 +1516,7 @@ select.modern-select:hover,
     .bean-card-footer,
     .roast-card-footer,
     .action-buttons,
+    .modal,
     footer {
         display: none;
     }

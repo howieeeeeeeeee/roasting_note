@@ -27,10 +27,15 @@
             {% for bean in beans %}
             <tr class="bean-row">
                 <td class="bean-name-cell">
-                    <strong>{{ bean.name }}</strong>
-                    {% if bean.notes %}
-                    <div class="bean-notes-preview">{{ bean.notes[:60] }}{% if bean.notes|length > 60 %}...{% endif %}</div>
-                    {% endif %}
+                    <div class="bean-name-with-color">
+                        <span class="bean-color-indicator" style="background-color: {{ bean.color if bean.color else '#6B8E6F' }};"></span>
+                        <div class="bean-name-info">
+                            <strong>{{ bean.name }}</strong>
+                            {% if bean.notes %}
+                            <div class="bean-notes-preview">{{ bean.notes[:60] }}{% if bean.notes|length > 60 %}...{% endif %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </td>
                 <td>{{ bean.origin or '-' }}</td>
                 <td>{{ bean.process or '-' }}</td>

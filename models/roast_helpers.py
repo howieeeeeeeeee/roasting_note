@@ -15,11 +15,13 @@ def create_draft_roast(roasts_collection):
     roast_doc = {
         'title': 'Untitled Roast',
         'roast_date': datetime.now(),
-        'temp_measurement_method': '',
+        'temp_measurement_method': 'IR Gun',
+        'roaster': 'Freshroast SR800',
         'general_notes': '',
         'key_timings': [],
         'temp_curve': [],
         'reviews': [],
+        'archived': False,
         'created_at': datetime.now(),
         'updated_at': datetime.now()
     }
@@ -45,7 +47,8 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
 
     update_doc = {
         'title': roast_data.get('title', 'Untitled Roast'),
-        'temp_measurement_method': roast_data.get('temp_measurement_method', ''),
+        'roaster': roast_data.get('roaster', 'Freshroast SR800'),
+        'temp_measurement_method': roast_data.get('temp_measurement_method', 'IR Gun'),
         'general_notes': roast_data.get('general_notes', ''),
         'updated_at': datetime.now()
     }

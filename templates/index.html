@@ -31,7 +31,11 @@
                         {{ roast.title }}
                     </a>
                 </td>
-                <td>{{ roast.bean_name }}</td>
+                <td>
+                    <span class="bean-label" style="background-color: {{ roast.bean_color }}4D; color: {{ roast.bean_color }};">
+                        {{ roast.bean_name }}
+                    </span>
+                </td>
                 <td class="date-cell">{{ roast.roast_date.strftime('%Y-%m-%d') if roast.roast_date else 'N/A' }}</td>
                 <td>
                     {% if roast.original_weight_grams %}
