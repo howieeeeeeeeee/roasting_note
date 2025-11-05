@@ -7,13 +7,17 @@
     <h1>Live Roasting: {{ roast.title }}</h1>
 </div>
 
+<!-- Toast notification container -->
+<div id="toastContainer" class="toast-container"></div>
+
 <div class="live-roast-container">
     <!-- Pre-roast Setup -->
     <section class="setup-section">
         <h2>Setup</h2>
         <div class="form-group">
             <label for="roast_title">Roast Name</label>
-            <input type="text" id="roast_title" name="roast_title" value="{{ roast.title }}" placeholder="e.g., Ethiopia Yirgacheffe - Light Roast">
+            <input type="text" id="roast_title" name="roast_title" value="{{ roast.title }}"
+                placeholder="e.g., Ethiopia Yirgacheffe - Light Roast">
         </div>
         <div class="form-row">
             <div class="form-group">
@@ -21,7 +25,8 @@
                 <select id="bean_id" name="bean_id" class="modern-select">
                     <option value="">Select a bean...</option>
                     {% for bean in beans %}
-                    <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id == bean._id %}selected{% endif %}>
+                    <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id==bean._id %}selected{% endif
+                        %}>
                         {{ bean.name }} ({{ bean.stock_grams }}g available)
                     </option>
                     {% endfor %}
@@ -29,76 +34,87 @@
             </div>
             <div class="form-group">
                 <label for="original_weight">Green Weight (grams)</label>
-                <input type="number" id="original_weight" name="original_weight" min="0" value="{{ roast.original_weight_grams or '' }}" placeholder="e.g., 250">
+                <input type="number" id="original_weight" name="original_weight" min="0"
+                    value="{{ roast.original_weight_grams or '' }}" placeholder="e.g., 250">
             </div>
         </div>
     </section>
 
-    <!-- Timer Display -->
-    <section class="timer-section">
-        <div class="timer-display" id="timerDisplay">00:00</div>
-        <div class="timer-controls">
-            <button id="startBtn" class="btn btn-success btn-lg">Start Roast</button>
-            <button id="endBtn" class="btn btn-danger btn-lg" style="display: none;">End Roast</button>
+    <!-- Full Width Layout: Left Panel + Right Panel -->
+    <div class="roast-panels">
+        <!-- Left Panel: Timer and Log Input -->
+        <div class="left-panel">
+            <!-- Timer Display -->
+            <section class="timer-section">
+                <div class="timer-display" id="timerDisplay">00:00</div>
+                <div class="timer-controls">
+                    <button id="startBtn" class="btn btn-success btn-lg">Start Roast</button>
+                    <button id="endBtn" class="btn btn-danger btn-lg" style="display: none;">End Roast</button>
+                </div>
+            </section>
+
+            <!-- Combined Event Logging -->
+            <section class="data-entry-section">
+                <h2>Log Event</h2>
+
+                <!-- Quick Key Events -->
+                <div class="form-group">
+                    <label>Quick Key Events <span class="helper-text">(Will capture current temp/fan/power
+                            below)</span></label>
+                    <div class="event-buttons">
+                        <button class="btn btn-secondary event-btn" data-event="Yellowing" disabled>Yellowing</button>
+                        <button class="btn btn-secondary event-btn" data-event="First Crack Start" disabled>FC
+                            Start</button>
+                        <button class="btn btn-secondary event-btn" data-event="First Crack End" disabled>FC
+                            End</button>
+                        <button class="btn btn-secondary event-btn" data-event="Second Crack Start" disabled>SC
+                            Start</button>
+                    </div>
+                </div>
+
+                <!-- Temperature & Settings -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="temperature">Temperature (°C)</label>
+                        <input type="number" step="0.1" id="temperature" name="temperature" placeholder="e.g., 190.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="fan_setting">Fan Setting</label>
+                        <input type="number" id="fan_setting" name="fan_setting" min="0" placeholder="e.g., 3">
+                    </div>
+                    <div class="form-group">
+                        <label for="power_setting">Power Setting</label>
+                        <input type="number" id="power_setting" name="power_setting" min="0" placeholder="e.g., 8">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="event_note">Event Note (Optional)</label>
+                    <input type="text" id="event_note" name="event_note"
+                        placeholder="e.g., Increased heat, Nice caramelization">
+                </div>
+
+                <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Temperature & Settings</button>
+            </section>
         </div>
-    </section>
 
-    <!-- Combined Event Logging -->
-    <section class="data-entry-section">
-        <h2>Log Event</h2>
+        <!-- Right Panel: Temperature and Event Log (Newest First) -->
+        <div class="right-panel">
+            <section class="timeline-section">
+                <h2>Roast Timeline</h2>
+                <div id="timelineList" class="timeline-list">
+                    {% set all_events = [] %}
 
-        <!-- Quick Key Events -->
-        <div class="form-group">
-            <label>Quick Key Events <span class="helper-text">(Will capture current temp/fan/power below)</span></label>
-            <div class="event-buttons">
-                <button class="btn btn-secondary event-btn" data-event="Yellowing" disabled>Yellowing</button>
-                <button class="btn btn-secondary event-btn" data-event="First Crack Start" disabled>FC Start</button>
-                <button class="btn btn-secondary event-btn" data-event="First Crack End" disabled>FC End</button>
-                <button class="btn btn-secondary event-btn" data-event="Second Crack Start" disabled>SC Start</button>
-                <button class="btn btn-secondary event-btn" data-event="Drop" disabled>Drop</button>
-            </div>
-        </div>
+                    {% for timing in roast.key_timings %}
+                    {% set _ = all_events.append({'time': timing.time_seconds, 'type': 'key', 'data': timing}) %}
+                    {% endfor %}
 
-        <!-- Temperature & Settings -->
-        <div class="form-row">
-            <div class="form-group">
-                <label for="temperature">Temperature (°C)</label>
-                <input type="number" step="0.1" id="temperature" name="temperature" placeholder="e.g., 190.5">
-            </div>
-            <div class="form-group">
-                <label for="fan_setting">Fan Setting</label>
-                <input type="number" id="fan_setting" name="fan_setting" min="0" placeholder="e.g., 3">
-            </div>
-            <div class="form-group">
-                <label for="power_setting">Power Setting</label>
-                <input type="number" id="power_setting" name="power_setting" min="0" placeholder="e.g., 8">
-            </div>
-        </div>
+                    {% for event in roast.temp_curve %}
+                    {% set _ = all_events.append({'time': event.time_seconds, 'type': 'temp', 'data': event}) %}
+                    {% endfor %}
 
-        <div class="form-group">
-            <label for="event_note">Event Note (Optional)</label>
-            <input type="text" id="event_note" name="event_note" placeholder="e.g., Increased heat, Nice caramelization">
-        </div>
-
-        <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Temperature & Settings</button>
-    </section>
-
-    <!-- Unified Timeline -->
-    <section class="timeline-section">
-        <h2>Roast Timeline</h2>
-        <div id="timelineList" class="timeline-list">
-            {% set all_events = [] %}
-
-            {% for timing in roast.key_timings %}
-                {% set _ = all_events.append({'time': timing.time_seconds, 'type': 'key', 'data': timing}) %}
-            {% endfor %}
-
-            {% for event in roast.temp_curve %}
-                {% set _ = all_events.append({'time': event.time_seconds, 'type': 'temp', 'data': event}) %}
-            {% endfor %}
-
-            {% if all_events %}
-                {% for event in all_events | sort(attribute='time') %}
+                    {% if all_events %}
+                    {% for event in all_events | sort(attribute='time', reverse=True) %}
                     {% if event.type == 'key' %}
                     <div class="timeline-item timeline-key">
                         <div class="timeline-time">{{ event.time | format_seconds }}</div>
@@ -111,16 +127,19 @@
                         <div class="timeline-time">{{ event.time | format_seconds }}</div>
                         <div class="timeline-content">
                             <span class="timeline-temp-value">{{ event.data.temperature }}°C</span>
-                            <span class="timeline-settings">Fan: {{ event.data.fan_setting }} | Power: {{ event.data.power_setting }}</span>
+                            <span class="timeline-settings">Fan: {{ event.data.fan_setting }} | Power: {{
+                                event.data.power_setting }}</span>
                         </div>
                     </div>
                     {% endif %}
-                {% endfor %}
-            {% else %}
-            <p class="empty-log">No events logged yet</p>
-            {% endif %}
+                    {% endfor %}
+                    {% else %}
+                    <p class="empty-log">No events logged yet</p>
+                    {% endif %}
+                </div>
+            </section>
         </div>
-    </section>
+    </div>
 </div>
 
 <script>
@@ -153,6 +172,29 @@
     function updateTimer() {
         seconds++;
         timerDisplay.textContent = formatTime(seconds);
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+
+        toastContainer.appendChild(toast);
+
+        // Trigger animation
+        setTimeout(() => {
+            toast.classList.add('toast-show');
+        }, 10);
+
+        // Remove toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('toast-show');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
     }
 
     // Save roast title
@@ -280,7 +322,7 @@
                     if (fanSetting !== null) lastFan = fanSetting;
                     if (powerSetting !== null) lastPower = powerSetting;
 
-                    // Add to unified timeline
+                    // Add to unified timeline (at the top)
                     const emptyLog = timelineList.querySelector('.empty-log');
                     if (emptyLog) emptyLog.remove();
 
@@ -300,7 +342,10 @@
                             ${displayText}
                         </div>
                     `;
-                    timelineList.appendChild(timelineItem);
+                    timelineList.insertBefore(timelineItem, timelineList.firstChild);
+
+                    // Show toast notification
+                    showToast(`✓ ${eventName} logged at ${formatTime(seconds)}`);
 
                     // Visual feedback - button glows green briefly
                     btn.style.backgroundColor = 'var(--success-color)';
@@ -317,7 +362,7 @@
                     fanInput.value = lastFan || '';
                     powerInput.value = lastPower || '';
                 } else {
-                    alert('Error logging event. Please try again.');
+                    showToast('Error logging event. Please try again.', 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -364,7 +409,7 @@
                 lastFan = parseInt(fanSetting);
                 lastPower = parseInt(powerSetting);
 
-                // Add to unified timeline
+                // Add to unified timeline (at the top)
                 const emptyLog = timelineList.querySelector('.empty-log');
                 if (emptyLog) emptyLog.remove();
 
@@ -378,7 +423,10 @@
                         ${note ? `<span class="timeline-note">${note}</span>` : ''}
                     </div>
                 `;
-                timelineList.appendChild(timelineItem);
+                timelineList.insertBefore(timelineItem, timelineList.firstChild);
+
+                // Show toast notification
+                showToast(`✓ Temperature ${temperature}°C logged at ${formatTime(seconds)}`);
 
                 // Set defaults to last values, clear temperature
                 tempInput.value = '';
@@ -389,7 +437,7 @@
                 // Focus back on temperature input
                 tempInput.focus();
             } else {
-                alert('Error logging data. Please try again.');
+                showToast('Error logging data. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
