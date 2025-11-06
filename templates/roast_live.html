@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>Live Roasting: {{ roast.title }}</h1>
+    <h1>Live Roasting</h1>
 </div>
 
 <!-- Toast notification container -->
@@ -59,32 +59,39 @@
 
                 <!-- Quick Key Events -->
                 <div class="form-group">
-                    <label>Quick Key Events <span class="helper-text">(Will capture current temp/fan/power
-                            below)</span></label>
-                    <div class="event-buttons">
-                        <button class="btn btn-secondary event-btn" data-event="Yellowing" disabled>Yellowing</button>
-                        <button class="btn btn-secondary event-btn" data-event="First Crack Start" disabled>FC
+                    <label>Quick Key Events</label>
+                    <div class="event-buttons-compact">
+                        <button class="btn btn-secondary event-btn-compact" data-event="Yellowing"
+                            disabled>Yellowing</button>
+                        <button class="btn btn-secondary event-btn-compact" data-event="First Crack Start" disabled>FC
                             Start</button>
-                        <button class="btn btn-secondary event-btn" data-event="First Crack End" disabled>FC
+                        <button class="btn btn-secondary event-btn-compact" data-event="First Crack End" disabled>FC
                             End</button>
-                        <button class="btn btn-secondary event-btn" data-event="Second Crack Start" disabled>SC
+                        <button class="btn btn-secondary event-btn-compact" data-event="Second Crack Start" disabled>SC
                             Start</button>
                     </div>
                 </div>
 
                 <!-- Temperature & Settings -->
-                <div class="form-row">
+                <div class="settings-row">
                     <div class="form-group">
                         <label for="temperature">Temperature (°C)</label>
-                        <input type="number" step="0.1" id="temperature" name="temperature" placeholder="e.g., 190.5">
+                        <input type="number" id="temperature" name="temperature" placeholder="e.g., 190">
                     </div>
                     <div class="form-group">
-                        <label for="fan_setting">Fan Setting</label>
-                        <input type="number" id="fan_setting" name="fan_setting" min="0" placeholder="e.g., 3">
+                        <label>Fan Setting (1-9)</label>
+                        <button type="button" class="btn-setting" id="fanSettingBtn" onclick="openSettingModal('fan')">
+                            <span class="setting-value" id="fanValue">-</span>
+                        </button>
+                        <input type="hidden" id="fan_setting" name="fan_setting" value="">
                     </div>
                     <div class="form-group">
-                        <label for="power_setting">Power Setting</label>
-                        <input type="number" id="power_setting" name="power_setting" min="0" placeholder="e.g., 8">
+                        <label>Power Setting (1-9)</label>
+                        <button type="button" class="btn-setting" id="powerSettingBtn"
+                            onclick="openSettingModal('power')">
+                            <span class="setting-value" id="powerValue">-</span>
+                        </button>
+                        <input type="hidden" id="power_setting" name="power_setting" value="">
                     </div>
                 </div>
 
@@ -94,7 +101,7 @@
                         placeholder="e.g., Increased heat, Nice caramelization">
                 </div>
 
-                <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Temperature & Settings</button>
+                <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Event</button>
             </section>
         </div>
 
@@ -142,6 +149,37 @@
     </div>
 </div>
 
+<!-- Modal for Fan/Power Settings -->
+<div id="settingModal" class="modal">
+    <div class="modal-content modal-compact">
+        <div class="modal-header">
+            <h2 id="modalTitle">Setting</h2>
+            <span class="modal-close" onclick="closeSettingModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="slider-container">
+                <div class="slider-value" id="sliderValue">5</div>
+                <input type="range" id="settingSlider" min="1" max="9" value="5" step="1" class="slider">
+                <div class="slider-marks">
+                    <span>1</span>
+                    <span>2</span>
+                    <span>3</span>
+                    <span>4</span>
+                    <span>5</span>
+                    <span>6</span>
+                    <span>7</span>
+                    <span>8</span>
+                    <span>9</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary btn-full-width" onclick="applySettingValue()">Apply</button>
+                <button class="btn btn-full-width" onclick="closeSettingModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let timerInterval = null;
     let seconds = 0;
@@ -156,7 +194,7 @@
     const timerDisplay = document.getElementById('timerDisplay');
     const startBtn = document.getElementById('startBtn');
     const endBtn = document.getElementById('endBtn');
-    const eventButtons = document.querySelectorAll('.event-btn');
+    const eventButtons = document.querySelectorAll('.event-btn-compact');
     const addEventBtn = document.getElementById('addEventBtn');
     const timelineList = document.getElementById('timelineList');
     const roastTitleInput = document.getElementById('roast_title');
@@ -196,6 +234,67 @@
             }, 300);
         }, 3000);
     }
+
+    // Modal functions for fan/power settings
+    let currentSettingType = null;
+
+    function openSettingModal(type) {
+        currentSettingType = type;
+        const modal = document.getElementById('settingModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const slider = document.getElementById('settingSlider');
+        const sliderValue = document.getElementById('sliderValue');
+
+        if (type === 'fan') {
+            modalTitle.textContent = 'Fan Setting';
+            const currentValue = document.getElementById('fan_setting').value || lastFan || 5;
+            slider.value = currentValue;
+            sliderValue.textContent = currentValue;
+        } else {
+            modalTitle.textContent = 'Power Setting';
+            const currentValue = document.getElementById('power_setting').value || lastPower || 5;
+            slider.value = currentValue;
+            sliderValue.textContent = currentValue;
+        }
+
+        modal.style.display = 'block';
+    }
+
+    function closeSettingModal() {
+        document.getElementById('settingModal').style.display = 'none';
+    }
+
+    function applySettingValue() {
+        const value = document.getElementById('settingSlider').value;
+        if (currentSettingType === 'fan') {
+            document.getElementById('fan_setting').value = value;
+            document.getElementById('fanValue').textContent = value;
+            lastFan = parseInt(value);
+        } else {
+            document.getElementById('power_setting').value = value;
+            document.getElementById('powerValue').textContent = value;
+            lastPower = parseInt(value);
+        }
+        closeSettingModal();
+    }
+
+    // Update slider value display
+    document.addEventListener('DOMContentLoaded', function () {
+        const slider = document.getElementById('settingSlider');
+        const sliderValue = document.getElementById('sliderValue');
+
+        slider.addEventListener('input', function () {
+            sliderValue.textContent = this.value;
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('settingModal');
+            if (event.target === modal) {
+                closeSettingModal();
+            }
+        };
+    });
 
     // Save roast title
     roastTitleInput.addEventListener('blur', async () => {
@@ -296,7 +395,7 @@
             const powerInput = document.getElementById('power_setting');
 
             // Get values - if fan/power are empty, use last known values
-            const temperature = tempInput.value ? parseFloat(tempInput.value) : null;
+            const temperature = tempInput.value ? parseInt(tempInput.value) : null;
             const fanSetting = fanInput.value ? parseInt(fanInput.value) : (lastFan || null);
             const powerSetting = powerInput.value ? parseInt(powerInput.value) : (lastPower || null);
 
@@ -358,9 +457,15 @@
                     // Clear temperature input after key event, keep fan/power for next time
                     tempInput.value = '';
 
-                    // Update fan/power inputs to show last values
-                    fanInput.value = lastFan || '';
-                    powerInput.value = lastPower || '';
+                    // Update fan/power display to show last values
+                    if (lastFan) {
+                        document.getElementById('fan_setting').value = lastFan;
+                        document.getElementById('fanValue').textContent = lastFan;
+                    }
+                    if (lastPower) {
+                        document.getElementById('power_setting').value = lastPower;
+                        document.getElementById('powerValue').textContent = lastPower;
+                    }
                 } else {
                     showToast('Error logging event. Please try again.', 'error');
                 }
@@ -383,10 +488,7 @@
         const powerSetting = powerInput.value || lastPower || 0;
         const note = noteInput.value || '';
 
-        if (!temperature) {
-            alert('Please enter a temperature value.');
-            return;
-        }
+        // Temperature is now optional - can log fan/power changes or notes without temperature
 
         try {
             const response = await fetch(`/api/roast/add_event/${roastId}`, {
@@ -396,7 +498,7 @@
                 },
                 body: JSON.stringify({
                     time_seconds: seconds,
-                    temperature: parseFloat(temperature),
+                    temperature: temperature ? parseInt(temperature) : null,
                     fan_setting: parseInt(fanSetting),
                     power_setting: parseInt(powerSetting),
                     note: note
@@ -405,7 +507,7 @@
 
             if (response.ok) {
                 // Remember values for next time
-                lastTemp = parseFloat(temperature);
+                if (temperature) lastTemp = parseInt(temperature);
                 lastFan = parseInt(fanSetting);
                 lastPower = parseInt(powerSetting);
 
@@ -415,23 +517,39 @@
 
                 const timelineItem = document.createElement('div');
                 timelineItem.className = 'timeline-item timeline-temp';
+                let contentHtml = '';
+                if (temperature) {
+                    contentHtml += `<span class="timeline-temp-value">${temperature}°C</span>`;
+                }
+                contentHtml += `<span class="timeline-settings">Fan: ${fanSetting} | Power: ${powerSetting}</span>`;
+                if (note) {
+                    contentHtml += `<span class="timeline-note">${note}</span>`;
+                }
+
                 timelineItem.innerHTML = `
                     <div class="timeline-time">${formatTime(seconds)}</div>
                     <div class="timeline-content">
-                        <span class="timeline-temp-value">${temperature}°C</span>
-                        <span class="timeline-settings">Fan: ${fanSetting} | Power: ${powerSetting}</span>
-                        ${note ? `<span class="timeline-note">${note}</span>` : ''}
+                        ${contentHtml}
                     </div>
                 `;
                 timelineList.insertBefore(timelineItem, timelineList.firstChild);
 
                 // Show toast notification
-                showToast(`✓ Temperature ${temperature}°C logged at ${formatTime(seconds)}`);
+                const logMessage = temperature ?
+                    `✓ Temperature ${temperature}°C logged at ${formatTime(seconds)}` :
+                    `✓ Event logged at ${formatTime(seconds)}`;
+                showToast(logMessage);
 
                 // Set defaults to last values, clear temperature
                 tempInput.value = '';
-                fanInput.value = lastFan;
-                powerInput.value = lastPower;
+                if (lastFan) {
+                    document.getElementById('fan_setting').value = lastFan;
+                    document.getElementById('fanValue').textContent = lastFan;
+                }
+                if (lastPower) {
+                    document.getElementById('power_setting').value = lastPower;
+                    document.getElementById('powerValue').textContent = lastPower;
+                }
                 noteInput.value = '';
 
                 // Focus back on temperature input
