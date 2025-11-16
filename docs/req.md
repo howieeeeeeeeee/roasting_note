@@ -242,10 +242,84 @@ A suggested structure for the Flask routes.
 * `POST /api/roast/add_review/<roast_id>`: `$push` new review to `reviews`.
 * `POST /api/roast/update_review/<roast_id>/<review_id>`: Update an existing review.
 * `POST /api/roast/delete_review/<roast_id>/<review_id>`: Delete a review from `reviews` array.
+* `GET /api/temp/current`: Get current temperature from K-Type sensor. Returns JSON with temperature value or null if unavailable.
 
 -----
 
-### **6. Deployment & Environment (Render)**
+### **6. K-Type Temperature Sensor Integration**
+
+The application integrates with a K-Type temperature sensor (Howie's design - K-Type Sensor V1) that provides real-time temperature readings via a local HTTP endpoint.
+
+#### **6.1. Temperature Sensor Configuration**
+
+* **Environment Variable:** `TEMP_SENSOR_URL`
+* **Default Value:** `http://192.168.0.47/temp`
+* **Response Format:**
+  ```json
+  {
+    "temperature_celsius": 27.00,
+    "temperature_fahrenheit": 80.60
+  }
+  ```
+  Note: The code supports both `temperature_celsius` and `temperatur_celsius` field names for compatibility.
+
+#### **6.2. Temperature Display**
+
+* Real-time temperature display on the live roasting page (`/roast/live/<roast_id>`)
+* Automatically updates every 5 seconds via polling
+* Displays "Offline" when sensor is unavailable
+* Only shown when roast is not finished (before `roast_end_time` is set)
+
+#### **6.3. Temperature Polling Logic**
+
+* Frontend polls `/api/temp/current` endpoint every 5 seconds
+* Backend makes 3 consecutive requests to the sensor (100ms timeout each)
+* Returns average of the two highest successful readings (rounded to integer)
+* Returns `null` if fewer than 2 successful readings
+* Temperature is displayed immediately in the UI (no database lag)
+
+#### **6.4. Automatic Temperature Logging**
+
+* When a valid temperature is retrieved and displayed:
+  * Frontend immediately displays the value
+  * Frontend sends the temperature to backend API to log to database
+  * Creates entry in the `temp_curve` array every 5 seconds during active roast
+* Only logs when:
+  * Roast has started (`roast_start_time` exists)
+  * Temperature value is valid (successfully retrieved from sensor)
+  * User has the live roast page open (frontend is active)
+* If temperature fetch fails:
+  * No automatic log entry is created
+  * Existing log entries are not modified
+  * Display continues to show last known status
+
+#### **6.5. Manual Event Temperature Integration**
+
+* When user manually logs events (key timings, power changes), the system automatically includes the current temperature
+* If temperature input field is empty:
+  * Backend makes one request to sensor (100ms timeout)
+  * Includes temperature in log entry if successful
+  * Saves event without temperature if sensor unavailable
+* User can manually override by entering temperature value
+* Critical: Events are always saved regardless of sensor availability
+
+#### **6.6. Final Temperature on Roast End**
+
+* When "End Roast" button is clicked:
+  * Backend fetches final temperature reading from sensor
+  * Creates final entry in `temp_curve` array if successful
+  * Roast ends normally even if temperature fetch fails
+
+#### **6.7. Default Temperature Measurement Method**
+
+* Changed from `"IR Gun"` to `"K-Type Sensor V1"` for new roasts
+* Updated in `models/roast_helpers.py`:
+  * `create_draft_roast()` function
+  * `update_roast()` function default parameter
+
+-----
+
+### **7. Deployment & Environment (Render)**
 
 * **Database:** Use a free **MongoDB Atlas** M0 cluster. The application will connect to this using a connection string.
 * **Environment Variables:**
@@ -253,7 +327,8 @@ A suggested structure for the Flask routes.
   * `FLASK_ENV=production`
   * `SECRET_KEY`: A long, random string for Flask sessions.
   * `MONGO_URI`: The full connection string from MongoDB Atlas, including username and password. (e.g., `mongodb+srv://<username>:<password>@cluster...`)
-* **`requirements.txt`:** Must include `Flask`, `pymongo`, `gunicorn`, `python-dotenv`.
+  * `TEMP_SENSOR_URL`: URL of the K-Type temperature sensor endpoint (e.g., `http://192.168.0.47/temp`). Defaults to `http://192.168.0.47/temp` if not set.
+* **`requirements.txt`:** Must include `Flask`, `pymongo`, `gunicorn`, `python-dotenv`, `requests`.
 * **`render.yaml`:**
   * **Service Type:** Web Service
   * **Build Command:** `pip install -r requirements.txt`

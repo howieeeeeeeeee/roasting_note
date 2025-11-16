@@ -542,13 +542,44 @@ body {
     box-shadow: var(--shadow);
 }
 
-.timer-display {
-    font-size: 3.5rem;
-    font-weight: bold;
+/* Timer and Temperature Panels */
+.timer-temp-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.timer-panel,
+.temp-panel {
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
     text-align: center;
+}
+
+.panel-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.panel-value {
+    font-size: 3rem;
+    font-weight: bold;
     color: var(--primary-color);
-    margin: 1rem 0;
     font-family: 'Courier New', monospace;
+    line-height: 1;
+}
+
+.panel-value .unit {
+    font-size: 1.5rem;
+    margin-left: 0.25rem;
+    color: var(--text-light);
 }
 
 .timer-controls {
@@ -763,8 +794,22 @@ footer {
         grid-template-columns: 1fr;
     }
 
-    .timer-display {
-        font-size: 2.5rem;
+    .timer-temp-panels {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .timer-panel,
+    .temp-panel {
+        padding: 1.25rem;
+    }
+
+    .panel-value {
+        font-size: 2.25rem;
+    }
+
+    .panel-value .unit {
+        font-size: 1.25rem;
     }
 
     .event-buttons {

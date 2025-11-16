@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 from dotenv import load_dotenv
+import requests
 
 # Load environment variables
 load_dotenv()
@@ -21,6 +22,52 @@ db = client.roastlogger
 # Collections
 beans_collection = db.beans
 roasts_collection = db.roasts
+
+
+# ============================================
+# Temperature Sensor Helper Functions
+# ============================================
+
+def fetch_temperature_from_sensor():
+    """
+    Fetch temperature from the K-Type sensor with 3-request averaging logic.
+
+    Makes 3 consecutive requests to the temperature sensor URL.
+    Each request has a 0.1 second (100ms) timeout.
+
+    Returns:
+        int: Rounded average of the two highest successful readings, or None if fewer than 2 successful readings
+    """
+    TEMP_SENSOR_URL = os.environ.get('TEMP_SENSOR_URL', 'http://192.168.0.47/temp')
+    TIMEOUT = 0.1  # 100ms timeout
+
+    successful_readings = []
+
+    # Make 3 consecutive requests
+    for i in range(3):
+        try:
+            response = requests.get(TEMP_SENSOR_URL, timeout=TIMEOUT)
+            if response.status_code == 200:
+                data = response.json()
+                # Try both field names for compatibility
+                temp_celsius = data.get('temperature_celsius') or data.get('temperatur_celsius')
+                if temp_celsius is not None:
+                    successful_readings.append(float(temp_celsius))
+        except (requests.exceptions.RequestException, ValueError, KeyError):
+            # Timeout, connection error, or invalid JSON - mark this request as failed
+            pass
+
+    # Need at least 2 successful readings
+    if len(successful_readings) < 2:
+        return None
+
+    # Sort in descending order and take top 2
+    successful_readings.sort(reverse=True)
+    top_two = successful_readings[:2]
+
+    # Calculate average and round to nearest integer
+    average = sum(top_two) / len(top_two)
+    return round(average)
 
 
 # ============================================
@@ -218,14 +265,52 @@ def api_roast_start(roast_id):
 
 @app.route('/api/roast/end/<roast_id>', methods=['POST'])
 def api_roast_end(roast_id):
-    """End roast timer"""
+    """End roast timer and log final temperature if available"""
+    roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+
+    if not roast:
+        return jsonify({'success': False, 'error': 'Roast not found'}), 404
+
+    end_time = datetime.now()
+
+    # Calculate elapsed time for final temperature log
+    if roast.get('roast_start_time'):
+        elapsed_seconds = int((end_time - roast['roast_start_time']).total_seconds())
+
+        # Try to get final temperature reading (single request)
+        temperature = fetch_temperature_from_sensor()
+
+        if temperature is not None:
+            # Get current fan/power settings from most recent temp_curve entry
+            last_fan = 0
+            last_power = 0
+            if roast.get('temp_curve') and len(roast['temp_curve']) > 0:
+                last_entry = roast['temp_curve'][-1]
+                last_fan = last_entry.get('fan_setting', 0)
+                last_power = last_entry.get('power_setting', 0)
+
+            # Log final temperature reading
+            final_temp_event = {
+                'time_seconds': elapsed_seconds,
+                'temperature': float(temperature),
+                'fan_setting': last_fan,
+                'power_setting': last_power
+            }
+
+            roasts_collection.update_one(
+                {'_id': ObjectId(roast_id)},
+                {'$push': {'temp_curve': final_temp_event}}
+            )
+
+    # Set roast end time
     roasts_collection.update_one(
         {'_id': ObjectId(roast_id)},
         {'$set': {
-            'roast_end_time': datetime.now(),
+            'roast_end_time': end_time,
             'updated_at': datetime.now()
         }}
     )
+
     return jsonify({'success': True})
 
 
@@ -253,9 +338,17 @@ def api_roast_add_timing(roast_id):
         'time_seconds': int(data['time_seconds'])
     }
 
-    # Add optional temperature, fan, and power settings
-    if data.get('temperature') is not None:
-        timing_event['temperature'] = float(data['temperature'])
+    # Handle temperature - auto-fetch from sensor if not provided
+    temp_value = data.get('temperature')
+    if temp_value is None:
+        # Temperature input was empty, try to fetch from sensor
+        temp_value = fetch_temperature_from_sensor()
+
+    # Add temperature only if we have a value (either from input or sensor)
+    if temp_value is not None:
+        timing_event['temperature'] = float(temp_value)
+
+    # Add optional fan and power settings
     if data.get('fan_setting') is not None:
         timing_event['fan_setting'] = int(data['fan_setting'])
     if data.get('power_setting') is not None:
@@ -279,10 +372,13 @@ def api_roast_add_event(roast_id):
 
     temp_event = {
         'time_seconds': int(data['time_seconds']),
-        'temperature': float(data['temperature']),
         'fan_setting': int(data.get('fan_setting', 0)),
         'power_setting': int(data.get('power_setting', 0))
     }
+
+    # Add temperature only if provided (not None/null)
+    if data.get('temperature') is not None:
+        temp_event['temperature'] = float(data['temperature'])
 
     # Add note if provided
     if data.get('note'):
@@ -400,6 +496,38 @@ def api_roast_delete_review(roast_id, review_id):
         return jsonify({'success': True})
     else:
         return redirect(url_for('roast_detail', roast_id=roast_id))
+
+
+# ============================================
+# API Routes - Temperature Sensor
+# ============================================
+
+@app.route('/api/temp/current', methods=['GET'])
+def api_temp_current():
+    """
+    Get current temperature from K-Type sensor
+
+    Returns:
+        JSON with temperature value (int) or null if sensor unavailable
+        {
+            "temperature": 190,  // or null
+            "status": "success"  // or "error"
+            "message": "..."     // optional error message
+        }
+    """
+    temperature = fetch_temperature_from_sensor()
+
+    if temperature is not None:
+        return jsonify({
+            'temperature': temperature,
+            'status': 'success'
+        })
+    else:
+        return jsonify({
+            'temperature': None,
+            'status': 'error',
+            'message': 'Insufficient readings or sensor unavailable'
+        })
 
 
 # ============================================

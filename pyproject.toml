@@ -1,0 +1,13 @@
+[project]
+name = "roasting-note"
+version = "0.1.0"
+description = "A personal, mobile-responsive web application for home coffee roasters"
+requires-python = ">=3.11"
+dependencies = [
+    "Flask==3.0.0",
+    "pymongo==4.6.1",
+    "python-dotenv==1.0.0",
+    "gunicorn==21.2.0",
+    "requests",
+]
+

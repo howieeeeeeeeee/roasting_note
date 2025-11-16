@@ -6,6 +6,11 @@ A personal, mobile-responsive web application for home coffee roasters to track 
 
 - **Bean Management**: Track green coffee beans with detailed information including origin, process, supplier, and inventory
 - **Live Roasting Interface**: Real-time roast tracking with timer, temperature logging, and key event markers
+- **K-Type Temperature Sensor Integration**: Real-time temperature monitoring using Howie's design K-Type Sensor V1
+  - Automatic temperature display during roasting (updates every 5 seconds)
+  - Auto-logging of temperature data throughout the roast
+  - Automatic temperature capture with manual events
+  - Graceful handling of sensor unavailability
 - **Roast Profiles**: Store complete roast data including temperature curves, timings, weights, and loss percentages
 - **Review System**: Rate and review your roasts with tasting notes
 - **Inventory Management**: Automatic stock tracking that updates when you roast
@@ -38,7 +43,8 @@ roasting_note/
 ├── static/
 │   └── css/
 │       └── style.css       # Responsive styles
-├── requirements.txt
+├── pyproject.toml          # Project dependencies (uv)
+├── requirements.txt        # Alternative dependency file
 ├── render.yaml             # Render deployment config
 ├── .env.example            # Environment variables template
 └── README.md
@@ -49,6 +55,7 @@ roasting_note/
 ### Prerequisites
 
 - Python 3.11+
+- [uv](https://github.com/astral-sh/uv) package manager (install with: `curl -LsSf https://astral.sh/uv/install.sh | sh` or `pip install uv`)
 - MongoDB (local installation or MongoDB Atlas account)
 
 ### Installation
@@ -59,18 +66,14 @@ roasting_note/
    cd roasting_note
    ```
 
-2. **Create a virtual environment**:
+2. **Install dependencies with uv**:
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   uv sync
    ```
+   
+   This will automatically create a virtual environment and install all dependencies from `pyproject.toml`.
 
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**:
+3. **Set up environment variables**:
    ```bash
    cp .env.example .env
    ```
@@ -79,14 +82,21 @@ roasting_note/
    ```
    SECRET_KEY=your-secret-key-here
    MONGO_URI=mongodb://localhost:27017/  # or your MongoDB Atlas connection string
+   TEMP_SENSOR_URL=http://192.168.0.47/temp  # URL of your K-Type temperature sensor
    ```
 
-5. **Run the application**:
+4. **Run the application**:
    ```bash
+   uv run python app.py
+   ```
+   
+   Or activate the virtual environment first:
+   ```bash
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    python app.py
    ```
 
-6. **Access the app**:
+5. **Access the app**:
    Open your browser and navigate to `http://localhost:5000`
 
 ## MongoDB Setup
@@ -107,6 +117,44 @@ roasting_note/
    ```
    mongodb+srv://<username>:<password>@cluster.mongodb.net/roastlogger?retryWrites=true&w=majority
    ```
+
+## K-Type Temperature Sensor Setup
+
+RoastLogger integrates with Howie's design K-Type Sensor V1 for real-time temperature monitoring during roasting.
+
+### Sensor Requirements
+
+- **Hardware**: K-Type thermocouple with HTTP endpoint (Howie's custom design)
+- **Network**: Local network access to the sensor device
+- **Response Format**: JSON response with `temperatur_celsius` field
+
+### Configuration
+
+1. **Set up your K-Type sensor hardware** and connect it to your local network
+2. **Configure the sensor URL** in your `.env` file:
+   ```
+   TEMP_SENSOR_URL=http://192.168.0.47/temp
+   ```
+   Replace with your sensor's actual IP address and endpoint
+
+3. **Test the sensor** by visiting the URL in your browser - you should see:
+   ```json
+   {"temperature_celsius": 27.00, "temperature_fahrenheit": 80.60}
+   ```
+
+### How It Works
+
+- **Automatic Polling**: The live roast page polls the sensor every 5 seconds
+- **Smart Averaging**: Makes 3 requests per poll and averages the top 2 readings for accuracy
+- **Graceful Degradation**: If the sensor is offline, the app displays "Offline" and continues working
+- **Auto-Logging**: Temperature data is automatically saved to your roast profile every 5 seconds
+- **Manual Override**: You can still manually enter temperature values if needed
+
+### Troubleshooting
+
+- **"Offline" displayed**: Check that the sensor device is powered on and connected to the network
+- **Intermittent readings**: Verify network stability and sensor device reliability
+- **Wrong IP address**: Update `TEMP_SENSOR_URL` in your `.env` file and restart the application
 
 ## Deployment to Render
 
@@ -135,6 +183,7 @@ roasting_note/
    - `SECRET_KEY`: Generate a long random string
    - `MONGO_URI`: Your MongoDB Atlas connection string
    - `FLASK_ENV`: `production`
+   - `TEMP_SENSOR_URL`: Your K-Type sensor URL (Note: The sensor must be accessible from the Render server. For local sensors, consider using a VPN or exposing the sensor via a public endpoint with proper security.)
 
 4. **Deploy**:
    - Render will automatically build and deploy
@@ -204,6 +253,7 @@ roasting_note/
 - `POST /api/roast/update/<roast_id>` - Update roast
 - `POST /api/roast/delete/<roast_id>` - Delete roast
 - `POST /api/roast/add_review/<roast_id>` - Add review
+- `GET /api/temp/current` - Get current temperature from K-Type sensor
 
 ## Database Schema
 
