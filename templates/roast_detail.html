@@ -74,6 +74,7 @@
                         <th>Time</th>
                         <th>Event / Note</th>
                         <th>Temp (°C)</th>
+                        <th>RoR (°C/min)</th>
                         <th>Fan</th>
                         <th>Power</th>
                     </tr>
@@ -101,7 +102,8 @@
                             'note': event.get('note', ''),
                             'temperature': event.temperature,
                             'fan_setting': event.fan_setting,
-                            'power_setting': event.power_setting
+                            'power_setting': event.power_setting,
+                            'ror': event.get('ror')
                         }) %}
                     {% endfor %}
 
@@ -123,6 +125,13 @@
                         <td>
                             {% if event.temperature %}
                                 {{ event.temperature }}°C
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if event.ror is not none %}
+                                {{ event.ror }}
                             {% else %}
                                 <span class="text-muted">—</span>
                             {% endif %}

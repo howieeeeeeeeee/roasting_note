@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
@@ -28,9 +28,35 @@ roasts_collection = db.roasts
 # Temperature Sensor Helper Functions
 # ============================================
 
+def fetch_temperature_from_sensor_fast():
+    """
+    Fast single-request temperature fetch for display updates.
+    Uses 200ms timeout for reliable response while still being responsive.
+
+    Returns:
+        int: Rounded temperature reading, or None if request fails
+    """
+    TEMP_SENSOR_URL = os.environ.get('TEMP_SENSOR_URL', 'http://192.168.0.47/temp')
+    TIMEOUT = 0.2  # 200ms timeout for fast but reliable response
+
+    try:
+        response = requests.get(TEMP_SENSOR_URL, timeout=TIMEOUT)
+        if response.status_code == 200:
+            data = response.json()
+            # Try both field names for compatibility
+            temp_celsius = data.get('temperature_celsius') or data.get('temperatur_celsius')
+            if temp_celsius is not None:
+                return round(float(temp_celsius))
+    except (requests.exceptions.RequestException, ValueError, KeyError):
+        pass
+
+    return None
+
+
 def fetch_temperature_from_sensor():
     """
     Fetch temperature from the K-Type sensor with 3-request averaging logic.
+    Used for accurate DB logging.
 
     Makes 3 consecutive requests to the temperature sensor URL.
     Each request has a 0.1 second (100ms) timeout.
@@ -74,6 +100,11 @@ def fetch_temperature_from_sensor():
 # HTML-Rendering Routes
 # ============================================
 
+@app.route('/favicon.ico')
+def favicon():
+    """Handle favicon requests to prevent 404 errors"""
+    return Response(status=204)
+
 @app.route('/')
 def index():
     """Dashboard - list of all roasts"""
@@ -113,15 +144,74 @@ def index():
 
 @app.route('/beans')
 def beans_list():
-    """List of all beans"""
-    beans = list(beans_collection.find({'archived': {'$ne': True}}).sort('name', 1))
-    return render_template('beans_list.html', beans=beans)
+    """List of all beans with optional filtering and sorting"""
+    # Get filter and sort parameters (filter out-of-stock by default)
+    filter_out_of_stock = request.args.get('filter_out_of_stock', 'true') == 'true'
+    sort_by = request.args.get('sort_by', 'name')
+    sort_order = request.args.get('sort_order', 'asc')
+
+    # Build query
+    query = {'archived': {'$ne': True}}
+    if filter_out_of_stock:
+        query['stock_grams'] = {'$gt': 0}
+
+    # Determine sort direction
+    sort_direction = 1 if sort_order == 'asc' else -1
+
+    # Map sort fields
+    sort_field_map = {
+        'name': 'name',
+        'price': 'unit_price_per_kg',
+        'date': 'purchase_date',
+        'stock': 'stock_grams'
+    }
+    sort_field = sort_field_map.get(sort_by, 'name')
+
+    beans = list(beans_collection.find(query).sort(sort_field, sort_direction))
+    return render_template('beans_list.html', beans=beans,
+                         filter_out_of_stock=filter_out_of_stock,
+                         sort_by=sort_by, sort_order=sort_order)
 
 
 @app.route('/beans/add')
 def beans_add_form():
     """Show add bean form"""
     return render_template('beans_form.html', bean=None, is_edit=False)
+
+
+@app.route('/beans/detail/<bean_id>')
+def beans_detail(bean_id):
+    """View bean details"""
+    bean = beans_collection.find_one({'_id': ObjectId(bean_id), 'archived': {'$ne': True}})
+    if not bean:
+        return "Bean not found", 404
+
+    # Get all roasts for this bean
+    roasts = list(roasts_collection.find({
+        'bean_id': ObjectId(bean_id),
+        'archived': {'$ne': True}
+    }).sort('roast_date', -1))
+
+    # Calculate metrics for each roast
+    for roast in roasts:
+        roast['bean_name'] = bean['name']
+        roast['bean_color'] = bean.get('color', '#6B8E6F')
+
+        # Calculate total roast duration
+        if roast.get('roast_start_time') and roast.get('roast_end_time'):
+            duration = (roast['roast_end_time'] - roast['roast_start_time']).total_seconds()
+            roast['total_duration_seconds'] = int(duration)
+
+        # Calculate time after first crack
+        if roast.get('key_timings') and roast.get('total_duration_seconds'):
+            fc_start = None
+            for timing in roast['key_timings']:
+                if 'First Crack Start' in timing['event_name']:
+                    fc_start = timing['time_seconds']
+            if fc_start:
+                roast['time_after_fc'] = roast['total_duration_seconds'] - fc_start
+
+    return render_template('beans_detail.html', bean=bean, roasts=roasts)
 
 
 @app.route('/beans/edit/<bean_id>')
@@ -367,18 +457,44 @@ def api_roast_add_timing(roast_id):
 
 @app.route('/api/roast/add_event/<roast_id>', methods=['POST'])
 def api_roast_add_event(roast_id):
-    """Add temperature/settings event to temp_curve array"""
+    """Add temperature/settings event to temp_curve array and optionally log to local CSV"""
     data = request.get_json()
+    roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+
+    # Get fan and power settings, with default values if not provided and no previous events
+    fan_setting = data.get('fan_setting')
+    power_setting = data.get('power_setting')
+
+    # If fan or power not provided, check for previous events
+    if fan_setting is None or power_setting is None:
+        # Check if there are any previous events in temp_curve
+        if roast and roast.get('temp_curve') and len(roast['temp_curve']) > 0:
+            # Use values from most recent event
+            last_event = roast['temp_curve'][-1]
+            if fan_setting is None:
+                fan_setting = last_event.get('fan_setting', 9)
+            if power_setting is None:
+                power_setting = last_event.get('power_setting', 3)
+        else:
+            # No previous events, use defaults: fan 9, power 3
+            if fan_setting is None:
+                fan_setting = 9
+            if power_setting is None:
+                power_setting = 3
 
     temp_event = {
         'time_seconds': int(data['time_seconds']),
-        'fan_setting': int(data.get('fan_setting', 0)),
-        'power_setting': int(data.get('power_setting', 0))
+        'fan_setting': int(fan_setting),
+        'power_setting': int(power_setting)
     }
 
     # Add temperature only if provided (not None/null)
     if data.get('temperature') is not None:
         temp_event['temperature'] = float(data['temperature'])
+
+    # Add RoR (Rate of Rise) if provided
+    if data.get('ror') is not None:
+        temp_event['ror'] = float(data['ror'])
 
     # Add note if provided
     if data.get('note'):
@@ -391,6 +507,36 @@ def api_roast_add_event(roast_id):
             '$set': {'updated_at': datetime.now()}
         }
     )
+
+    return jsonify({'success': True})
+
+
+@app.route('/api/roast/log_temp_local/<roast_id>', methods=['POST'])
+def api_roast_log_temp_local(roast_id):
+    """Log temperature reading to local file for detailed analysis"""
+    import os
+
+    data = request.get_json()
+    time_seconds = data.get('time_seconds')
+    temperature = data.get('temperature')
+    ror = data.get('ror')  # Rate of Rise
+
+    # Create logs directory if it doesn't exist
+    logs_dir = os.path.join(os.getcwd(), 'temp_logs')
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # Create log file named by roast_id
+    log_file = os.path.join(logs_dir, f'{roast_id}.csv')
+
+    # Write header if file doesn't exist
+    file_exists = os.path.exists(log_file)
+
+    with open(log_file, 'a') as f:
+        if not file_exists:
+            f.write('time_seconds,temperature,ror\n')
+        # Write RoR if available, otherwise write empty field
+        ror_value = f'{ror}' if ror is not None else ''
+        f.write(f'{time_seconds},{temperature},{ror_value}\n')
 
     return jsonify({'success': True})
 
@@ -502,10 +648,36 @@ def api_roast_delete_review(roast_id, review_id):
 # API Routes - Temperature Sensor
 # ============================================
 
+@app.route('/api/temp/current_fast', methods=['GET'])
+def api_temp_current_fast():
+    """
+    Get current temperature from K-Type sensor (fast single request for display)
+
+    Returns:
+        JSON with temperature value (int) or null if sensor unavailable
+        {
+            "temperature": 190,  // or null
+            "status": "success"  // or "error"
+        }
+    """
+    temperature = fetch_temperature_from_sensor_fast()
+
+    if temperature is not None:
+        return jsonify({
+            'temperature': temperature,
+            'status': 'success'
+        })
+    else:
+        return jsonify({
+            'temperature': None,
+            'status': 'error'
+        })
+
+
 @app.route('/api/temp/current', methods=['GET'])
 def api_temp_current():
     """
-    Get current temperature from K-Type sensor
+    Get current temperature from K-Type sensor (accurate 3-request average for DB logging)
 
     Returns:
         JSON with temperature value (int) or null if sensor unavailable

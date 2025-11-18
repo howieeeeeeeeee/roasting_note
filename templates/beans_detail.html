@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}{{ bean.name }} - RoastLogger{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <span class="bean-color-indicator" style="background-color: {{ bean.color if bean.color else '#6B8E6F' }};"></span>
+        {{ bean.name }}
+    </h1>
+    <div class="header-actions">
+        <a href="{{ url_for('beans_edit_form', bean_id=bean._id) }}" class="btn btn-primary">Edit Bean</a>
+        <form action="{{ url_for('api_beans_delete', bean_id=bean._id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to archive this bean?');">
+            <button type="submit" class="btn btn-danger">Archive Bean</button>
+        </form>
+        <a href="{{ url_for('beans_list') }}" class="btn btn-secondary">Back to Beans</a>
+    </div>
+</div>
+
+<div class="roast-detail">
+    <section class="detail-section">
+        <h2>Bean Information</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <strong>Origin:</strong> {{ bean.origin or 'Not specified' }}
+            </div>
+            <div class="detail-item">
+                <strong>Process:</strong> {{ bean.process or 'Not specified' }}
+            </div>
+            <div class="detail-item">
+                <strong>Supplier:</strong> {{ bean.supplier or 'Not specified' }}
+            </div>
+            <div class="detail-item">
+                <strong>Purchase Date:</strong> {{ bean.purchase_date.strftime('%Y-%m-%d') if bean.purchase_date else 'Not specified' }}
+            </div>
+        </div>
+    </section>
+
+    <section class="detail-section">
+        <h2>Stock & Pricing</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <strong>Current Stock:</strong>
+                <span class="stock-badge {% if bean.stock_grams and bean.stock_grams < 100 %}stock-low{% endif %}">
+                    {{ bean.stock_grams or 0 }}g
+                </span>
+            </div>
+            <div class="detail-item">
+                <strong>Purchase Weight:</strong> {{ bean.purchase_weight_grams or 'Not specified' }}{% if bean.purchase_weight_grams %}g{% endif %}
+            </div>
+            <div class="detail-item">
+                <strong>Total Purchase Price:</strong>
+                {% if bean.purchase_price_total %}
+                    ${{ bean.purchase_price_total.to_decimal() | round(2) }}
+                {% else %}
+                    Not specified
+                {% endif %}
+            </div>
+            <div class="detail-item">
+                <strong>Price per kg:</strong>
+                {% if bean.unit_price_per_kg %}
+                    ${{ bean.unit_price_per_kg.to_decimal() | round(2) }}
+                {% else %}
+                    Not calculated
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    {% if bean.notes %}
+    <section class="detail-section">
+        <h2>Notes</h2>
+        <div class="notes-content">{{ bean.notes }}</div>
+    </section>
+    {% endif %}
+
+    <section class="detail-section">
+        <h2>Roast History ({{ roasts|length }})</h2>
+        {% if roasts %}
+        <div class="roasts-table-container">
+            <table class="roasts-table">
+                <thead>
+                    <tr>
+                        <th>Roast Name</th>
+                        <th>Date</th>
+                        <th>Weight</th>
+                        <th>Duration</th>
+                        <th>After FC</th>
+                        <th>Loss %</th>
+                        <th class="actions-column">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for roast in roasts %}
+                    <tr class="roast-row">
+                        <td class="roast-name-cell">
+                            <a href="{{ url_for('roast_detail', roast_id=roast._id) }}" class="roast-link">
+                                {{ roast.title }}
+                            </a>
+                        </td>
+                        <td class="date-cell">{{ roast.roast_date.strftime('%Y-%m-%d') if roast.roast_date else 'N/A' }}</td>
+                        <td>
+                            {% if roast.original_weight_grams %}
+                                {{ roast.original_weight_grams }}g
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if roast.total_duration_seconds %}
+                                {{ roast.total_duration_seconds | format_seconds }}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if roast.time_after_fc %}
+                                {{ roast.time_after_fc | format_seconds }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if roast.weight_loss_percentage %}
+                                <span class="loss-badge">{{ roast.weight_loss_percentage }}%</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <div class="action-buttons">
+                                <a href="{{ url_for('roast_detail', roast_id=roast._id) }}" class="btn-icon" title="View">
+                                    <span class="material-icons">visibility</span>
+                                </a>
+                                <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="btn-icon" title="Edit">
+                                    <span class="material-icons">edit</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No roasts recorded for this bean yet.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

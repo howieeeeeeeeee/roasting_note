@@ -49,12 +49,12 @@ body {
 }
 
 .nav-container {
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 1rem;
+    padding: 0 1.5rem;
 }
 
 .nav-brand a {
@@ -112,9 +112,9 @@ body {
    Main Container
    ============================================ */
 .container {
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 2rem 1.5rem;
     min-height: calc(100vh - 140px);
 }
 
@@ -133,12 +133,26 @@ body {
 .page-header h1 {
     color: var(--primary-color);
     font-size: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .header-actions {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.header-actions form {
+    display: inline-flex;
+    align-items: center;
+}
+
+.header-actions .btn {
+    height: auto;
+    line-height: 1.5;
 }
 
 /* ============================================
@@ -223,7 +237,7 @@ body {
 .roasts-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 .bean-card,
@@ -399,7 +413,7 @@ body {
 
 .data-table th,
 .data-table td {
-    padding: 0.75rem;
+    padding: 1rem 1.25rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
 }
@@ -512,17 +526,17 @@ body {
 
 .setup-section {
     background: var(--card-bg);
-    padding: 2rem;
+    padding: 1.75rem;
     border-radius: 8px;
     box-shadow: var(--shadow);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 /* Full Width Layout: Left and Right Panels - 3:2 ratio */
 .roast-panels {
     display: grid;
     grid-template-columns: 3fr 2fr;
-    gap: 1.5rem;
+    gap: 1.25rem;
     align-items: start;
 }
 
@@ -530,14 +544,14 @@ body {
 .right-panel {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 .timer-section,
 .data-entry-section,
 .timeline-section {
     background: var(--card-bg);
-    padding: 2rem;
+    padding: 1.75rem;
     border-radius: 8px;
     box-shadow: var(--shadow);
 }
@@ -597,7 +611,7 @@ body {
 /* Compact event buttons - all in one row */
 .event-buttons-compact {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 0.75rem;
 }
 
@@ -745,6 +759,14 @@ footer {
    Responsive Design - Mobile
    ============================================ */
 @media (max-width: 768px) {
+    .container {
+        padding: 1.5rem 1rem;
+    }
+
+    .nav-container {
+        padding: 0 1rem;
+    }
+
     .nav-toggle {
         display: flex;
     }
@@ -783,6 +805,18 @@ footer {
 
     .page-header h1 {
         font-size: 1.5rem;
+    }
+
+    .roast-detail,
+    .form {
+        padding: 1.5rem;
+    }
+
+    .timer-section,
+    .data-entry-section,
+    .timeline-section,
+    .setup-section {
+        padding: 1.25rem;
     }
 
     .beans-grid,
@@ -987,7 +1021,7 @@ select.modern-select:hover,
 
 .roasts-table td,
 .beans-table td {
-    padding: 1rem;
+    padding: 1.25rem 1rem;
     border-bottom: 1px solid #f0f0f0;
 }
 
@@ -1069,6 +1103,161 @@ select.modern-select:hover,
     color: var(--text-light);
     margin-top: 0.375rem;
     line-height: 1.4;
+}
+
+.bean-link {
+    color: var(--text-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.bean-link:hover {
+    color: var(--primary-color);
+}
+
+.clickable-row {
+    cursor: pointer;
+}
+
+.clickable-row:hover {
+    background-color: var(--bg-color);
+    transition: background-color 0.15s;
+}
+
+/* Sortable Header Styles */
+.sortable-header {
+    position: relative;
+}
+
+.sort-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.375rem;
+    vertical-align: middle;
+    color: var(--text-light);
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sort-btn:hover {
+    color: var(--primary-color);
+}
+
+.sort-btn .material-icons {
+    font-size: 1rem;
+}
+
+.sort-btn-inline {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.sort-btn-inline:hover {
+    color: var(--primary-color);
+}
+
+.sort-btn-inline .material-icons {
+    font-size: 1rem;
+}
+
+/* Filter Button Styles */
+.btn-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.btn-filter .material-icons {
+    font-size: 1.125rem;
+}
+
+/* FC Time Badge */
+.fc-time-badge {
+    font-size: 1.25rem;
+    color: var(--text-light);
+    margin-left: 0.75rem;
+    font-family: 'Courier New', monospace;
+}
+
+/* RoR Badge */
+.ror-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.5rem;
+    background-color: #E8F4F8;
+    color: #2C7A9C;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Timer Panel Main (for full-width time display) */
+.timer-panel-main {
+    background: var(--bg-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+/* Stepper Control Styles */
+.stepper-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.5rem;
+    height: 44px;
+}
+
+.btn-stepper {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    color: var(--text-light);
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.btn-stepper:hover {
+    background-color: var(--border-color);
+    color: var(--primary-color);
+}
+
+.btn-stepper .material-icons {
+    font-size: 1.25rem;
+}
+
+.stepper-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-family: 'Courier New', monospace;
+    min-width: 2rem;
+    text-align: center;
 }
 
 .actions-column {

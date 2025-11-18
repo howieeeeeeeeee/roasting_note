@@ -11,31 +11,38 @@
 <div id="toastContainer" class="toast-container"></div>
 
 <div class="live-roast-container">
-    <!-- Pre-roast Setup -->
-    <section class="setup-section">
-        <h2>Setup</h2>
-        <div class="form-group">
-            <label for="roast_title">Roast Name</label>
-            <input type="text" id="roast_title" name="roast_title" value="{{ roast.title }}"
-                placeholder="e.g., Ethiopia Yirgacheffe - Light Roast">
-        </div>
-        <div class="form-row">
+    <!-- Pre-roast Setup - Collapsible during roasting -->
+    <section class="setup-section" id="setupSection">
+        <h2 onclick="toggleSetup()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+            <span>Setup</span>
+            <span class="material-icons" id="setupToggleIcon">expand_less</span>
+        </h2>
+        <div id="setupContent">
             <div class="form-group">
-                <label for="bean_id">Select Bean</label>
-                <select id="bean_id" name="bean_id" class="modern-select">
-                    <option value="">Select a bean...</option>
-                    {% for bean in beans %}
-                    <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id==bean._id %}selected{% endif
-                        %}>
-                        {{ bean.name }} ({{ bean.stock_grams }}g available)
-                    </option>
-                    {% endfor %}
-                </select>
+                <label for="roast_title">Roast Name</label>
+                <input type="text" id="roast_title" name="roast_title" value="{{ roast.title }}"
+                    placeholder="e.g., Ethiopia Yirgacheffe - Light Roast">
             </div>
-            <div class="form-group">
-                <label for="original_weight">Green Weight (grams)</label>
-                <input type="number" id="original_weight" name="original_weight" min="0"
-                    value="{{ roast.original_weight_grams or '' }}" placeholder="e.g., 250">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bean_id">Select Bean</label>
+                    <select id="bean_id" name="bean_id" class="modern-select">
+                        <option value="">Select a bean...</option>
+                        {% for bean in beans %}
+                        {% if bean.stock_grams and bean.stock_grams > 0 %}
+                        <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id==bean._id %}selected{% endif
+                            %}>
+                            {{ bean.name }} ({{ bean.stock_grams }}g available)
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="original_weight">Green Weight (grams)</label>
+                    <input type="number" id="original_weight" name="original_weight" min="0"
+                        value="{{ roast.original_weight_grams or '' }}" placeholder="e.g., 250">
+                </div>
             </div>
         </div>
     </section>
@@ -46,20 +53,29 @@
         <div class="left-panel">
             <!-- Timer, Temperature and Controls -->
             <section class="timer-section">
-                <div class="timer-temp-panels">
-                    <div class="timer-panel">
-                        <div class="panel-label">Time</div>
-                        <div class="panel-value" id="timerDisplay">00:00</div>
+                <div class="timer-panel-main">
+                    <div class="panel-label">Time</div>
+                    <div class="panel-value">
+                        <span id="timerDisplay">00:00</span>
+                        <span id="fcTimeDisplay" class="fc-time-badge" style="display: none;"></span>
                     </div>
-                    {% if not roast.roast_end_time %}
+                </div>
+                {% if not roast.roast_end_time %}
+                <div class="timer-temp-panels">
                     <div class="temp-panel">
                         <div class="panel-label">Temperature</div>
                         <div class="panel-value">
                             <span id="tempValue">--</span><span class="unit">°C</span>
                         </div>
                     </div>
-                    {% endif %}
+                    <div class="temp-panel">
+                        <div class="panel-label">RoR</div>
+                        <div class="panel-value">
+                            <span id="rorValue">--</span><span class="unit">°C/min</span>
+                        </div>
+                    </div>
                 </div>
+                {% endif %}
                 <div class="timer-controls">
                     <button id="startBtn" class="btn btn-success btn-lg">Start Roast</button>
                     <button id="endBtn" class="btn btn-danger btn-lg" style="display: none;">End Roast</button>
@@ -75,13 +91,11 @@
                     <label>Quick Key Events</label>
                     <div class="event-buttons-compact">
                         <button class="btn btn-secondary event-btn-compact" data-event="Yellowing"
-                            disabled>Yellowing</button>
-                        <button class="btn btn-secondary event-btn-compact" data-event="First Crack Start" disabled>FC
-                            Start</button>
-                        <button class="btn btn-secondary event-btn-compact" data-event="First Crack End" disabled>FC
-                            End</button>
-                        <button class="btn btn-secondary event-btn-compact" data-event="Second Crack Start" disabled>SC
-                            Start</button>
+                            disabled title="Yellowing">Y</button>
+                        <button class="btn btn-secondary event-btn-compact" data-event="First Crack Start" disabled title="First Crack Start">FC</button>
+                        <button class="btn btn-secondary event-btn-compact" data-event="First Crack End" disabled title="First Crack End">FC-end</button>
+                        <button class="btn btn-secondary event-btn-compact" data-event="Second Crack Start" disabled title="Second Crack Start">SC</button>
+                        <button class="btn btn-secondary event-btn-compact" data-event="Second Crack End" disabled title="Second Crack End">SC-end</button>
                     </div>
                 </div>
 
@@ -93,18 +107,29 @@
                     </div>
                     <div class="form-group">
                         <label>Fan Setting (1-9)</label>
-                        <button type="button" class="btn-setting" id="fanSettingBtn" onclick="openSettingModal('fan')">
-                            <span class="setting-value" id="fanValue">-</span>
-                        </button>
-                        <input type="hidden" id="fan_setting" name="fan_setting" value="">
+                        <div class="stepper-control">
+                            <button type="button" class="btn-stepper" onclick="adjustFan(-1)">
+                                <span class="material-icons">remove</span>
+                            </button>
+                            <span class="stepper-value" id="fanValue">9</span>
+                            <button type="button" class="btn-stepper" onclick="adjustFan(1)">
+                                <span class="material-icons">add</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="fan_setting" name="fan_setting" value="9">
                     </div>
                     <div class="form-group">
                         <label>Power Setting (1-9)</label>
-                        <button type="button" class="btn-setting" id="powerSettingBtn"
-                            onclick="openSettingModal('power')">
-                            <span class="setting-value" id="powerValue">-</span>
-                        </button>
-                        <input type="hidden" id="power_setting" name="power_setting" value="">
+                        <div class="stepper-control">
+                            <button type="button" class="btn-stepper" onclick="adjustPower(-1)">
+                                <span class="material-icons">remove</span>
+                            </button>
+                            <span class="stepper-value" id="powerValue">3</span>
+                            <button type="button" class="btn-stepper" onclick="adjustPower(1)">
+                                <span class="material-icons">add</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="power_setting" name="power_setting" value="3">
                     </div>
                 </div>
 
@@ -162,49 +187,31 @@
     </div>
 </div>
 
-<!-- Modal for Fan/Power Settings -->
-<div id="settingModal" class="modal">
-    <div class="modal-content modal-compact">
-        <div class="modal-header">
-            <h2 id="modalTitle">Setting</h2>
-            <span class="modal-close" onclick="closeSettingModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <div class="slider-container">
-                <div class="slider-value" id="sliderValue">5</div>
-                <input type="range" id="settingSlider" min="1" max="9" value="5" step="1" class="slider">
-                <div class="slider-marks">
-                    <span>1</span>
-                    <span>2</span>
-                    <span>3</span>
-                    <span>4</span>
-                    <span>5</span>
-                    <span>6</span>
-                    <span>7</span>
-                    <span>8</span>
-                    <span>9</span>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-primary btn-full-width" onclick="applySettingValue()">Apply</button>
-                <button class="btn btn-full-width" onclick="closeSettingModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
     let timerInterval = null;
     let tempPollingInterval = null;
     let seconds = 0;
     let isRunning = false;
     const roastId = '{{ roast._id }}';
+    const roastStarted = {% if roast.roast_start_time %}true{% else %} false{% endif %};
     const roastEnded = {% if roast.roast_end_time %}true{% else %} false{% endif %};
 
     // Remember last values
     let lastTemp = null;
     let lastFan = null;
     let lastPower = null;
+
+    // Temperature logging counter (log to DB every 3 fetches)
+    let tempFetchCounter = 0;
+
+    // Temperature history for RoR calculation (stores {time, temp} objects)
+    let tempHistory = [];
+
+    // Latest FC start time (seconds)
+    let fcStartTime = null;
+
+    // Track last logged second to prevent duplicates in CSV
+    let lastLoggedSecond = -1;
 
     const timerDisplay = document.getElementById('timerDisplay');
     const startBtn = document.getElementById('startBtn');
@@ -226,64 +233,200 @@
     function updateTimer() {
         seconds++;
         timerDisplay.textContent = formatTime(seconds);
-    }
 
-    // Temperature polling functions
-    async function fetchAndDisplayTemperature() {
-        if (!tempValueDisplay) return; // Temperature display not available (roast ended)
-
-        try {
-            const response = await fetch('/api/temp/current');
-            const data = await response.json();
-
-            if (data.status === 'success' && data.temperature !== null) {
-                // Display temperature
-                tempValueDisplay.textContent = data.temperature;
-                tempValueDisplay.style.color = '';
-                lastTemp = data.temperature;
-
-                // Auto-log temperature to database if roast is running
-                if (isRunning) {
-                    await autoLogTemperature(data.temperature);
-                }
-            } else {
-                // Sensor offline or insufficient readings
-                tempValueDisplay.textContent = '--';
-                tempValueDisplay.style.color = '#999';
-            }
-        } catch (error) {
-            console.error('Error fetching temperature:', error);
-            if (tempValueDisplay) {
-                tempValueDisplay.textContent = '--';
-                tempValueDisplay.style.color = '#999';
+        // Update FC elapsed time if FC has been logged
+        if (fcStartTime !== null) {
+            const fcElapsed = seconds - fcStartTime;
+            const fcDisplay = document.getElementById('fcTimeDisplay');
+            if (fcDisplay) {
+                fcDisplay.textContent = `(FC +${formatTime(fcElapsed)})`;
             }
         }
     }
 
-    async function autoLogTemperature(temperature) {
+    // Calculate RoR (Rate of Rise)
+    function calculateRoR(currentTemp, currentTime) {
+        // Need at least 20 seconds of data
+        if (currentTime < 20) {
+            return null;
+        }
+
+        // Find temperature from 20 seconds ago
+        const targetTime = currentTime - 20;
+        let closestReading = null;
+        let closestTimeDiff = Infinity;
+
+        for (const reading of tempHistory) {
+            const timeDiff = Math.abs(reading.time - targetTime);
+            if (timeDiff < closestTimeDiff) {
+                closestTimeDiff = timeDiff;
+                closestReading = reading;
+            }
+        }
+
+        if (closestReading && closestTimeDiff <= 2) { // Within 2 seconds tolerance
+            // RoR = (current temp - temp 20s ago) * 3
+            const ror = (currentTemp - closestReading.temp) * 3;
+            return Math.round(ror * 10) / 10; // Round to 1 decimal place
+        }
+
+        return null;
+    }
+
+    // Fast temperature fetch for display (1 second) - single sensor request
+    async function fetchAndDisplayTemperature() {
+        if (!tempValueDisplay) {
+            console.error('Temperature display element not found');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/temp/current_fast');
+            const data = await response.json();
+            console.log('Temperature fetch response:', data);
+
+            if (data.status === 'success' && data.temperature !== null) {
+                // Display temperature immediately
+                console.log('Updating temperature display to:', data.temperature);
+                tempValueDisplay.textContent = data.temperature;
+                tempValueDisplay.style.color = '';
+                lastTemp = data.temperature;
+
+                // Add to temperature history for RoR calculation
+                // Use the current timer value (seconds) for consistency with display
+                if (isRunning) {
+                    const currentSecond = seconds;
+                    tempHistory.push({ time: currentSecond, temp: data.temperature });
+
+                    // Keep only last 30 seconds of data
+                    tempHistory = tempHistory.filter(reading => reading.time >= currentSecond - 30);
+
+                    // Calculate and display RoR
+                    const ror = calculateRoR(data.temperature, currentSecond);
+                    const rorDisplay = document.getElementById('rorValue');
+                    if (ror !== null && rorDisplay) {
+                        rorDisplay.textContent = ror.toFixed(1);
+                        rorDisplay.style.color = '';
+                    } else if (rorDisplay) {
+                        rorDisplay.textContent = '--';
+                        rorDisplay.style.color = '#999';
+                    }
+
+                    // Log to local CSV every second with RoR (only if we haven't logged this second yet)
+                    if (currentSecond !== lastLoggedSecond) {
+                        logTemperatureLocally(currentSecond, data.temperature, ror);
+                        lastLoggedSecond = currentSecond;
+                    }
+                }
+
+                // Increment counter
+                tempFetchCounter++;
+
+                // Auto-log to database every 5 fetches (every 5 seconds) with accurate reading
+                if (isRunning && tempFetchCounter >= 5) {
+                    await autoLogTemperatureAccurate();
+                    tempFetchCounter = 0; // Reset counter
+                }
+            } else {
+                // Sensor temporarily unavailable - keep showing last known temperature
+                console.log('Sensor unavailable, keeping last temperature:', lastTemp);
+                if (lastTemp === null) {
+                    // No temperature ever received, show "--"
+                    tempValueDisplay.textContent = '--';
+                    tempValueDisplay.style.color = '#999';
+                }
+                // If lastTemp exists, display keeps showing it (no update needed)
+            }
+        } catch (error) {
+            console.error('Error fetching temperature:', error);
+            // Keep showing last known temperature on error
+            if (lastTemp === null && tempValueDisplay) {
+                tempValueDisplay.textContent = '--';
+                tempValueDisplay.style.color = '#999';
+            }
+            // If lastTemp exists, display keeps showing it
+        }
+    }
+
+    // Log temperature to local CSV file (fire and forget - doesn't block)
+    function logTemperatureLocally(time, temperature, ror) {
+        // Don't await this - let it run in background to avoid blocking display updates
+        fetch(`/api/roast/log_temp_local/${roastId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                time_seconds: time,
+                temperature: temperature,
+                ror: ror !== null ? ror : null
+            })
+        }).catch(error => {
+            // Silent fail - local logging is not critical
+            console.error('Error logging temperature locally:', error);
+        });
+    }
+
+    // Accurate temperature logging to DB (every 3 seconds) - uses 3-request average
+    async function autoLogTemperatureAccurate() {
         // Only log if roast has started
         if (!isRunning) return;
 
         try {
-            // Use last known fan/power settings, default to 0
-            const fanSetting = lastFan || 0;
-            const powerSetting = lastPower || 0;
+            // Fetch accurate temperature reading (3-request average)
+            const response = await fetch('/api/temp/current');
+            const data = await response.json();
 
-            await fetch(`/api/roast/add_event/${roastId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+            if (data.status === 'success' && data.temperature !== null) {
+                const temperature = data.temperature;
+
+                // Calculate RoR using current tempHistory
+                const ror = calculateRoR(temperature, seconds);
+
+                // Use last known fan/power settings, default to 0
+                const fanSetting = lastFan || 0;
+                const powerSetting = lastPower || 0;
+
+                const requestBody = {
                     time_seconds: seconds,
                     temperature: temperature,
                     fan_setting: fanSetting,
                     power_setting: powerSetting
-                })
-            });
+                };
 
-            // Success - silently logged, no toast needed for auto-logging
-            console.log(`Auto-logged temperature: ${temperature}°C at ${formatTime(seconds)}`);
+                // Add RoR if available
+                if (ror !== null && ror !== undefined) {
+                    requestBody.ror = ror;
+                }
+
+                const logResponse = await fetch(`/api/roast/add_event/${roastId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (logResponse.ok) {
+                    // Add to timeline display
+                    const emptyLog = timelineList.querySelector('.empty-log');
+                    if (emptyLog) emptyLog.remove();
+
+                    const timelineItem = document.createElement('div');
+                    timelineItem.className = 'timeline-item timeline-temp';
+                    const rorText = (ror !== null && ror !== undefined) ? ` (${ror.toFixed(1)}°C/min)` : '';
+                    timelineItem.innerHTML = `
+                        <div class="timeline-time">${formatTime(seconds)}</div>
+                        <div class="timeline-content">
+                            <span class="timeline-temp-value">${temperature}°C${rorText}</span>
+                            <span class="timeline-settings">Fan: ${fanSetting} | Power: ${powerSetting}</span>
+                        </div>
+                    `;
+                    timelineList.insertBefore(timelineItem, timelineList.firstChild);
+
+                    console.log(`Auto-logged accurate temperature: ${temperature}°C at ${formatTime(seconds)}`);
+                }
+            }
         } catch (error) {
             // Log error but don't interrupt display
             console.error('Error auto-logging temperature:', error);
@@ -291,13 +434,25 @@
     }
 
     function startTemperaturePolling() {
+        console.log('startTemperaturePolling called. roastEnded:', roastEnded);
         if (roastEnded) return; // Don't poll if roast already ended
 
+        // Clear any existing interval first to prevent duplicates
+        if (tempPollingInterval) {
+            clearInterval(tempPollingInterval);
+            tempPollingInterval = null;
+        }
+
+        // Reset counter when starting
+        tempFetchCounter = 0;
+
+        console.log('Fetching temperature immediately...');
         // Fetch immediately
         fetchAndDisplayTemperature();
 
-        // Then poll every 5 seconds
-        tempPollingInterval = setInterval(fetchAndDisplayTemperature, 3000);
+        // Then poll every 1 second (display updates), but log to DB every 3 seconds
+        console.log('Setting up 1-second polling interval...');
+        tempPollingInterval = setInterval(fetchAndDisplayTemperature, 1000);
     }
 
     function stopTemperaturePolling() {
@@ -330,69 +485,78 @@
         }, 3000);
     }
 
-    // Modal functions for fan/power settings
-    let currentSettingType = null;
+    // Stepper functions for fan and power
+    function adjustFan(delta) {
+        const fanInput = document.getElementById('fan_setting');
+        const fanDisplay = document.getElementById('fanValue');
+        let currentValue = parseInt(fanInput.value) || 9;
+        let newValue = currentValue + delta;
 
-    function openSettingModal(type) {
-        currentSettingType = type;
-        const modal = document.getElementById('settingModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const slider = document.getElementById('settingSlider');
-        const sliderValue = document.getElementById('sliderValue');
+        // Clamp between 1 and 9
+        newValue = Math.max(1, Math.min(9, newValue));
 
-        if (type === 'fan') {
-            modalTitle.textContent = 'Fan Setting';
-            const currentValue = document.getElementById('fan_setting').value || lastFan || 5;
-            slider.value = currentValue;
-            sliderValue.textContent = currentValue;
+        fanInput.value = newValue;
+        fanDisplay.textContent = newValue;
+        lastFan = newValue;
+    }
+
+    function adjustPower(delta) {
+        const powerInput = document.getElementById('power_setting');
+        const powerDisplay = document.getElementById('powerValue');
+        let currentValue = parseInt(powerInput.value) || 3;
+        let newValue = currentValue + delta;
+
+        // Clamp between 1 and 9
+        newValue = Math.max(1, Math.min(9, newValue));
+
+        powerInput.value = newValue;
+        powerDisplay.textContent = newValue;
+        lastPower = newValue;
+    }
+
+    // Toggle setup section
+    let setupCollapsed = false;
+    function toggleSetup() {
+        const setupContent = document.getElementById('setupContent');
+        const setupIcon = document.getElementById('setupToggleIcon');
+
+        if (setupCollapsed) {
+            setupContent.style.display = 'block';
+            setupIcon.textContent = 'expand_less';
+            setupCollapsed = false;
         } else {
-            modalTitle.textContent = 'Power Setting';
-            const currentValue = document.getElementById('power_setting').value || lastPower || 5;
-            slider.value = currentValue;
-            sliderValue.textContent = currentValue;
+            setupContent.style.display = 'none';
+            setupIcon.textContent = 'expand_more';
+            setupCollapsed = true;
         }
-
-        modal.style.display = 'block';
     }
 
-    function closeSettingModal() {
-        document.getElementById('settingModal').style.display = 'none';
-    }
-
-    function applySettingValue() {
-        const value = document.getElementById('settingSlider').value;
-        if (currentSettingType === 'fan') {
-            document.getElementById('fan_setting').value = value;
-            document.getElementById('fanValue').textContent = value;
-            lastFan = parseInt(value);
-        } else {
-            document.getElementById('power_setting').value = value;
-            document.getElementById('powerValue').textContent = value;
-            lastPower = parseInt(value);
+    // Auto-collapse setup when roast starts
+    function collapseSetupOnStart() {
+        if (!setupCollapsed) {
+            toggleSetup();
         }
-        closeSettingModal();
     }
 
-    // Update slider value display
     document.addEventListener('DOMContentLoaded', function () {
-        const slider = document.getElementById('settingSlider');
-        const sliderValue = document.getElementById('sliderValue');
+        console.log('Page loaded. roastStarted:', roastStarted, 'roastEnded:', roastEnded);
 
-        slider.addEventListener('input', function () {
-            sliderValue.textContent = this.value;
-        });
+        // Initialize default fan and power values
+        lastFan = 9;
+        lastPower = 3;
 
-        // Close modal when clicking outside
-        window.onclick = function (event) {
-            const modal = document.getElementById('settingModal');
-            if (event.target === modal) {
-                closeSettingModal();
-            }
-        };
-
-        // Start temperature polling on page load if roast not ended
+        // Start temperature polling on page load if roast hasn't ended (includes draft and in-progress roasts)
         if (!roastEnded) {
+            console.log('Starting temperature polling...');
+            // Only set isRunning flag if roast has actually started
+            if (roastStarted) {
+                isRunning = true;
+                collapseSetupOnStart(); // Collapse setup section for ongoing roasts
+            }
+            // Start temperature display regardless (shows temp even before starting)
             startTemperaturePolling();
+        } else {
+            console.log('Roast has ended, not starting temperature polling');
         }
     });
 
@@ -436,7 +600,10 @@
 
             if (response.ok) {
                 isRunning = true;
+
+                // Start timer (temperature polling continues independently)
                 timerInterval = setInterval(updateTimer, 1000);
+
                 startBtn.style.display = 'none';
                 endBtn.style.display = 'inline-block';
                 eventButtons.forEach(btn => btn.disabled = false);
@@ -444,8 +611,12 @@
                 document.getElementById('bean_id').disabled = true;
                 document.getElementById('original_weight').disabled = true;
 
-                // Start temperature polling
-                startTemperaturePolling();
+                // Collapse setup section
+                collapseSetupOnStart();
+
+                // Reset temperature fetch counter and last logged second
+                tempFetchCounter = 0;
+                lastLoggedSecond = -1;
             } else {
                 alert('Error starting roast. Please try again.');
             }
@@ -495,13 +666,25 @@
         btn.addEventListener('click', async () => {
             const eventName = btn.getAttribute('data-event');
 
+            // Track FC start time
+            if (eventName === 'First Crack Start') {
+                fcStartTime = seconds;
+                // Update FC time display to show elapsed time (starts at 00:00)
+                const fcDisplay = document.getElementById('fcTimeDisplay');
+                if (fcDisplay) {
+                    fcDisplay.textContent = `(FC +00:00)`;
+                    fcDisplay.style.display = 'inline';
+                }
+            }
+
             // Capture current temp/fan/power values at this exact moment
             const tempInput = document.getElementById('temperature');
             const fanInput = document.getElementById('fan_setting');
             const powerInput = document.getElementById('power_setting');
 
-            // Get values - if fan/power are empty, use last known values
-            const temperature = tempInput.value ? parseInt(tempInput.value) : null;
+            // Get values - if temperature field is empty, use sensor temperature (lastTemp)
+            // If fan/power are empty, use last known values
+            const temperature = tempInput.value ? parseInt(tempInput.value) : lastTemp;
             const fanSetting = fanInput.value ? parseInt(fanInput.value) : (lastFan || null);
             const powerSetting = powerInput.value ? parseInt(powerInput.value) : (lastPower || null);
 
@@ -589,7 +772,8 @@
         const powerInput = document.getElementById('power_setting');
         const noteInput = document.getElementById('event_note');
 
-        const temperature = tempInput.value;
+        // If temperature field is empty, use the current sensor temperature (lastTemp)
+        const temperature = tempInput.value ? tempInput.value : lastTemp;
         const fanSetting = fanInput.value || lastFan || 0;
         const powerSetting = powerInput.value || lastPower || 0;
         const note = noteInput.value || '';

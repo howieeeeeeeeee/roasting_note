@@ -85,8 +85,10 @@ Stores all data related to a single roasting session. This model embeds the temp
     {
       "time_seconds": "Integer", // Seconds from roast_start_time
       "temperature": "Float", // The temperature reading
-      "fan_setting": "Integer", // e.g., 1-5
-      "power_setting": "Integer" // e.g., 1-10 or 1-100%
+      "fan_setting": "Integer", // e.g., 1-9
+      "power_setting": "Integer", // e.g., 1-9
+      "ror": "Float", // Rate of Rise in °C/min (optional, calculated field)
+      "note": "String" // Optional note for this event
     }
   ],
 
@@ -165,31 +167,56 @@ This is the most complex UI. It should be a single page (`/roast/live/<roast_id>
 1. **Initiation:**
       * Clicking "Start New Roast" on the dashboard creates a new, *draft* `roast` document in the DB (e.g., with `title: "Untitled"`, no weights, no bean).
       * The user is redirected to the "Live Roasting" page: `/roast/live/<new_roast_id>`.
-2. **Pre-Roast Setup:**
+2. **Pre-Roast Setup (Collapsible):**
       * On this page, the user sees:
-          * A dropdown to select a **Bean** (populated from the `beans` collection).
+          * A dropdown to select a **Bean** (populated from `beans` collection, **filtered to show only beans with stock > 0g**).
           * An input for **Original Weight (grams)**.
+          * Section collapses automatically when roast starts to maximize screen space
           * *Note:* These can be set now or later in the "Edit" screen.
 3. **Roasting:**
+      * **Display Layout:**
+          * **Timer:** Large display showing MM:SS format
+              * Shows FC time in parentheses when First Crack Start is clicked: "MM:SS (MM:SS)"
+              * Updates to latest FC if multiple FC events logged
+          * **Temperature & RoR:** Side-by-side panels showing:
+              * Temperature: Real-time °C reading from sensor
+              * RoR: Calculated rate of rise in °C/min (available after 20 seconds)
       * **"Start Roast" Button:**
-          * *Frontend:* Starts an on-screen timer (e.g., `00:00`).
-          * *Backend Call:* Sends an API request to set the `roast_start_time` to `datetime.now()` for this `roast_id`.
-      * **Event Logging (Buttons):**
-          * A set of buttons: "Mark Yellowing", "Mark FC Start", "Mark FC End", "Mark SC Start", "Mark Drop".
-          * *Action:* Clicking a button gets the current timer value (in seconds) and sends an API request to `$push` a new sub-document to the `key_timings` array.
-          * *Example:* `POST /api/roast/add_timing/<roast_id>` with JSON body: `{"event_name": "First Crack Start", "time_seconds": 542}`.
+          * *Frontend:* Starts on-screen timer, auto-collapses setup section
+          * *Backend Call:* Sets `roast_start_time` to `datetime.now()`
+          * Initiates temperature polling (every 1 second) and logging (every 3 seconds)
+      * **Quick Key Events (Compact Buttons):**
+          * Minimal buttons with short labels and tooltips:
+              * Y (Yellowing)
+              * FC (First Crack Start) - triggers FC time display
+              * FC-end (First Crack End)
+              * SC (Second Crack Start)
+              * SC-end (Second Crack End)
+          * Clicking logs event with current temperature and settings
+      * **Fan & Power Controls:**
+          * Direct +/- stepper buttons (no modal)
+          * Range: 1-9 for both fan and power
+          * Default values: Fan 9, Power 3
+          * Large number display with increment/decrement buttons
       * **Data Entry (Form):**
-          * A small form with inputs for: **Temperature**, **Fan Setting**, **Power Setting**.
-          * An "Add Event" button.
-          * *Action:* Clicking gets the current timer value and form values. Sends an API request to `$push` a new sub-document to the `temp_curve` array.
-          * *Example:* `POST /api/roast/add_event/<roast_id>` with JSON body: `{"time_seconds": 545, "temperature": 190.5, "fan_setting": 3, "power_setting": 4}`.
-      * **Live Display:**
-          * The page should have two "log" areas that update via JavaScript as events are added, showing the `key_timings` and `temp_curve` data just submitted.
+          * Temperature input (auto-filled from sensor if empty)
+          * Fan/power settings with stepper controls
+          * Optional note field
+          * "Add Event" button logs to `temp_curve`
+      * **Automatic Background Processes:**
+          * Temperature fetched every 1 second from sensor
+          * Logged locally to `temp_logs/{roast_id}.csv` every second
+          * Logged to database every 3 seconds with RoR value
+          * RoR calculated using 20-second sliding window
+      * **Live Timeline Display:**
+          * Shows both `key_timings` and `temp_curve` events
+          * Displays temperature, RoR (if available), fan, and power settings
+          * Newest events at top
 4. **Ending the Roast:**
       * **"End Roast" Button:**
-          * *Frontend:* Stops the on-screen timer.
-          * *Backend Call:* Sends an API request to set the `roast_end_time` to `datetime.now()`.
-          * *Action:* The user is then redirected to the "Edit Roast" page to fill in post-roast details.
+          * *Frontend:* Stops timer and temperature polling
+          * *Backend Call:* Sets `roast_end_time`, attempts final temperature reading
+          * *Action:* Redirects to "Edit Roast" page for post-roast details
 
 #### **4.5. Post-Roast & Editing**
 
@@ -243,6 +270,7 @@ A suggested structure for the Flask routes.
 * `POST /api/roast/update_review/<roast_id>/<review_id>`: Update an existing review.
 * `POST /api/roast/delete_review/<roast_id>/<review_id>`: Delete a review from `reviews` array.
 * `GET /api/temp/current`: Get current temperature from K-Type sensor. Returns JSON with temperature value or null if unavailable.
+* `POST /api/roast/log_temp_local/<roast_id>`: Log temperature reading to local CSV file for detailed analysis.
 
 -----
 
@@ -316,6 +344,59 @@ The application integrates with a K-Type temperature sensor (Howie's design - K-
 * Updated in `models/roast_helpers.py`:
   * `create_draft_roast()` function
   * `update_roast()` function default parameter
+
+#### **6.8. Rate of Rise (RoR) Calculation**
+
+* **Real-time RoR calculation** during roasting:
+  * RoR = (current temperature - temperature 20 seconds ago) × 3
+  * Provides °C/min measurement of temperature increase rate
+  * Displayed alongside temperature on live roasting page
+  * Calculated every second once 20 seconds of data is available
+* **RoR Display:**
+  * Shown in real-time next to temperature reading
+  * Displays "--" until 20 seconds of data is collected
+  * Rounded to 1 decimal place for readability
+* **RoR Storage:**
+  * Saved to database with temperature events in `temp_curve` array
+  * New optional field: `ror` (Float) in temperature event documents
+  * Only saved when temperature is logged (every 3 seconds)
+* **RoR in Event Logs:**
+  * Displayed in timeline on live roasting page
+  * Shown in roast detail page event table as colored badge
+  * Format: "RoR: X.X°C/min" next to temperature reading
+
+#### **6.9. Local Temperature Logging**
+
+* **Purpose:** Detailed second-by-second temperature logging for analysis
+* **Storage Location:** `temp_logs/` directory in application root
+* **File Format:**
+  * CSV files named by roast_id: `{roast_id}.csv`
+  * Header: `time_seconds,temperature`
+  * One entry per second during active roast
+* **API Endpoint:** `POST /api/roast/log_temp_local/<roast_id>`
+* **Automatic Creation:**
+  * Directory created if doesn't exist
+  * New file created for each roast
+  * Appends data throughout roast session
+* **Use Cases:**
+  * Detailed post-roast analysis
+  * RoR calculations
+  * Temperature curve graphing
+  * Pattern recognition across roasts
+
+#### **6.10. First Crack (FC) Time Tracking**
+
+* **FC Time Display:**
+  * When "First Crack Start" button is clicked, displays time-to-FC next to main timer
+  * Format: "MM:SS (MM:SS)" where second time is FC start time
+  * Shown in parentheses for clarity
+* **Multiple FC Events:**
+  * If multiple FC Start events are logged, displays the latest one
+  * Updates display each time FC Start is clicked
+* **Implementation:**
+  * JavaScript tracks `fcStartTime` variable
+  * Updates `fcTimeDisplay` badge element
+  * Persists until roast ends
 
 -----
 
