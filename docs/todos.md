@@ -3,4 +3,4 @@
   GET /api/temp/current (every 5 seconds, only when roast running)
   POST /api/roast/add_event (every 5 seconds, only when roast running)
 
-  analyze this, see how to achinve ithis efficiently and without less lagging
+  analyze this, see how to achieve this efficiently and without too much lagging

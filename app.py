@@ -1,4 +1,5 @@
 import os
+import collections
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 from pymongo import MongoClient
@@ -444,6 +445,12 @@ def api_roast_add_timing(roast_id):
     if data.get('power_setting') is not None:
         timing_event['power_setting'] = int(data['power_setting'])
 
+    # Calculate and add RoR
+    if temp_value is not None:
+        ror = calculate_ror(roast_id, float(temp_value), int(data['time_seconds']))
+        if ror is not None:
+            timing_event['ror'] = ror
+
     roasts_collection.update_one(
         {'_id': ObjectId(roast_id)},
         {
@@ -481,6 +488,10 @@ def api_roast_add_event(roast_id):
                 fan_setting = 9
             if power_setting is None:
                 power_setting = 3
+        
+        # Ensure they are integers if we fell back to defaults
+        if fan_setting is None: fan_setting = 9
+        if power_setting is None: power_setting = 3
 
     temp_event = {
         'time_seconds': int(data['time_seconds']),
@@ -492,9 +503,14 @@ def api_roast_add_event(roast_id):
     if data.get('temperature') is not None:
         temp_event['temperature'] = float(data['temperature'])
 
-    # Add RoR (Rate of Rise) if provided
+    # Add RoR (Rate of Rise)
+    # First check if provided in data (legacy), otherwise calculate it
     if data.get('ror') is not None:
         temp_event['ror'] = float(data['ror'])
+    elif data.get('temperature') is not None:
+        ror = calculate_ror(roast_id, float(data['temperature']), int(data['time_seconds']))
+        if ror is not None:
+            temp_event['ror'] = ror
 
     # Add note if provided
     if data.get('note'):
@@ -700,6 +716,155 @@ def api_temp_current():
             'status': 'error',
             'message': 'Insufficient readings or sensor unavailable'
         })
+
+
+# ============================================
+# Optimized Polling Logic
+# ============================================
+
+# Global in-memory storage for recent temperature readings
+# Structure: { roast_id: deque([(time, temp), ...], maxlen=30) }
+from collections import deque
+roast_temp_history = {}
+
+def calculate_ror(roast_id, current_temp, current_time):
+    """
+    Calculate Rate of Rise (RoR) based on temperature history.
+    RoR = (Current Temp - Temp 30s ago) * (60 / 30) = (Delta) * 2
+    Returns None if insufficient data.
+    """
+    if roast_id not in roast_temp_history:
+        roast_temp_history[roast_id] = {
+            'history': collections.deque(maxlen=60), # Keep last 60 readings
+            'last_db_log_time': -1
+        }
+    
+    state = roast_temp_history[roast_id]
+    history = state['history']
+    
+    # Add current reading
+    history.append({'time': current_time, 'temp': current_temp})
+    
+    # Find reading ~30 seconds ago
+    target_time = current_time - 30
+    past_reading = None
+    
+    # Search for reading closest to target_time
+    # Since deque is ordered by time, we can iterate
+    for reading in history:
+        if reading['time'] >= target_time:
+            # If we found a reading that is exactly or just after target_time
+            # Check if it's within a reasonable window (e.g., +/- 2 seconds of target)
+            if reading['time'] <= target_time + 2:
+                past_reading = reading
+            break
+            
+    if past_reading:
+        temp_diff = current_temp - past_reading['temp']
+        time_diff = current_time - past_reading['time']
+        
+        if time_diff > 0:
+            # Normalize to per minute
+            ror = (temp_diff / time_diff) * 60
+            return round(ror, 1)
+            
+    return None
+
+
+@app.route('/api/roast/sync_state/<roast_id>', methods=['POST'])
+def api_roast_sync_state(roast_id):
+    """
+    Consolidated endpoint for real-time roast synchronization.
+    Called every 1 second by client.
+    Handles:
+    1. Temperature fetching (Fast vs Accurate)
+    2. RoR Calculation
+    3. Local CSV Logging (Every 1s)
+    4. MongoDB Logging (Every 5s)
+    """
+    data = request.get_json()
+    client_time = int(data.get('time_seconds', 0))
+    status = data.get('status', 'stopped')
+    fan_setting = int(data.get('fan_setting', 0))
+    power_setting = int(data.get('power_setting', 0))
+
+    # Initialize state if needed
+    if roast_id not in roast_temp_history:
+        roast_temp_history[roast_id] = {
+            'history': collections.deque(maxlen=60),
+            'last_db_log_time': -1
+        }
+    
+    state = roast_temp_history[roast_id]
+
+    # Determine if we should log to DB based on time interval
+    # Log if we crossed a 5-second boundary since last log
+    # e.g., last=10, current=16 -> 16//5 (3) > 10//5 (2) -> Log
+    # e.g., last=10, current=14 -> 14//5 (2) == 10//5 (2) -> No log
+    current_interval = client_time // 5
+    last_interval = state['last_db_log_time'] // 5
+    is_db_log_interval = (current_interval > last_interval) and (client_time > 0)
+
+    # Fetch temperature
+    # Use accurate fetch if it's a DB log interval, otherwise fast fetch
+    if is_db_log_interval:
+        temp = fetch_temperature_from_sensor()
+    else:
+        temp = fetch_temperature_from_sensor_fast()
+
+    response_data = {
+        'success': True,
+        'temperature': temp,
+        'ror': None,
+        'logged_to_db': False
+    }
+
+    if temp is not None:
+        # Calculate RoR
+        ror = calculate_ror(roast_id, temp, client_time)
+        response_data['ror'] = ror
+
+        # If roast is running, handle logging
+        if status == 'running':
+            # 1. Log to local CSV (Always)
+            try:
+                logs_dir = os.path.join(os.getcwd(), 'temp_logs')
+                os.makedirs(logs_dir, exist_ok=True)
+                log_file = os.path.join(logs_dir, f'{roast_id}.csv')
+                
+                file_exists = os.path.exists(log_file)
+                with open(log_file, 'a') as f:
+                    if not file_exists:
+                        f.write('time_seconds,temperature,ror\n')
+                    ror_str = str(ror) if ror is not None else ''
+                    f.write(f'{client_time},{temp},{ror_str}\n')
+            except Exception as e:
+                print(f"Error logging local CSV: {e}")
+
+            # 2. Log to MongoDB (Every 5 seconds)
+            if is_db_log_interval:
+                try:
+                    temp_event = {
+                        'time_seconds': client_time,
+                        'temperature': float(temp),
+                        'fan_setting': fan_setting,
+                        'power_setting': power_setting,
+                        'ror': ror
+                    }
+                    roasts_collection.update_one(
+                        {'_id': ObjectId(roast_id)},
+                        {
+                            '$push': {'temp_curve': temp_event},
+                            '$set': {'updated_at': datetime.now()}
+                        }
+                    )
+                    response_data['logged_to_db'] = True
+                    # Update last log time
+                    state['last_db_log_time'] = client_time
+                except Exception as e:
+                    print(f"Error logging to MongoDB: {e}")
+
+    return jsonify(response_data)
 
 
 # ============================================
