@@ -7,9 +7,28 @@ from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 from dotenv import load_dotenv
 import requests
+import logging
 
 # Load environment variables
 load_dotenv()
+
+# Filter out TLS handshake errors (scanner noise)
+class TLSHandshakeFilter(logging.Filter):
+    """Filter out TLS handshake attempts from logs"""
+    def filter(self, record):
+        # Check if this is a 400 error log message
+        msg = str(record.getMessage())
+        # Suppress logs containing TLS handshake indicators
+        # TLS handshakes show up as "code 400, message Bad request version" with binary data
+        if 'code 400' in msg and 'Bad request version' in msg:
+            # Check if message contains binary/hex patterns typical of TLS handshakes
+            if '\\x' in msg or len(msg) > 150:
+                return False  # Don't log this message
+        return True  # Log everything else
+
+# Apply filter to Werkzeug logger
+werkzeug_logger = logging.getLogger('werkzeug')
+werkzeug_logger.addFilter(TLSHandshakeFilter())
 
 # Initialize Flask app
 app = Flask(__name__)
