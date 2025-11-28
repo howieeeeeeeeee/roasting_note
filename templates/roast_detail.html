@@ -8,9 +8,27 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>{{ roast.title }}</h1>
+    <div class="header-left">
+        <div class="dropdown-menu-container">
+            <button class="btn-icon dropdown-toggle" onclick="toggleDropdown()" title="More actions">
+                <span class="material-icons">more_vert</span>
+            </button>
+            <div class="dropdown-menu" id="actionDropdown">
+                <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="dropdown-item">
+                    <span class="material-icons">edit</span>
+                    Edit
+                </a>
+                <form action="{{ url_for('api_roast_delete', roast_id=roast._id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this roast?');" class="dropdown-item-form">
+                    <button type="submit" class="dropdown-item dropdown-item-danger">
+                        <span class="material-icons">delete</span>
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+        <h1>{{ roast.title }}</h1>
+    </div>
     <div class="header-actions">
-        <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="btn btn-primary">Edit Roast</a>
         <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Dashboard</a>
     </div>
 </div>
@@ -62,6 +80,61 @@
                 <strong>Duration:</strong> {{ roast.roast_duration_seconds | format_seconds if roast.roast_duration_seconds else 'N/A' }}
             </div>
         </div>
+    </section>
+
+    <section class="detail-section">
+        <h2>Reviews</h2>
+        {% if roast.reviews %}
+        <div class="reviews-list-full">
+            {% for review in roast.reviews | sort(attribute='review_date', reverse=True) %}
+            <div class="review-card-full" onclick="showReviewModal('{{ review._id }}', 'view')">
+                <div class="review-card-header">
+                    <div class="review-rating">
+                        {% set score = review.overall_score if review.overall_score else review.get('rating', 3) %}
+                        {% for i in range(score) %}★{% endfor %}
+                        {% for i in range(5 - score) %}☆{% endfor %}
+                    </div>
+                    <span class="review-date">{{ review.review_date | format_date if review.review_date else 'N/A' }}</span>
+                </div>
+                <div class="review-card-body">
+                    {% if review.get('extraction_method') %}
+                    <div class="review-detail-item">
+                        {% set method = review.get('extraction_method', '').lower() %}
+                        {% if 'espresso' in method %}
+                            {% set method_color = '#8B4513' %}
+                        {% elif 'pour' in method or 'v60' in method or 'chemex' in method %}
+                            {% set method_color = '#6B8E6F' %}
+                        {% elif 'french' in method or 'press' in method %}
+                            {% set method_color = '#9B7E5C' %}
+                        {% elif 'aeropress' in method %}
+                            {% set method_color = '#7A9B8E' %}
+                        {% elif 'drip' in method %}
+                            {% set method_color = '#8E6B6F' %}
+                        {% elif 'cold' in method %}
+                            {% set method_color = '#5C7E9B' %}
+                        {% else %}
+                            {% set method_color = '#8B7D6B' %}
+                        {% endif %}
+                        <span class="extraction-method-label" style="background-color: {{ method_color }}4D; color: {{ method_color }};">
+                            {{ review.get('extraction_method', '') | replace('_', ' ') | title }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if review.notes %}
+                    <div class="review-detail-item">
+                        <strong>Notes:</strong>
+                        <div class="review-notes">{{ review.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No reviews yet.</p>
+        {% endif %}
+
+        <button class="btn btn-primary btn-full-width" onclick="showReviewModal(null, 'create')">Add Review</button>
     </section>
 
     {% if roast.key_timings or roast.temp_curve %}
@@ -164,30 +237,6 @@
         <div class="notes-content markdown-content" id="generalNotes" data-markdown="{{ roast.general_notes }}"></div>
     </section>
     {% endif %}
-
-    <section class="detail-section">
-        <h2>Reviews</h2>
-        {% if roast.reviews %}
-        <div class="reviews-overview">
-            {% for review in roast.reviews %}
-            <div class="review-overview-card" onclick="showReviewModal('{{ review._id }}', 'view')">
-                <div class="review-overview-header">
-                    <div class="review-rating">
-                        {% set score = review.overall_score if review.overall_score else review.get('rating', 3) %}
-                        {% for i in range(score) %}★{% endfor %}
-                        {% for i in range(5 - score) %}☆{% endfor %}
-                    </div>
-                    <span class="review-date">{{ review.review_date.strftime('%Y-%m-%d') if review.review_date else 'N/A' }}</span>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p>No reviews yet.</p>
-        {% endif %}
-
-        <button class="btn btn-primary btn-full-width" onclick="showReviewModal(null, 'create')">Add Review</button>
-    </section>
 </div>
 
 <!-- Review Modal -->
@@ -294,8 +343,8 @@
             overall_score: {{ review.overall_score if review.overall_score else review.get('rating', 3) }},
             extraction_method: '{{ review.get('extraction_method', '') }}',
             notes: {{ review.notes | tojson }},
-            review_date: '{{ review.review_date.strftime('%Y-%m-%d %H:%M') if review.review_date else '' }}',
-            updated_at: '{{ review.updated_at.strftime('%Y-%m-%d %H:%M') if review.get('updated_at') and review.updated_at != review.created_at else '' }}'
+            review_date: '{{ review.review_date | format_date if review.review_date else '' }}',
+            updated_at: '{{ review.updated_at | format_date if review.get('updated_at') and review.updated_at != review.created_at else '' }}'
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     };
@@ -430,11 +479,25 @@
         return methods[method] || method || 'Not specified';
     }
 
+    // Toggle dropdown menu
+    function toggleDropdown() {
+        const dropdown = document.getElementById('actionDropdown');
+        dropdown.classList.toggle('show');
+    }
+
     // Close modal when clicking outside
     window.onclick = function(event) {
         const modal = document.getElementById('reviewModal');
         if (event.target === modal) {
             closeReviewModal();
+        }
+
+        // Close dropdown if clicking outside
+        if (!event.target.matches('.dropdown-toggle') && !event.target.closest('.dropdown-toggle')) {
+            const dropdown = document.getElementById('actionDropdown');
+            if (dropdown && dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+            }
         }
     }
 
@@ -446,6 +509,14 @@
             if (markdownText) {
                 generalNotesDiv.innerHTML = marked.parse(markdownText);
             }
+        }
+
+        // Check if we should open the review modal automatically
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('openReview') === 'true') {
+            showReviewModal(null, 'create');
+            // Remove the parameter from URL without reloading
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
     });
 </script>

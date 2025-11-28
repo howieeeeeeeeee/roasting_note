@@ -98,7 +98,7 @@
                                 {{ roast.title }}
                             </a>
                         </td>
-                        <td class="date-cell">{{ roast.roast_date.strftime('%Y-%m-%d') if roast.roast_date else 'N/A' }}</td>
+                        <td class="date-cell">{{ roast.roast_date | format_date if roast.roast_date else 'N/A' }}</td>
                         <td>
                             {% if roast.original_weight_grams %}
                                 {{ roast.original_weight_grams }}g
@@ -135,6 +135,9 @@
                                 <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="btn-icon" title="Edit">
                                     <span class="material-icons">edit</span>
                                 </a>
+                                <button type="button" class="btn-icon" title="Reviews" onclick="showRoastReviews('{{ roast._id }}')">
+                                    <span class="material-icons">rate_review</span>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -147,4 +150,122 @@
         {% endif %}
     </section>
 </div>
+
+<!-- Reviews Modal -->
+<div id="reviewsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Reviews</h2>
+            <span class="modal-close" onclick="closeReviewsModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="reviewsList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRoastId = null;
+
+    // Store reviews data for each roast
+    const roastsReviews = {
+        {% for roast in roasts %}
+        '{{ roast._id }}': [
+            {% for review in roast.reviews %}
+            {
+                overall_score: {{ review.overall_score if review.overall_score else review.get('rating', 3) }},
+                extraction_method: '{{ review.get('extraction_method', '') }}',
+                notes: {{ review.notes | tojson if review.notes else '""' }},
+                review_date: '{{ review.review_date | format_date if review.review_date else '' }}'
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]{% if not loop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    function showRoastReviews(roastId) {
+        currentRoastId = roastId;
+        const modal = document.getElementById('reviewsModal');
+        const reviewsList = document.getElementById('reviewsList');
+        const reviews = roastsReviews[roastId] || [];
+
+        if (reviews && reviews.length > 0) {
+            // Sort reviews by date (most recent first)
+            const sortedReviews = reviews.sort((a, b) => {
+                const dateA = new Date(a.review_date);
+                const dateB = new Date(b.review_date);
+                return dateB - dateA;
+            });
+
+            let html = '<div class="reviews-modal-header"><a href="/roast/detail/' + roastId + '?openReview=true" class="btn btn-primary btn-sm">Add Review</a></div>';
+            html += '<div class="reviews-modal-list">';
+
+            sortedReviews.forEach(review => {
+                const date = review.review_date ? new Date(review.review_date).toLocaleDateString() : 'N/A';
+                const score = review.overall_score || review.rating || 3;
+                const stars = '★'.repeat(score) + '☆'.repeat(5 - score);
+                const notes = review.notes || 'No notes';
+
+                // Get extraction method color
+                let methodColor = '#8B7D6B'; // default
+                let extractionMethod = '';
+                if (review.extraction_method) {
+                    extractionMethod = review.extraction_method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    const methodLower = review.extraction_method.toLowerCase();
+                    if (methodLower.includes('espresso')) methodColor = '#8B4513';
+                    else if (methodLower.includes('pour') || methodLower.includes('v60') || methodLower.includes('chemex')) methodColor = '#6B8E6F';
+                    else if (methodLower.includes('french') || methodLower.includes('press')) methodColor = '#9B7E5C';
+                    else if (methodLower.includes('aeropress')) methodColor = '#7A9B8E';
+                    else if (methodLower.includes('drip')) methodColor = '#8E6B6F';
+                    else if (methodLower.includes('cold')) methodColor = '#5C7E9B';
+                }
+
+                html += `
+                    <div class="review-modal-card">
+                        <div class="review-modal-header">
+                            <div class="review-rating">${stars}</div>
+                            <span class="review-date">${date}</span>
+                        </div>
+                        <div class="review-modal-body">
+                            ${extractionMethod ? `<div class="review-detail-item">
+                                <span class="extraction-method-label" style="background-color: ${methodColor}4D; color: ${methodColor};">
+                                    ${extractionMethod}
+                                </span>
+                            </div>` : ''}
+                            <div class="review-detail-item">
+                                <strong>Notes:</strong>
+                                <div class="review-notes">${notes}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            reviewsList.innerHTML = html;
+        } else {
+            reviewsList.innerHTML = `
+                <div class="empty-reviews">
+                    <p>No reviews yet for this roast.</p>
+                    <a href="/roast/detail/${roastId}?openReview=true" class="btn btn-primary">Add Review</a>
+                </div>
+            `;
+        }
+
+        modal.style.display = 'block';
+    }
+
+    function closeReviewsModal() {
+        document.getElementById('reviewsModal').style.display = 'none';
+        currentRoastId = null;
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('reviewsModal');
+        if (event.target === modal) {
+            closeReviewsModal();
+        }
+    }
+</script>
 {% endblock %}

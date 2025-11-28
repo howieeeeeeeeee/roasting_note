@@ -22,7 +22,7 @@ def create_draft_roast(roasts_collection):
     Returns:
         ObjectId of created roast
     """
-    current_time_utc = get_current_time_with_tz()
+    current_time_utc = get_current_time_utc()
     roast_doc = {
         'title': 'Untitled Roast',
         'roast_date': current_time_utc,
@@ -61,21 +61,23 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
         'roaster': roast_data.get('roaster', 'Freshroast SR800'),
         'temp_measurement_method': roast_data.get('temp_measurement_method', 'K-Type Sensor V1'),
         'general_notes': roast_data.get('general_notes', ''),
-        'updated_at': get_current_time_with_tz()
+        'updated_at': get_current_time_utc()
     }
 
-    # Handle roast date - keep as local time WITH timezone info
+    # Handle roast date - convert from local time to UTC
     if roast_data.get('roast_date'):
         try:
             # Try parsing datetime-local format first (YYYY-MM-DDTHH:MM) - this is in local timezone
             local_dt = datetime.strptime(roast_data['roast_date'], '%Y-%m-%dT%H:%M')
-            # Localize to local timezone and keep timezone info
-            update_doc['roast_date'] = local_tz.localize(local_dt)
+            # Localize to local timezone and convert to UTC
+            local_dt = local_tz.localize(local_dt)
+            update_doc['roast_date'] = local_dt.astimezone(pytz.utc).replace(tzinfo=None)
         except:
             try:
                 # Fallback to date-only format for backwards compatibility
                 local_dt = datetime.strptime(roast_data['roast_date'], '%Y-%m-%d')
-                update_doc['roast_date'] = local_tz.localize(local_dt)
+                local_dt = local_tz.localize(local_dt)
+                update_doc['roast_date'] = local_dt.astimezone(pytz.utc).replace(tzinfo=None)
             except:
                 pass
 

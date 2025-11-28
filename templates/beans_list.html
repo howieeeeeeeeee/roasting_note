@@ -59,7 +59,29 @@
                         </div>
                     </div>
                 </td>
-                <td>{{ bean.origin or '-' }}</td>
+                <td>
+                    {% if bean.origin %}
+                        {% set origin_lower = bean.origin.lower() %}
+                        {% if 'ethiopia' in origin_lower %}
+                            {% set origin_color = '#8B6F47' %}
+                        {% elif 'colombia' in origin_lower or 'columbia' in origin_lower %}
+                            {% set origin_color = '#6B8E6F' %}
+                        {% elif 'indonesia' in origin_lower %}
+                            {% set origin_color = '#9B7E5C' %}
+                        {% elif 'panama' in origin_lower %}
+                            {% set origin_color = '#7A9B8E' %}
+                        {% elif 'kenya' in origin_lower %}
+                            {% set origin_color = '#8E6B6F' %}
+                        {% else %}
+                            {% set origin_color = '#8B7D6B' %}
+                        {% endif %}
+                        <span class="origin-label" style="background-color: {{ origin_color }}4D; color: {{ origin_color }};">
+                            {{ bean.origin }}
+                        </span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
                 <td>{{ bean.process or '-' }}</td>
                 <td>{{ bean.supplier or '-' }}</td>
                 <td>

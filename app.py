@@ -8,6 +8,7 @@ from bson.decimal128 import Decimal128
 from dotenv import load_dotenv
 import requests
 import logging
+import pytz
 
 # Load environment variables
 load_dotenv()
@@ -42,6 +43,15 @@ db = client.roastlogger
 # Collections
 beans_collection = db.beans
 roasts_collection = db.roasts
+
+# Timezone Configuration
+TIMEZONE = os.environ.get('TIMEZONE', 'America/New_York')
+local_tz = pytz.timezone(TIMEZONE)
+
+def get_current_time_with_tz():
+    """Get current time in local timezone WITH timezone info for database storage"""
+    # Get current time in local timezone and keep timezone info
+    return datetime.now(local_tz)
 
 
 # ============================================
@@ -128,7 +138,10 @@ def favicon():
 @app.route('/')
 def index():
     """Dashboard - list of all roasts"""
-    roasts = list(roasts_collection.find({'archived': {'$ne': True}}).sort('roast_date', -1))
+    roasts = list(roasts_collection.find({'archived': {'$ne': True}}))
+
+    # Sort by roast_start_time if available, otherwise by roast_date
+    roasts.sort(key=lambda r: r.get('roast_start_time') or r.get('roast_date') or datetime.min, reverse=True)
 
     # Get bean names and calculate metrics for each roast
     for roast in roasts:
@@ -324,7 +337,7 @@ def api_beans_delete(bean_id):
         {'_id': ObjectId(bean_id)},
         {'$set': {
             'archived': True,
-            'updated_at': datetime.now()
+            'updated_at': get_current_time_with_tz()
         }}
     )
     return redirect(url_for('beans_list'))
@@ -348,8 +361,8 @@ def api_roast_start(roast_id):
     data = request.get_json() or {}
 
     update_data = {
-        'roast_start_time': datetime.now(),
-        'updated_at': datetime.now()
+        'roast_start_time': get_current_time_with_tz(),
+        'updated_at': get_current_time_with_tz()
     }
 
     # Update bean_id and original_weight if provided
@@ -381,7 +394,7 @@ def api_roast_end(roast_id):
     if not roast:
         return jsonify({'success': False, 'error': 'Roast not found'}), 404
 
-    end_time = datetime.now()
+    end_time = get_current_time_with_tz()
 
     # Calculate elapsed time for final temperature log
     if roast.get('roast_start_time'):
@@ -417,7 +430,7 @@ def api_roast_end(roast_id):
         {'_id': ObjectId(roast_id)},
         {'$set': {
             'roast_end_time': end_time,
-            'updated_at': datetime.now()
+            'updated_at': get_current_time_with_tz()
         }}
     )
 
@@ -432,7 +445,7 @@ def api_roast_update_title(roast_id):
         {'_id': ObjectId(roast_id)},
         {'$set': {
             'title': data.get('title', 'Untitled Roast'),
-            'updated_at': datetime.now()
+            'updated_at': get_current_time_with_tz()
         }}
     )
     return jsonify({'success': True})
@@ -474,7 +487,7 @@ def api_roast_add_timing(roast_id):
         {'_id': ObjectId(roast_id)},
         {
             '$push': {'key_timings': timing_event},
-            '$set': {'updated_at': datetime.now()}
+            '$set': {'updated_at': get_current_time_with_tz()}
         }
     )
 
@@ -539,7 +552,7 @@ def api_roast_add_event(roast_id):
         {'_id': ObjectId(roast_id)},
         {
             '$push': {'temp_curve': temp_event},
-            '$set': {'updated_at': datetime.now()}
+            '$set': {'updated_at': get_current_time_with_tz()}
         }
     )
 
@@ -602,7 +615,7 @@ def api_roast_delete(roast_id):
         {'_id': ObjectId(roast_id)},
         {'$set': {
             'archived': True,
-            'updated_at': datetime.now()
+            'updated_at': get_current_time_with_tz()
         }}
     )
     return redirect(url_for('index'))
@@ -613,21 +626,22 @@ def api_roast_add_review(roast_id):
     """Add review to roast"""
     data = request.get_json() or request.form.to_dict()
 
+    current_time_utc = get_current_time_with_tz()
     review = {
         '_id': ObjectId(),
         'overall_score': int(data.get('overall_score', 3)),
         'extraction_method': data.get('extraction_method', ''),
         'notes': data.get('notes', ''),
-        'review_date': datetime.now(),
-        'created_at': datetime.now(),
-        'updated_at': datetime.now()
+        'review_date': current_time_utc,
+        'created_at': current_time_utc,
+        'updated_at': current_time_utc
     }
 
     roasts_collection.update_one(
         {'_id': ObjectId(roast_id)},
         {
             '$push': {'reviews': review},
-            '$set': {'updated_at': datetime.now()}
+            '$set': {'updated_at': current_time_utc}
         }
     )
 
@@ -642,13 +656,14 @@ def api_roast_update_review(roast_id, review_id):
     """Update an existing review"""
     data = request.get_json() or request.form.to_dict()
 
+    current_time_utc = get_current_time_with_tz()
     # Build the update for the specific review in the array
     update_fields = {
         'reviews.$.overall_score': int(data.get('overall_score', 3)),
         'reviews.$.extraction_method': data.get('extraction_method', ''),
         'reviews.$.notes': data.get('notes', ''),
-        'reviews.$.updated_at': datetime.now(),
-        'updated_at': datetime.now()
+        'reviews.$.updated_at': current_time_utc,
+        'updated_at': current_time_utc
     }
 
     roasts_collection.update_one(
@@ -669,7 +684,7 @@ def api_roast_delete_review(roast_id, review_id):
         {'_id': ObjectId(roast_id)},
         {
             '$pull': {'reviews': {'_id': ObjectId(review_id)}},
-            '$set': {'updated_at': datetime.now()}
+            '$set': {'updated_at': get_current_time_with_tz()}
         }
     )
 
@@ -874,7 +889,7 @@ def api_roast_sync_state(roast_id):
                         {'_id': ObjectId(roast_id)},
                         {
                             '$push': {'temp_curve': temp_event},
-                            '$set': {'updated_at': datetime.now()}
+                            '$set': {'updated_at': get_current_time_with_tz()}
                         }
                     )
                     response_data['logged_to_db'] = True
@@ -892,7 +907,7 @@ def api_roast_sync_state(roast_id):
 
 @app.template_filter('format_date')
 def format_date(value):
-    """Format datetime for display"""
+    """Format datetime for display (no timezone conversion - shows DB value as-is)"""
     if value is None:
         return ''
     if isinstance(value, datetime):
