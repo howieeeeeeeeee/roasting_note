@@ -72,6 +72,7 @@ body {
     display: flex;
     gap: 0;
     margin: 0;
+    margin-right: auto;
 }
 
 .nav-menu li a {
@@ -146,7 +147,7 @@ body {
 
 .header-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 1rem;
     flex-wrap: wrap;
     align-items: center;
 }
@@ -469,8 +470,8 @@ body {
 
 .detail-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem 2rem;
 }
 
 .detail-item {
@@ -543,7 +544,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 2fr;
     gap: 1.25rem;
-    align-items: start;
+    align-items: stretch;  /* Make both panels same height */
 }
 
 .left-panel,
@@ -819,7 +820,7 @@ body {
 
 .chart-container-large {
     position: relative;
-    height: 400px;
+    height: 370px;
     width: 100%;
 }
 
@@ -850,7 +851,7 @@ body {
 
 .pf-timeline-canvas {
     flex: 1;
-    height: 16px;
+    height: 22px;
     border-radius: 4px;
     background: #f5f5f5;
 }

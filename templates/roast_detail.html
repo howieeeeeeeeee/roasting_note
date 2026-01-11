@@ -7,11 +7,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="{{ url_for('static', filename='js/roast-chart.js') }}"></script>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div class="header-left">
+        <h1>{{ roast.title }}</h1>
+    </div>
+    <div class="header-actions">
         <div class="dropdown-menu-container">
             <button class="btn-icon dropdown-toggle" onclick="toggleDropdown()" title="More actions">
                 <span class="material-icons">more_vert</span>
@@ -31,9 +35,6 @@
                 </form>
             </div>
         </div>
-        <h1>{{ roast.title }}</h1>
-    </div>
-    <div class="header-actions">
         <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Dashboard</a>
     </div>
 </div>
@@ -179,6 +180,17 @@
             {% if roast.temp_curve %}
             <div class="chart-container-large">
                 <canvas id="roastCurveChart"></canvas>
+            </div>
+            <!-- Power/Fan Timeline Bars -->
+            <div class="pf-timeline-bars">
+                <div class="pf-timeline-row">
+                    <span class="pf-label">Power</span>
+                    <canvas id="powerTimeline" class="pf-timeline-canvas"></canvas>
+                </div>
+                <div class="pf-timeline-row">
+                    <span class="pf-label">Fan</span>
+                    <canvas id="fanTimeline" class="pf-timeline-canvas"></canvas>
+                </div>
             </div>
             {% else %}
             <p class="empty-log">No temperature curve data available</p>
@@ -377,14 +389,14 @@
     // Store reviews data for JavaScript access
     const reviewsData = {
         {% for review in roast.reviews %}
-    '{{ review._id }}': {
-        overall_score: { { review.overall_score if review.overall_score else review.get('rating', 3) } },
-        extraction_method: '{{ review.get('extraction_method', '') }}',
-            notes: { { review.notes | tojson } },
-        review_date: '{{ review.review_date | format_date if review.review_date else '' }}',
-            updated_at: '{{ review.updated_at | format_date if review.get('updated_at') and review.updated_at != review.created_at else '' }}'
-    } {% if not loop.last %}, {% endif %}
-    {% endfor %}
+        '{{ review._id }}': {
+            overall_score: {{ review.overall_score if review.overall_score else review.get('rating', 3) }},
+            extraction_method: '{{ review.get("extraction_method", "") }}',
+            notes: {{ review.notes | tojson }},
+            review_date: '{{ review.review_date | format_date if review.review_date else "" }}',
+            updated_at: '{{ review.updated_at | format_date if review.get("updated_at") and review.updated_at != review.created_at else "" }}'
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
     };
 
     function showReviewModal(reviewId, mode) {
@@ -579,137 +591,20 @@
 
     {% if roast.temp_curve %}
     document.addEventListener('DOMContentLoaded', function () {
-        const canvas = document.getElementById('roastCurveChart');
-        if (!canvas) return;
+        const tempCurve = {{ roast.temp_curve | tojson }};
+        const keyTimings = {{ roast.key_timings | tojson if roast.key_timings else '[]' }};
+        const roastDuration = {{ roast.roast_duration_seconds | default(0) }};
 
-        const tempCurve = {{ roast.temp_curve | tojson
-    }};
-    const keyTimings = {{ roast.key_timings | tojson if roast.key_timings else '[]' }};
+        // Initialize shared chart component
+        RoastChart.init({
+            isLive: false,
+            chartContainerId: 'roastCurveChart',
+            powerCanvasId: 'powerTimeline',
+            fanCanvasId: 'fanTimeline'
+        });
 
-    // Prepare annotations
-    const eventColors = {
-        'Yellowing': '#f0ad4e',
-        'First Crack Start': '#d9534f',
-        'First Crack End': '#c9302c',
-        'Second Crack Start': '#5bc0de',
-        'Second Crack End': '#31b0d5'
-    };
-
-    const annotations = {};
-    keyTimings.forEach(timing => {
-        const timeLabel = formatTime(timing.time_seconds);
-        const color = eventColors[timing.event_name] || '#6B5B4D';
-        const annotationId = 'event-' + timing.time_seconds;
-
-        annotations[annotationId] = {
-            type: 'line',
-            scaleID: 'x',
-            value: timeLabel,
-            borderColor: color,
-            borderWidth: 2,
-            borderDash: [5, 5],
-            label: {
-                display: true,
-                content: timing.event_name,
-                position: 'start',
-                backgroundColor: color,
-                color: 'white',
-                font: { size: 10 },
-                yAdjust: -20
-            }
-        };
-    });
-
-    const labels = tempCurve.map(e => formatTime(e.time_seconds));
-    const tempData = tempCurve.map(e => e.temperature);
-    const rorData = tempCurve.map(e => e.ror || null);
-
-    // Calculate dynamic Y-axis max
-    const maxTemp = Math.max(...tempData);
-    let tempMax = 100;
-    if (maxTemp > 180) tempMax = 230;
-    else if (maxTemp > 150) tempMax = 190;
-    else if (maxTemp > 120) tempMax = 160;
-    else if (maxTemp > 90) tempMax = 130;
-
-    function formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-
-    const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Temperature (°C)',
-                    data: tempData,
-                    borderColor: '#6B5B4D',
-                    backgroundColor: 'rgba(107, 91, 77, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    yAxisID: 'y-temp',
-                    pointRadius: 0,
-                    pointHoverRadius: 4
-                },
-                {
-                    label: 'RoR (°C/min)',
-                    data: rorData,
-                    borderColor: '#6B8E6F',
-                    backgroundColor: 'rgba(107, 142, 111, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    yAxisID: 'y-ror',
-                    pointRadius: 0,
-                    pointHoverRadius: 4
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
-            scales: {
-                x: {
-                    title: { display: true, text: 'Time', color: '#666' },
-                    ticks: { color: '#666', maxTicksLimit: 12 }
-                },
-                'y-temp': {
-                    type: 'linear',
-                    position: 'left',
-                    min: 0,
-                    max: tempMax,
-                    title: { display: true, text: 'Temp (°C)', color: '#6B5B4D' },
-                    ticks: { color: '#6B5B4D', stepSize: 25 },
-                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
-                },
-                'y-ror': {
-                    type: 'linear',
-                    position: 'right',
-                    min: 0,
-                    max: 50,
-                    title: { display: true, text: 'RoR (°C/min)', color: '#6B8E6F' },
-                    ticks: { color: '#6B8E6F', stepSize: 10 },
-                    grid: { drawOnChartArea: false }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: { usePointStyle: true, padding: 15, color: '#2C2C2C' }
-                },
-                annotation: {
-                    annotations: annotations
-                }
-            }
-        }
-    });
+        // Load data and render chart with timeline bars
+        RoastChart.initFromData(tempCurve, keyTimings, roastDuration);
     });
     {% endif %}
 </script>

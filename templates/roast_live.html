@@ -6,6 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="{{ url_for('static', filename='js/roast-chart.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -125,8 +126,8 @@
                 <!-- Temperature & Settings -->
                 <div class="settings-row">
                     <div class="form-group">
-                        <label for="temperature">Temperature (°C)</label>
-                        <input type="number" id="temperature" name="temperature" placeholder="e.g., 190">
+                        <label for="temperature">Temp</label>
+                        <input type="number" id="temperature" name="temperature">
                     </div>
                     <div class="form-group">
                         <label>Fan</label>
@@ -157,9 +158,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="event_note">Event Note (Optional)</label>
-                    <input type="text" id="event_note" name="event_note"
-                        placeholder="e.g., Increased heat, Nice caramelization">
+                    <label for="event_note">Note</label>
+                    <input type="text" id="event_note" name="event_note">
                 </div>
 
                 <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Event</button>
@@ -296,11 +296,10 @@
         roastChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: chartData.labels,
                 datasets: [
                     {
                         label: 'Temperature (°C)',
-                        data: chartData.tempData,
+                        data: [],  // Will use {x, y} format
                         borderColor: '#6B5B4D',  // primary-color
                         backgroundColor: 'rgba(107, 91, 77, 0.1)',
                         borderWidth: 2,
@@ -311,7 +310,7 @@
                     },
                     {
                         label: 'RoR (°C/min)',
-                        data: chartData.rorData,
+                        data: [],  // Will use {x, y} format
                         borderColor: '#6B8E6F',  // success-color
                         backgroundColor: 'rgba(107, 142, 111, 0.1)',
                         borderWidth: 2,
@@ -331,20 +330,22 @@
                 },
                 scales: {
                     x: {
+                        type: 'linear',
                         title: {
                             display: true,
                             text: 'Time',
                             color: '#666'
                         },
+                        min: 0,
+                        max: currentMaxMinutes * 60,  // Initial max in seconds
                         ticks: {
                             color: '#666',
-                            maxTicksLimit: 10,
-                            callback: function (value, index) {
-                                // Show every ~30 seconds or so
-                                if (index % 30 === 0) {
-                                    return this.getLabelForValue(value);
-                                }
-                                return '';
+                            stepSize: 60,  // Show tick every 60 seconds
+                            callback: function (value) {
+                                // Format seconds to MM:SS
+                                const mins = Math.floor(value / 60);
+                                const secs = value % 60;
+                                return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
                             }
                         },
                         grid: {
@@ -373,7 +374,7 @@
                         type: 'linear',
                         position: 'right',
                         min: 0,
-                        max: 50,
+                        max: 30,  // Will expand dynamically as needed
                         title: {
                             display: true,
                             text: 'RoR (°C/min)',
@@ -403,6 +404,11 @@
                 },
                 animation: {
                     duration: 0  // Disable animation for smooth real-time updates
+                },
+                layout: {
+                    padding: {
+                        top: 30  // Space for event marker labels
+                    }
                 }
             }
         });
@@ -411,8 +417,8 @@
     function updateChartData(timeSeconds, temp, ror, fan, power) {
         if (!roastChart) return;
 
-        const timeLabel = formatTime(timeSeconds);
-        chartData.labels.push(timeLabel);
+        // Store data for timeline bars
+        chartData.labels.push(timeSeconds);  // Store numeric seconds
         chartData.tempData.push(temp);
         chartData.rorData.push(ror);
 
@@ -422,18 +428,22 @@
         chartData.fanData.push(fan !== null ? fan : lastFanValue);
         chartData.powerData.push(power !== null ? power : lastPowerValue);
 
+        // Add data points using {x, y} format for linear x-axis
+        roastChart.data.datasets[0].data.push({ x: timeSeconds, y: temp });
+        roastChart.data.datasets[1].data.push({ x: timeSeconds, y: ror });
+
         // Update P/F timeline canvases
         updatePFTimelines();
 
-        // Dynamic Y-axis scaling based on temperature
         // Dynamic Y-axis scaling based on temperature and RoR
         updateChartScales(temp, ror);
 
         // Check if we need to expand x-axis (past current max)
         const currentMinutes = timeSeconds / 60;
-        if (currentMinutes > currentMaxMinutes) {
-            // Round up to nearest 2 minutes
-            currentMaxMinutes = Math.ceil(currentMinutes / 2) * 2;
+        if (currentMinutes > currentMaxMinutes - 1) {
+            // Expand by 2 minutes when approaching the edge
+            currentMaxMinutes = Math.ceil(currentMinutes / 2) * 2 + 2;
+            roastChart.options.scales.x.max = currentMaxMinutes * 60;
         }
 
         roastChart.update('none');  // Update without animation
@@ -442,6 +452,7 @@
     // Dynamic Y-axis scaling
     let currentTempMax = 100;
     let currentRoRMin = 0;
+    let currentRoRMax = 30;
 
     function updateChartScales(temp, ror) {
         // Temp Max Scaling
@@ -458,68 +469,41 @@
             }
         }
 
-        // RoR Min Scaling
-        if (ror !== null && ror < currentRoRMin) {
-            // Round down to nearest 5
-            let newMin = Math.floor(ror / 5) * 5;
+        // RoR flexible scaling - round to nearest 10
+        if (ror !== null) {
+            let needsUpdate = false;
 
-            if (newMin < currentRoRMin) {
-                currentRoRMin = newMin;
-                if (roastChart) {
-                    roastChart.options.scales['y-ror'].min = currentRoRMin;
-                }
+            // Check if we need to expand minimum (for negative values)
+            if (ror < currentRoRMin) {
+                currentRoRMin = Math.floor(ror / 10) * 10;
+                needsUpdate = true;
+            }
+
+            // Check if we need to expand maximum
+            if (ror > currentRoRMax - 5) {
+                currentRoRMax = Math.ceil(ror / 10) * 10 + 10;
+                needsUpdate = true;
+            }
+
+            if (needsUpdate && roastChart) {
+                roastChart.options.scales['y-ror'].min = currentRoRMin;
+                roastChart.options.scales['y-ror'].max = currentRoRMax;
             }
         }
     }
 
-    // Update Power/Fan timeline canvases
+    // Update Power/Fan timeline canvases using shared segmented bar drawing
     function updatePFTimelines() {
         const powerCanvas = document.getElementById('powerTimeline');
         const fanCanvas = document.getElementById('fanTimeline');
 
-        if (powerCanvas) drawTimelineBar(powerCanvas, chartData.powerData, '#fcb69f');
-        if (fanCanvas) drawTimelineBar(fanCanvas, chartData.fanData, '#4dd0e1');
-    }
-
-    function drawTimelineBar(canvas, data, color) {
-        if (!canvas || data.length === 0) return;
-
-        const ctx = canvas.getContext('2d');
-        // Use getBoundingClientRect for more accurate width, fallback to parent width
-        let width = canvas.getBoundingClientRect().width;
-        if (width === 0) {
-            width = canvas.parentElement.offsetWidth - 50;
+        // Use RoastChart's segmented bar drawing for colored segments with labels
+        if (powerCanvas) {
+            RoastChart.drawSegmentedTimelineBar(powerCanvas, chartData.powerData, 'power', 'P');
         }
-        // If still 0 (e.g. hidden tab), use a default or skip
-        if (width <= 0) return;
-
-        const height = 16;
-
-        // Set canvas dimensions if they don't match (prevents stretching)
-        if (canvas.width !== width || canvas.height !== height) {
-            canvas.width = width;
-            canvas.height = height;
+        if (fanCanvas) {
+            RoastChart.drawSegmentedTimelineBar(fanCanvas, chartData.fanData, 'fan', 'F');
         }
-
-        ctx.clearRect(0, 0, width, height);
-
-        const barWidth = Math.max(2, width / Math.max(data.length, 1));
-
-        data.forEach((value, index) => {
-            const x = (index / Math.max(data.length, 1)) * width;
-            const alpha = 0.3 + (value / 9) * 0.7;  // Opacity based on value (1-9)
-
-            // Parse hex color to RGB
-            let r = 0, g = 0, b = 0;
-            if (color.startsWith('#')) {
-                r = parseInt(color.slice(1, 3), 16);
-                g = parseInt(color.slice(3, 5), 16);
-                b = parseInt(color.slice(5, 7), 16);
-            }
-
-            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            ctx.fillRect(x, 0, barWidth + 1, height);
-        });
     }
 
     // Add event marker to chart
@@ -545,10 +529,11 @@
             roastChart.options.plugins.annotation.annotations = {};
         }
 
+        // Use numeric time value directly (linear x-axis)
         roastChart.options.plugins.annotation.annotations[annotationId] = {
             type: 'line',
             scaleID: 'x',
-            value: timeLabel,
+            value: timeSeconds,  // Use numeric seconds for linear x-axis
             borderColor: color,
             borderWidth: 2,
             borderDash: [5, 5],
@@ -558,8 +543,9 @@
                 position: 'start',
                 backgroundColor: color,
                 color: 'white',
-                font: { size: 10 },
-                yAdjust: -20 // Move label up slightly
+                font: { size: 10, weight: 'bold' },
+                padding: 4,
+                yAdjust: 15  // Position inside chart area, below the top edge
             }
         };
 
