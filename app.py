@@ -1,7 +1,7 @@
 import os
 import collections
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response, session
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
@@ -35,14 +35,37 @@ werkzeug_logger.addFilter(TLSHandshakeFilter())
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-# MongoDB Connection
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
-client = MongoClient(MONGO_URI)
-db = client.roastlogger
+# ============================================
+# Dual MongoDB Connection (Local + Online)
+# ============================================
+DEFAULT_DB = os.environ.get('DEFAULT_DB', 'local')
 
-# Collections
-beans_collection = db.beans
-roasts_collection = db.roasts
+# Online DB (MongoDB Atlas)
+MONGO_URI_ONLINE = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
+mongo_online = MongoClient(MONGO_URI_ONLINE)
+db_online = mongo_online.roastlogger
+
+# Local DB
+MONGO_URI_LOCAL = os.environ.get('MONGO_URI_LOCAL', 'mongodb://localhost:27017/')
+mongo_local = MongoClient(MONGO_URI_LOCAL)
+db_local = mongo_local.roastlogger
+
+def get_current_db_mode():
+    """Get current database mode from session or default"""
+    return session.get('db_mode', DEFAULT_DB)
+
+def get_beans_collection():
+    """Returns beans collection from currently selected DB"""
+    if get_current_db_mode() == 'online':
+        return db_online.beans
+    return db_local.beans
+
+def get_roasts_collection():
+    """Returns roasts collection from currently selected DB"""
+    if get_current_db_mode() == 'online':
+        return db_online.roasts
+    return db_local.roasts
+
 
 # Timezone Configuration
 TIMEZONE = os.environ.get('TIMEZONE', 'America/New_York')
@@ -138,7 +161,7 @@ def favicon():
 @app.route('/')
 def index():
     """Dashboard - list of all roasts"""
-    roasts = list(roasts_collection.find({'archived': {'$ne': True}}))
+    roasts = list(get_roasts_collection().find({'archived': {'$ne': True}}))
 
     # Sort by roast_start_time if available, otherwise by roast_date
     roasts.sort(key=lambda r: r.get('roast_start_time') or r.get('roast_date') or datetime.min, reverse=True)
@@ -146,7 +169,7 @@ def index():
     # Get bean names and calculate metrics for each roast
     for roast in roasts:
         if roast.get('bean_id'):
-            bean = beans_collection.find_one({'_id': ObjectId(roast['bean_id'])})
+            bean = get_beans_collection().find_one({'_id': ObjectId(roast['bean_id'])})
             if bean:
                 roast['bean_name'] = bean['name']
                 roast['bean_color'] = bean.get('color', '#6B8E6F')
@@ -200,7 +223,7 @@ def beans_list():
     }
     sort_field = sort_field_map.get(sort_by, 'name')
 
-    beans = list(beans_collection.find(query).sort(sort_field, sort_direction))
+    beans = list(get_beans_collection().find(query).sort(sort_field, sort_direction))
     return render_template('beans_list.html', beans=beans,
                          filter_out_of_stock=filter_out_of_stock,
                          sort_by=sort_by, sort_order=sort_order)
@@ -215,12 +238,12 @@ def beans_add_form():
 @app.route('/beans/detail/<bean_id>')
 def beans_detail(bean_id):
     """View bean details"""
-    bean = beans_collection.find_one({'_id': ObjectId(bean_id), 'archived': {'$ne': True}})
+    bean = get_beans_collection().find_one({'_id': ObjectId(bean_id), 'archived': {'$ne': True}})
     if not bean:
         return "Bean not found", 404
 
     # Get all roasts for this bean
-    roasts = list(roasts_collection.find({
+    roasts = list(get_roasts_collection().find({
         'bean_id': ObjectId(bean_id),
         'archived': {'$ne': True}
     }).sort('roast_date', -1))
@@ -250,7 +273,7 @@ def beans_detail(bean_id):
 @app.route('/beans/edit/<bean_id>')
 def beans_edit_form(bean_id):
     """Show edit bean form"""
-    bean = beans_collection.find_one({'_id': ObjectId(bean_id), 'archived': {'$ne': True}})
+    bean = get_beans_collection().find_one({'_id': ObjectId(bean_id), 'archived': {'$ne': True}})
     if not bean:
         return "Bean not found", 404
     return render_template('beans_form.html', bean=bean, is_edit=True)
@@ -260,31 +283,31 @@ def beans_edit_form(bean_id):
 def roast_new():
     """Create new draft roast and redirect to live interface"""
     from models.roast_helpers import create_draft_roast
-    new_roast_id = create_draft_roast(roasts_collection)
+    new_roast_id = create_draft_roast(get_roasts_collection())
     return redirect(url_for('roast_live', roast_id=new_roast_id))
 
 
 @app.route('/roast/live/<roast_id>')
 def roast_live(roast_id):
     """Live roasting interface"""
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
+    roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
     if not roast:
         return "Roast not found", 404
 
-    beans = list(beans_collection.find({'archived': {'$ne': True}}).sort('name', 1))
+    beans = list(get_beans_collection().find({'archived': {'$ne': True}}).sort('name', 1))
     return render_template('roast_live.html', roast=roast, beans=beans)
 
 
 @app.route('/roast/detail/<roast_id>')
 def roast_detail(roast_id):
     """View roast details"""
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
+    roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
     if not roast:
         return "Roast not found", 404
 
     # Get bean info
     if roast.get('bean_id'):
-        bean = beans_collection.find_one({'_id': ObjectId(roast['bean_id'])})
+        bean = get_beans_collection().find_one({'_id': ObjectId(roast['bean_id'])})
         roast['bean_name'] = bean['name'] if bean else 'Unknown Bean'
     else:
         roast['bean_name'] = 'Not Set'
@@ -300,11 +323,11 @@ def roast_detail(roast_id):
 @app.route('/roast/edit/<roast_id>')
 def roast_edit_form(roast_id):
     """Edit roast form"""
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
+    roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
     if not roast:
         return "Roast not found", 404
 
-    beans = list(beans_collection.find({'archived': {'$ne': True}}).sort('name', 1))
+    beans = list(get_beans_collection().find({'archived': {'$ne': True}}).sort('name', 1))
     return render_template('roast_edit.html', roast=roast, beans=beans)
 
 
@@ -317,7 +340,7 @@ def api_beans_add():
     """Add new bean"""
     from models.bean_helpers import create_bean
     bean_data = request.form.to_dict()
-    bean_id = create_bean(beans_collection, bean_data)
+    bean_id = create_bean(get_beans_collection(), bean_data)
     return redirect(url_for('beans_list'))
 
 
@@ -326,14 +349,14 @@ def api_beans_edit(bean_id):
     """Edit bean"""
     from models.bean_helpers import update_bean
     bean_data = request.form.to_dict()
-    update_bean(beans_collection, bean_id, bean_data)
+    update_bean(get_beans_collection(), bean_id, bean_data)
     return redirect(url_for('beans_list'))
 
 
 @app.route('/api/beans/delete/<bean_id>', methods=['POST'])
 def api_beans_delete(bean_id):
     """Archive bean (soft delete)"""
-    beans_collection.update_one(
+    get_beans_collection().update_one(
         {'_id': ObjectId(bean_id)},
         {'$set': {
             'archived': True,
@@ -351,7 +374,7 @@ def api_beans_delete(bean_id):
 def api_roast_create():
     """Create new draft roast"""
     from models.roast_helpers import create_draft_roast
-    new_roast_id = create_draft_roast(roasts_collection)
+    new_roast_id = create_draft_roast(get_roasts_collection())
     return jsonify({'new_roast_id': str(new_roast_id)})
 
 
@@ -373,12 +396,18 @@ def api_roast_start(roast_id):
 
         # Decrement bean stock
         if data.get('bean_id'):
-            beans_collection.update_one(
+            get_beans_collection().update_one(
                 {'_id': ObjectId(data['bean_id'])},
                 {'$inc': {'stock_grams': -int(data['original_weight_grams'])}}
             )
 
-    roasts_collection.update_one(
+    # Handle ambient temperature and humidity
+    if data.get('ambient_temp_celsius'):
+        update_data['ambient_temp_celsius'] = float(data['ambient_temp_celsius'])
+    if data.get('ambient_humidity'):
+        update_data['ambient_humidity'] = float(data['ambient_humidity'])
+
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id)},
         {'$set': update_data}
     )
@@ -389,7 +418,7 @@ def api_roast_start(roast_id):
 @app.route('/api/roast/end/<roast_id>', methods=['POST'])
 def api_roast_end(roast_id):
     """End roast timer and log final temperature if available"""
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+    roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id)})
 
     if not roast:
         return jsonify({'success': False, 'error': 'Roast not found'}), 404
@@ -398,7 +427,11 @@ def api_roast_end(roast_id):
 
     # Calculate elapsed time for final temperature log
     if roast.get('roast_start_time'):
-        elapsed_seconds = int((end_time - roast['roast_start_time']).total_seconds())
+        start_time = roast['roast_start_time']
+        # Ensure start_time is timezone-aware (handle legacy data)
+        if start_time.tzinfo is None:
+            start_time = local_tz.localize(start_time)
+        elapsed_seconds = int((end_time - start_time).total_seconds())
 
         # Try to get final temperature reading (single request)
         temperature = fetch_temperature_from_sensor()
@@ -420,13 +453,13 @@ def api_roast_end(roast_id):
                 'power_setting': last_power
             }
 
-            roasts_collection.update_one(
+            get_roasts_collection().update_one(
                 {'_id': ObjectId(roast_id)},
                 {'$push': {'temp_curve': final_temp_event}}
             )
 
     # Set roast end time
-    roasts_collection.update_one(
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id)},
         {'$set': {
             'roast_end_time': end_time,
@@ -441,7 +474,7 @@ def api_roast_end(roast_id):
 def api_roast_update_title(roast_id):
     """Update roast title"""
     data = request.get_json()
-    roasts_collection.update_one(
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id)},
         {'$set': {
             'title': data.get('title', 'Untitled Roast'),
@@ -483,7 +516,7 @@ def api_roast_add_timing(roast_id):
         if ror is not None:
             timing_event['ror'] = ror
 
-    roasts_collection.update_one(
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id)},
         {
             '$push': {'key_timings': timing_event},
@@ -498,7 +531,7 @@ def api_roast_add_timing(roast_id):
 def api_roast_add_event(roast_id):
     """Add temperature/settings event to temp_curve array and optionally log to local CSV"""
     data = request.get_json()
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+    roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id)})
 
     # Get fan and power settings, with default values if not provided and no previous events
     fan_setting = data.get('fan_setting')
@@ -548,7 +581,7 @@ def api_roast_add_event(roast_id):
     if data.get('note'):
         temp_event['note'] = data['note']
 
-    roasts_collection.update_one(
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id)},
         {
             '$push': {'temp_curve': temp_event},
@@ -594,24 +627,24 @@ def api_roast_update(roast_id):
     """Update roast from edit form"""
     from models.roast_helpers import update_roast
     roast_data = request.form.to_dict()
-    update_roast(roasts_collection, beans_collection, roast_id, roast_data)
+    update_roast(get_roasts_collection(), get_beans_collection(), roast_id, roast_data)
     return redirect(url_for('roast_detail', roast_id=roast_id))
 
 
 @app.route('/api/roast/delete/<roast_id>', methods=['POST'])
 def api_roast_delete(roast_id):
     """Archive roast (soft delete) and restore bean stock"""
-    roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+    roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id)})
 
     # Restore bean stock if applicable
     if roast and roast.get('bean_id') and roast.get('original_weight_grams'):
-        beans_collection.update_one(
+        get_beans_collection().update_one(
             {'_id': ObjectId(roast['bean_id'])},
             {'$inc': {'stock_grams': roast['original_weight_grams']}}
         )
 
     # Archive the roast instead of deleting
-    roasts_collection.update_one(
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id)},
         {'$set': {
             'archived': True,
@@ -637,7 +670,7 @@ def api_roast_add_review(roast_id):
         'updated_at': current_time_utc
     }
 
-    roasts_collection.update_one(
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id)},
         {
             '$push': {'reviews': review},
@@ -666,7 +699,7 @@ def api_roast_update_review(roast_id, review_id):
         'updated_at': current_time_utc
     }
 
-    roasts_collection.update_one(
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id), 'reviews._id': ObjectId(review_id)},
         {'$set': update_fields}
     )
@@ -680,7 +713,7 @@ def api_roast_update_review(roast_id, review_id):
 @app.route('/api/roast/delete_review/<roast_id>/<review_id>', methods=['POST'])
 def api_roast_delete_review(roast_id, review_id):
     """Delete a review from the roast"""
-    roasts_collection.update_one(
+    get_roasts_collection().update_one(
         {'_id': ObjectId(roast_id)},
         {
             '$pull': {'reviews': {'_id': ObjectId(review_id)}},
@@ -826,18 +859,27 @@ def api_roast_sync_state(roast_id):
     if roast_id not in roast_temp_history:
         roast_temp_history[roast_id] = {
             'history': collections.deque(maxlen=60),
-            'last_db_log_time': -1
+            'last_db_log_time': -1,
+            'last_fan': -1,
+            'last_power': -1
         }
     
     state = roast_temp_history[roast_id]
 
-    # Determine if we should log to DB based on time interval
-    # Log if we crossed a 5-second boundary since last log
-    # e.g., last=10, current=16 -> 16//5 (3) > 10//5 (2) -> Log
-    # e.g., last=10, current=14 -> 14//5 (2) == 10//5 (2) -> No log
+    # Check for setting changes
+    settings_changed = (fan_setting != state.get('last_fan', -1)) or \
+                       (power_setting != state.get('last_power', -1))
+
+    # Determine if we should log to DB based on time interval OR setting change
+    # Log if we crossed a 5-second boundary since last log OR settings changed
     current_interval = client_time // 5
     last_interval = state['last_db_log_time'] // 5
-    is_db_log_interval = (current_interval > last_interval) and (client_time > 0)
+    is_db_log_interval = ((current_interval > last_interval) and (client_time > 0)) or settings_changed
+
+    # Update last known settings
+    if settings_changed:
+        state['last_fan'] = fan_setting
+        state['last_power'] = power_setting
 
     # Fetch temperature
     # Use accurate fetch if it's a DB log interval, otherwise fast fetch
@@ -885,7 +927,7 @@ def api_roast_sync_state(roast_id):
                         'power_setting': power_setting,
                         'ror': ror
                     }
-                    roasts_collection.update_one(
+                    get_roasts_collection().update_one(
                         {'_id': ObjectId(roast_id)},
                         {
                             '$push': {'temp_curve': temp_event},
@@ -899,6 +941,107 @@ def api_roast_sync_state(roast_id):
                     print(f"Error logging to MongoDB: {e}")
 
     return jsonify(response_data)
+
+
+# ============================================
+# Database Settings & Sync API
+# ============================================
+
+@app.route('/api/settings/db', methods=['GET'])
+def api_get_db_settings():
+    """Get current database mode"""
+    return jsonify({
+        'mode': get_current_db_mode(),
+        'default': DEFAULT_DB
+    })
+
+
+@app.route('/api/settings/db', methods=['POST'])
+def api_set_db_settings():
+    """Set database mode (local or online)"""
+    data = request.get_json() or {}
+    mode = data.get('mode', 'local')
+    
+    if mode not in ['local', 'online']:
+        return jsonify({'success': False, 'error': 'Invalid mode'}), 400
+    
+    session['db_mode'] = mode
+    return jsonify({'success': True, 'mode': mode})
+
+
+def sync_collection(source_col, target_col):
+    """
+    Sync documents from source to target collection.
+    Returns counts of added and updated documents.
+    """
+    added = 0
+    updated = 0
+    
+    # Get all non-archived documents from source
+    source_docs = list(source_col.find({'archived': {'$ne': True}}))
+    
+    # Get all existing IDs in target
+    target_ids = set(target_col.distinct('_id'))
+    
+    for doc in source_docs:
+        if doc['_id'] not in target_ids:
+            # Insert new document
+            target_col.insert_one(doc)
+            added += 1
+        else:
+            # Update existing document
+            target_col.replace_one({'_id': doc['_id']}, doc)
+            updated += 1
+    
+    return {'added': added, 'updated': updated}
+
+
+@app.route('/api/sync/online-to-local', methods=['POST'])
+def api_sync_online_to_local():
+    """Sync data from online DB to local DB"""
+    try:
+        beans_result = sync_collection(db_online.beans, db_local.beans)
+        roasts_result = sync_collection(db_online.roasts, db_local.roasts)
+        
+        return jsonify({
+            'success': True,
+            'beans': beans_result,
+            'roasts': roasts_result
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/sync/local-to-online', methods=['POST'])
+def api_sync_local_to_online():
+    """Sync data from local DB to online DB"""
+    try:
+        beans_result = sync_collection(db_local.beans, db_online.beans)
+        roasts_result = sync_collection(db_local.roasts, db_online.roasts)
+        
+        return jsonify({
+            'success': True,
+            'beans': beans_result,
+            'roasts': roasts_result
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/db/clean-local', methods=['POST'])
+def api_clean_local_db():
+    """Delete all documents from local database (beans and roasts)"""
+    try:
+        beans_deleted = db_local.beans.delete_many({}).deleted_count
+        roasts_deleted = db_local.roasts.delete_many({}).deleted_count
+        
+        return jsonify({
+            'success': True,
+            'beans_deleted': beans_deleted,
+            'roasts_deleted': roasts_deleted
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ============================================

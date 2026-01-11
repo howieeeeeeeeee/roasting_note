@@ -13,7 +13,8 @@
 
         <div class="form-group">
             <label for="title">Roast Title *</label>
-            <input type="text" id="title" name="title" required value="{{ roast.title }}" placeholder="e.g., Roast #23 - Yirgacheffe">
+            <input type="text" id="title" name="title" required value="{{ roast.title }}"
+                placeholder="e.g., Roast #23 - Yirgacheffe">
         </div>
 
         <div class="form-row">
@@ -22,7 +23,8 @@
                 <select id="bean_id" name="bean_id" required>
                     <option value="">Select a bean...</option>
                     {% for bean in beans %}
-                    <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id == bean._id %}selected{% endif %}>
+                    <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id==bean._id %}selected{% endif
+                        %}>
                         {{ bean.name }}
                     </option>
                     {% endfor %}
@@ -31,19 +33,37 @@
 
             <div class="form-group">
                 <label for="roast_date">Roast Date & Time</label>
-                <input type="datetime-local" id="roast_date" name="roast_date" value="{{ roast.roast_date.strftime('%Y-%m-%dT%H:%M') if roast.roast_date else '' }}">
+                <input type="datetime-local" id="roast_date" name="roast_date"
+                    value="{{ roast.roast_date.strftime('%Y-%m-%dT%H:%M') if roast.roast_date else '' }}">
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group">
                 <label for="roaster">Roaster</label>
-                <input type="text" id="roaster" name="roaster" value="{{ roast.roaster or 'Freshroast SR800' }}" placeholder="e.g., Freshroast SR800, Behmor 1600">
+                <input type="text" id="roaster" name="roaster" value="{{ roast.roaster or 'Freshroast SR800' }}"
+                    placeholder="e.g., Freshroast SR800, Behmor 1600">
             </div>
 
             <div class="form-group">
                 <label for="temp_measurement_method">Temperature Measurement Method</label>
-                <input type="text" id="temp_measurement_method" name="temp_measurement_method" value="{{ roast.temp_measurement_method or 'IR Gun' }}" placeholder="e.g., K-Type (Bean), IR Gun (Drum)">
+                <input type="text" id="temp_measurement_method" name="temp_measurement_method"
+                    value="{{ roast.temp_measurement_method or 'IR Gun' }}"
+                    placeholder="e.g., K-Type (Bean), IR Gun (Drum)">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="ambient_temp_celsius">Ambient Temp (°C)</label>
+                <input type="number" id="ambient_temp_celsius" name="ambient_temp_celsius" step="0.1"
+                    value="{{ roast.ambient_temp_celsius or '' }}" placeholder="e.g., 22">
+            </div>
+
+            <div class="form-group">
+                <label for="ambient_humidity">Humidity (%)</label>
+                <input type="number" id="ambient_humidity" name="ambient_humidity" min="0" max="100" step="1"
+                    value="{{ roast.ambient_humidity or '' }}" placeholder="e.g., 55">
             </div>
         </div>
     </section>
@@ -54,12 +74,14 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="original_weight_grams">Green Weight (grams) *</label>
-                <input type="number" id="original_weight_grams" name="original_weight_grams" required value="{{ roast.original_weight_grams or '' }}" min="0" onchange="calculateWeightLoss()">
+                <input type="number" id="original_weight_grams" name="original_weight_grams" required
+                    value="{{ roast.original_weight_grams or '' }}" min="0" onchange="calculateWeightLoss()">
             </div>
 
             <div class="form-group">
                 <label for="roasted_weight_grams">Roasted Weight (grams)</label>
-                <input type="number" id="roasted_weight_grams" name="roasted_weight_grams" value="{{ roast.roasted_weight_grams or '' }}" min="0" onchange="calculateWeightLoss()">
+                <input type="number" id="roasted_weight_grams" name="roasted_weight_grams"
+                    value="{{ roast.roasted_weight_grams or '' }}" min="0" onchange="calculateWeightLoss()">
             </div>
         </div>
 
@@ -67,9 +89,9 @@
             <label>Weight Loss Percentage</label>
             <div id="weight_loss_display" class="calc-display">
                 {% if roast.weight_loss_percentage %}
-                    {{ roast.weight_loss_percentage }}%
+                {{ roast.weight_loss_percentage }}%
                 {% else %}
-                    Enter both weights to calculate
+                Enter both weights to calculate
                 {% endif %}
             </div>
         </div>
@@ -79,63 +101,91 @@
         <h2>Notes</h2>
         <div class="form-group">
             <label for="general_notes">General Notes</label>
-            <textarea id="general_notes" name="general_notes" rows="6" placeholder="Observations, outcomes, things to try next time...">{{ roast.general_notes or '' }}</textarea>
+            <textarea id="general_notes" name="general_notes" rows="6"
+                placeholder="Observations, outcomes, things to try next time...">{{ roast.general_notes or '' }}</textarea>
         </div>
     </section>
 
     {% if roast.key_timings or roast.temp_curve %}
-    <section class="form-section">
+    <section class="form-section roast-data-section">
         <h2>Roast Data</h2>
-        <p class="info-text">Note: Currently, editing individual timing and temperature events is not supported in this version. To modify these, you would need to delete and re-roast.</p>
 
-        {% if roast.key_timings %}
-        <h3>Key Timings</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Event</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for timing in roast.key_timings %}
-                <tr>
-                    <td>{{ timing.event_name }}</td>
-                    <td>{{ timing.time_seconds | format_seconds }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
+        <!-- Tabs -->
+        <div class="panel-tabs">
+            <button class="panel-tab active" data-tab="curve" onclick="switchDataTab('curve')">
+                <span class="material-icons">show_chart</span>
+                Curve
+            </button>
+            <button class="panel-tab" data-tab="data" onclick="switchDataTab('data')">
+                <span class="material-icons">table_chart</span>
+                Data
+            </button>
+        </div>
 
-        {% if roast.temp_curve %}
-        <h3>Temperature Curve (First 10 entries)</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Temperature</th>
-                    <th>Fan</th>
-                    <th>Power</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for event in roast.temp_curve[:10] %}
-                <tr>
-                    <td>{{ event.time_seconds | format_seconds }}</td>
-                    <td>{{ event.temperature }}°</td>
-                    <td>{{ event.fan_setting }}</td>
-                    <td>{{ event.power_setting }}</td>
-                </tr>
-                {% endfor %}
-                {% if roast.temp_curve|length > 10 %}
-                <tr>
-                    <td colspan="4" class="text-center">... and {{ roast.temp_curve|length - 10 }} more entries</td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
-        {% endif %}
+        <!-- Curve Tab -->
+        <div id="curveDataTab" class="tab-content active">
+            {% if roast.temp_curve %}
+            <div class="chart-container-large">
+                <canvas id="roastCurveChart"></canvas>
+            </div>
+            {% else %}
+            <p class="empty-log">No temperature curve data available</p>
+            {% endif %}
+        </div>
+
+        <!-- Data Tab -->
+        <div id="dataDataTab" class="tab-content">
+            <p class="info-text">Note: Editing individual timing and temperature events is not supported.</p>
+
+            {% if roast.key_timings %}
+            <h3>Key Timings</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for timing in roast.key_timings %}
+                    <tr>
+                        <td>{{ timing.event_name }}</td>
+                        <td>{{ timing.time_seconds | format_seconds }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+
+            {% if roast.temp_curve %}
+            <h3>Temperature Curve (First 10 entries)</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Temp</th>
+                        <th>Fan</th>
+                        <th>Power</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in roast.temp_curve[:10] %}
+                    <tr>
+                        <td>{{ event.time_seconds | format_seconds }}</td>
+                        <td>{{ event.temperature }}°</td>
+                        <td>{{ event.fan_setting }}</td>
+                        <td>{{ event.power_setting }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if roast.temp_curve|length > 10 %}
+                    <tr>
+                        <td colspan="4" class="text-center">... and {{ roast.temp_curve|length - 10 }} more entries</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
     </section>
     {% endif %}
 
@@ -145,6 +195,9 @@
     </div>
 </form>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <script>
     function calculateWeightLoss() {
         const originalWeight = parseFloat(document.getElementById('original_weight_grams').value);
@@ -158,5 +211,164 @@
             display.textContent = 'Enter both weights to calculate';
         }
     }
+
+    // Tab switching
+    function switchDataTab(tabName) {
+        document.querySelectorAll('.roast-data-section .panel-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            }
+        });
+
+        document.getElementById('curveDataTab').classList.remove('active');
+        document.getElementById('dataDataTab').classList.remove('active');
+
+        if (tabName === 'curve') {
+            document.getElementById('curveDataTab').classList.add('active');
+        } else {
+            document.getElementById('dataDataTab').classList.add('active');
+        }
+    }
+
+    // Initialize chart with historical data
+    {% if roast.temp_curve %}
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('roastCurveChart');
+        if (!canvas) return;
+
+        // Prepare data from roast
+        const tempCurve = {{ roast.temp_curve | tojson
+    }};
+    const keyTimings = {{ roast.key_timings | tojson if roast.key_timings else '[]' }};
+
+    // Prepare annotations
+    const eventColors = {
+        'Yellowing': '#f0ad4e',
+        'First Crack Start': '#d9534f',
+        'First Crack End': '#c9302c',
+        'Second Crack Start': '#5bc0de',
+        'Second Crack End': '#31b0d5'
+    };
+
+    const annotations = {};
+    keyTimings.forEach(timing => {
+        const timeLabel = formatTime(timing.time_seconds);
+        const color = eventColors[timing.event_name] || '#6B5B4D';
+        const annotationId = 'event-' + timing.time_seconds;
+
+        annotations[annotationId] = {
+            type: 'line',
+            scaleID: 'x',
+            value: timeLabel,
+            borderColor: color,
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+                display: true,
+                content: timing.event_name,
+                position: 'start',
+                backgroundColor: color,
+                color: 'white',
+                font: { size: 10 },
+                yAdjust: -20
+            }
+        };
+    });
+
+    const labels = tempCurve.map(e => formatTime(e.time_seconds));
+    const tempData = tempCurve.map(e => e.temperature);
+    const rorData = tempCurve.map(e => e.ror || null);
+
+    // Calculate dynamic Y-axis max based on actual data
+    const maxTemp = Math.max(...tempData);
+    let tempMax = 100;
+    if (maxTemp > 180) tempMax = 230;
+    else if (maxTemp > 150) tempMax = 190;
+    else if (maxTemp > 120) tempMax = 160;
+    else if (maxTemp > 90) tempMax = 130;
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Temperature (°C)',
+                    data: tempData,
+                    borderColor: '#6B5B4D',
+                    backgroundColor: 'rgba(107, 91, 77, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    yAxisID: 'y-temp',
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                },
+                {
+                    label: 'RoR (°C/min)',
+                    data: rorData,
+                    borderColor: '#6B8E6F',
+                    backgroundColor: 'rgba(107, 142, 111, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    yAxisID: 'y-ror',
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Time', color: '#666' },
+                    ticks: { color: '#666', maxTicksLimit: 12 }
+                },
+                'y-temp': {
+                    type: 'linear',
+                    position: 'left',
+                    min: 0,
+                    max: tempMax,
+                    title: { display: true, text: 'Temp (°C)', color: '#6B5B4D' },
+                    ticks: { color: '#6B5B4D', stepSize: 25 },
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                },
+                'y-ror': {
+                    type: 'linear',
+                    position: 'right',
+                    min: 0,
+                    max: 50,
+                    title: { display: true, text: 'RoR (°C/min)', color: '#6B8E6F' },
+                    ticks: { color: '#6B8E6F', stepSize: 10 },
+                    grid: { drawOnChartArea: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, padding: 15, color: '#2C2C2C' }
+                },
+                annotation: {
+                    annotations: annotations
+                }
+            }
+        }
+    }
+        }
+    });
+    });
+    {% endif %}
 </script>
 {% endblock %}

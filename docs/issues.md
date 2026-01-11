@@ -1,0 +1,3 @@
+- should be able to see the bar on the roast detail page as well, the curve should share the same fucntion/object.
+- now the current setting power and fan are still not reflected on the chart. 
+- add hehight, the marker for event are cut off

@@ -28,6 +28,8 @@ def create_draft_roast(roasts_collection):
         'roast_date': current_time_utc,
         'temp_measurement_method': 'K-Type Sensor V1',
         'roaster': 'Freshroast SR800',
+        'ambient_temp_celsius': None,
+        'ambient_humidity': None,
         'general_notes': '',
         'key_timings': [],
         'temp_curve': [],
@@ -60,6 +62,8 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
         'title': roast_data.get('title', 'Untitled Roast'),
         'roaster': roast_data.get('roaster', 'Freshroast SR800'),
         'temp_measurement_method': roast_data.get('temp_measurement_method', 'K-Type Sensor V1'),
+        'ambient_temp_celsius': float(roast_data['ambient_temp_celsius']) if roast_data.get('ambient_temp_celsius') else None,
+        'ambient_humidity': float(roast_data['ambient_humidity']) if roast_data.get('ambient_humidity') else None,
         'general_notes': roast_data.get('general_notes', ''),
         'updated_at': get_current_time_with_tz()
     }

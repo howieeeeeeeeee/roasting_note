@@ -26,8 +26,67 @@
                 <li><a href="{{ url_for('index') }}">Roasts</a></li>
                 <li><a href="{{ url_for('beans_list') }}">Beans</a></li>
             </ul>
+            <button class="btn-icon settings-btn" onclick="openSettingsModal()" title="Settings">
+                <span class="material-icons">settings</span>
+            </button>
         </div>
     </nav>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content settings-modal">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <span class="modal-close" onclick="closeSettingsModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Database Connection</h3>
+                    <div class="db-toggle-container">
+                        <label class="db-option">
+                            <input type="radio" name="dbMode" value="local" id="dbModeLocal">
+                            <span class="db-option-label">Local</span>
+                        </label>
+                        <label class="db-option">
+                            <input type="radio" name="dbMode" value="online" id="dbModeOnline">
+                            <span class="db-option-label">Online</span>
+                        </label>
+                    </div>
+                    <p class="settings-hint" id="dbModeHint">Currently using: <strong id="currentDbMode">-</strong></p>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Sync Data</h3>
+                    <p class="settings-hint">Sync beans and roasts between databases</p>
+                    <div class="sync-buttons">
+                        <button class="btn btn-secondary" id="syncOnlineToLocalBtn"
+                            onclick="syncData('online-to-local')">
+                            <span class="material-icons">cloud_download</span>
+                            Online → Local
+                        </button>
+                        <button class="btn btn-secondary" id="syncLocalToOnlineBtn"
+                            onclick="syncData('local-to-online')">
+                            <span class="material-icons">cloud_upload</span>
+                            Local → Online
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section settings-danger">
+                    <h3>Danger Zone</h3>
+                    <p class="settings-hint">This will permanently delete all beans and roasts from your local database.
+                    </p>
+                    <button class="btn btn-danger" id="cleanLocalDbBtn" onclick="cleanLocalDb()">
+                        <span class="material-icons">delete_forever</span>
+                        Clean Up Local DB
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <main class="container">
         {% block content %}{% endblock %}
@@ -46,6 +105,138 @@
             navMenu.classList.toggle('active');
             navToggle.classList.toggle('active');
         });
+
+        // Settings Modal
+        function openSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'block';
+            loadDbSettings();
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        async function loadDbSettings() {
+            try {
+                const response = await fetch('/api/settings/db');
+                const data = await response.json();
+                document.getElementById('currentDbMode').textContent = data.mode;
+                if (data.mode === 'local') {
+                    document.getElementById('dbModeLocal').checked = true;
+                } else {
+                    document.getElementById('dbModeOnline').checked = true;
+                }
+            } catch (error) {
+                console.error('Error loading DB settings:', error);
+            }
+        }
+
+        // DB Mode Change
+        document.querySelectorAll('input[name="dbMode"]').forEach(radio => {
+            radio.addEventListener('change', async (e) => {
+                const newMode = e.target.value;
+                try {
+                    const response = await fetch('/api/settings/db', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mode: newMode })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('currentDbMode').textContent = data.mode;
+                        showToast(`Switched to ${data.mode} database`, 'success');
+                        // Reload page to reflect new DB
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                } catch (error) {
+                    showToast('Error switching database', 'error');
+                }
+            });
+        });
+
+        // Sync Data
+        async function syncData(direction) {
+            const btn = direction === 'online-to-local'
+                ? document.getElementById('syncOnlineToLocalBtn')
+                : document.getElementById('syncLocalToOnlineBtn');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons spinning">sync</span> Syncing...';
+
+            try {
+                const response = await fetch(`/api/sync/${direction}`, { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    const beansMsg = `Beans: ${data.beans.added} added, ${data.beans.updated} updated`;
+                    const roastsMsg = `Roasts: ${data.roasts.added} added, ${data.roasts.updated} updated`;
+                    showToast(`Sync complete! ${beansMsg}. ${roastsMsg}.`, 'success');
+                } else {
+                    showToast(`Sync failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast('Sync failed: Network error', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = direction === 'online-to-local'
+                    ? '<span class="material-icons">cloud_download</span> Online → Local'
+                    : '<span class="material-icons">cloud_upload</span> Local → Online';
+            }
+        }
+
+        // Toast Notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('toast-fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 8000);
+        }
+
+        // Clean Up Local DB
+        async function cleanLocalDb() {
+            // First confirmation
+            if (!confirm('Are you sure you want to delete ALL beans and roasts from your LOCAL database?')) {
+                return;
+            }
+            // Second confirmation
+            if (!confirm('⚠️ FINAL WARNING: This action CANNOT be undone. Type "DELETE" mentally and click OK to proceed.')) {
+                return;
+            }
+
+            const btn = document.getElementById('cleanLocalDbBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons spinning">delete_forever</span> Deleting...';
+
+            try {
+                const response = await fetch('/api/db/clean-local', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(`Local DB cleaned! ${data.beans_deleted} beans and ${data.roasts_deleted} roasts deleted.`, 'success');
+                } else {
+                    showToast(`Failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast('Failed: Network error', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-icons">delete_forever</span> Clean Up Local DB';
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('settingsModal');
+            if (event.target === modal) {
+                closeSettingsModal();
+            }
+        }
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>

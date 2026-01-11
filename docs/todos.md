@@ -1,6 +1,5 @@
-  GET /api/temp/current_fast (every 1 second)
-  POST /api/roast/log_temp_local (every 1 second, only when roast running)
-  GET /api/temp/current (every 5 seconds, only when roast running)
-  POST /api/roast/add_event (every 5 seconds, only when roast running)
+### To-Dos
 
-  analyze this, see how to achieve this efficiently and without too much lagging
+- [x] Add ambient temp and humidity to the roast level data (allow edit in the middle or end of roast)
+- [x] Real time graph, showing the time on x-axis (baseline in 8 mins on x-axis, if time pass 8 mins, take the max time and rounf to the nearest 2 min), and show temp on theleft y-axis (max 200) and ror at right y-axis (max 50). make sure the color and design are match the current style and the display of the grpah are smooth and respnsive on frontend
+- [x] Database sync/switch feature: Settings modal to switch between local/online DB, with bidirectional sync functionality (see Section 7 in req.md)

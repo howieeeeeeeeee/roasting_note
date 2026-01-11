@@ -17,8 +17,8 @@
     --bg-color: #FAFAF9;
     --card-bg: #FFFFFF;
     --border-color: #E8E6E3;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08);
-    --shadow-hover: 0 2px 6px rgba(0,0,0,0.12);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 * {
@@ -538,10 +538,10 @@ body {
     margin-bottom: 1.25rem;
 }
 
-/* Full Width Layout: Left and Right Panels - 3:2 ratio */
+/* Full Width Layout: Left and Right Panels - 1:2 ratio (right panel 2/3) */
 .roast-panels {
     display: grid;
-    grid-template-columns: 3fr 2fr;
+    grid-template-columns: 1fr 2fr;
     gap: 1.25rem;
     align-items: start;
 }
@@ -551,6 +551,13 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+}
+
+.right-panel {
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
 }
 
 .timer-section,
@@ -729,6 +736,123 @@ body {
     font-style: italic;
     text-align: center;
     padding: 2rem;
+}
+
+/* ============================================
+   Roast Curve Chart
+   ============================================ */
+.chart-section {
+    background: var(--card-bg);
+    padding: 1.75rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.chart-section h2 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.chart-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 220px;
+    }
+}
+
+/* ============================================
+   Panel Tabs (Curve/Log)
+   ============================================ */
+.panel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.panel-tab:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.panel-tab.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.panel-tab .material-icons {
+    font-size: 1.25rem;
+}
+
+.tab-content {
+    display: none;
+    padding: 1.25rem;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Large Chart Container */
+.chart-section-full {
+    padding: 0;
+}
+
+.chart-container-large {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+/* Power/Fan Timeline Bars */
+.pf-timeline-bars {
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.pf-timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.pf-timeline-row:last-child {
+    margin-bottom: 0;
+}
+
+.pf-label {
+    width: 45px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #666;
+    flex-shrink: 0;
+}
+
+.pf-timeline-canvas {
+    flex: 1;
+    height: 16px;
+    border-radius: 4px;
+    background: #f5f5f5;
 }
 
 /* ============================================
@@ -946,6 +1070,7 @@ footer {
    Responsive Design - Tablet
    ============================================ */
 @media (min-width: 769px) and (max-width: 1024px) {
+
     .beans-grid,
     .roasts-list {
         grid-template-columns: repeat(2, 1fr);
@@ -968,7 +1093,8 @@ footer {
     .form-group input,
     .form-group select,
     .form-group textarea {
-        font-size: 16px; /* Prevents zoom on iOS */
+        font-size: 16px;
+        /* Prevents zoom on iOS */
     }
 }
 
@@ -1383,8 +1509,8 @@ select.modern-select:hover,
     padding: 0;
 }
 
-.dropdown-item + .dropdown-item,
-.dropdown-item-form + .dropdown-item-form {
+.dropdown-item+.dropdown-item,
+.dropdown-item-form+.dropdown-item-form {
     border-top: 1px solid var(--border-color);
 }
 
@@ -1555,8 +1681,13 @@ select.modern-select:hover,
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .modal-content {
@@ -1575,6 +1706,7 @@ select.modern-select:hover,
         transform: translateY(-50px);
         opacity: 0;
     }
+
     to {
         transform: translateY(0);
         opacity: 1;
@@ -1742,13 +1874,13 @@ select.modern-select:hover,
     background-color: var(--bg-color);
 }
 
-.radio-label input[type="radio"]:checked + .radio-custom {
+.radio-label input[type="radio"]:checked+.radio-custom {
     border-color: var(--primary-color);
     background-color: var(--primary-color);
     color: white;
 }
 
-.radio-label input[type="radio"]:focus + .radio-custom {
+.radio-label input[type="radio"]:focus+.radio-custom {
     outline: none;
     box-shadow: 0 0 0 3px rgba(107, 91, 77, 0.2);
 }
@@ -2054,10 +2186,21 @@ select.modern-select:hover,
     font-weight: 600;
 }
 
-.markdown-content h1 { font-size: 1.75rem; }
-.markdown-content h2 { font-size: 1.5rem; }
-.markdown-content h3 { font-size: 1.25rem; }
-.markdown-content h4 { font-size: 1.1rem; }
+.markdown-content h1 {
+    font-size: 1.75rem;
+}
+
+.markdown-content h2 {
+    font-size: 1.5rem;
+}
+
+.markdown-content h3 {
+    font-size: 1.25rem;
+}
+
+.markdown-content h4 {
+    font-size: 1.1rem;
+}
 
 .markdown-content p {
     margin-bottom: 1rem;
@@ -2190,6 +2333,7 @@ select.modern-select:hover,
    Print Styles
    ============================================ */
 @media print {
+
     .navbar,
     .page-header .btn,
     .form-actions,
@@ -2214,5 +2358,217 @@ select.modern-select:hover,
     .roasts-table-container,
     .beans-table-container {
         box-shadow: none;
+    }
+}
+
+/* ============================================
+   Settings Button & Modal
+   ============================================ */
+.settings-btn {
+    margin-left: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.settings-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.settings-btn .material-icons {
+    font-size: 1.5rem;
+}
+
+.settings-modal {
+    max-width: 400px;
+}
+
+.settings-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.settings-section h3 {
+    margin: 0 0 0.75rem 0;
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.settings-hint {
+    font-size: 0.875rem;
+    color: #666;
+    margin: 0.5rem 0;
+}
+
+.db-toggle-container {
+    display: flex;
+    gap: 1rem;
+}
+
+.db-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.db-option input {
+    display: none;
+}
+
+.db-option-label {
+    display: block;
+    padding: 0.75rem 1rem;
+    background: var(--background-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.db-option input:checked+.db-option-label {
+    border-color: var(--primary-color);
+    background: rgba(107, 91, 77, 0.1);
+    color: var(--primary-color);
+}
+
+.db-option:hover .db-option-label {
+    border-color: var(--primary-color);
+}
+
+.sync-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sync-buttons .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.sync-buttons .material-icons {
+    font-size: 1.25rem;
+}
+
+.settings-danger {
+    border-color: var(--danger-color);
+    background: rgba(180, 79, 79, 0.05);
+}
+
+.settings-danger h3 {
+    color: var(--danger-color);
+}
+
+.btn-danger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #a03e3e;
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toast {
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 350px;
+    animation: slideIn 0.3s ease;
+}
+
+.toast-success {
+    border-left: 4px solid var(--success-color);
+}
+
+.toast-error {
+    border-left: 4px solid var(--danger-color);
+}
+
+.toast-info {
+    border-left: 4px solid var(--primary-color);
+}
+
+.toast-fade-out {
+    animation: fadeOut 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+/* Spinning animation for sync icon */
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .toast-container {
+        left: 20px;
+        right: 20px;
+    }
+
+    .toast {
+        max-width: 100%;
     }
 }

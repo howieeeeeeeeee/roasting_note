@@ -400,18 +400,86 @@ The application integrates with a K-Type temperature sensor (Howie's design - K-
 
 -----
 
-### **7. Deployment & Environment (Render)**
+### **7. Database Sync & Switch Feature**
+
+The application supports connecting to two MongoDB databases: **local** (for home network use) and **online** (MongoDB Atlas, for remote access). Users can switch between databases and sync data between them.
+
+#### **7.1. Settings Modal UI**
+
+* **Settings Button:**
+  * Location: Top-right corner of every page (in the navigation bar)
+  * Icon: Gear (`settings` Material Icon)
+  * On click: Opens the Settings Modal
+
+* **Settings Modal Contents:**
+  * **Database Switch:**
+    * Radio buttons or toggle: "Local" / "Online"
+    * Shows current active database with visual indicator
+    * Switching triggers a page reload to use the new connection
+  * **Sync Actions:**
+    * Two buttons:
+      * **"Sync Online → Local"** - Copies/updates data from online DB to local DB
+      * **"Sync Local → Online"** - Copies/updates data from local DB to online DB
+    * Each button shows loading state during sync
+  * **Close Button** to dismiss the modal
+
+#### **7.2. Sync Logic**
+
+When syncing from Source DB → Target DB:
+
+1. **Fetch all non-archived documents** from both `beans` and `roasts` collections in both DBs
+2. **For each document in Source DB:**
+   * If `_id` does NOT exist in Target DB → **Insert** (add new document)
+   * If `_id` EXISTS in Target DB → **Update** (replace with source document)
+3. **Track counts:**
+   * `added`: Number of new documents inserted
+   * `updated`: Number of existing documents updated
+4. **Important:** Sync does NOT delete documents. If a document exists in Target but not in Source, it remains in Target.
+
+#### **7.3. API Endpoints**
+
+* `GET /api/settings/db` - Returns current database mode (`{"mode": "local" | "online"}`)
+* `POST /api/settings/db` - Switch database mode
+  * Body: `{"mode": "local" | "online"}`
+  * Stores preference in session/cookie
+  * Returns: `{"success": true, "mode": "local" | "online"}`
+* `POST /api/sync/online-to-local` - Sync from online → local
+  * Returns: `{"success": true, "beans": {"added": N, "updated": N}, "roasts": {"added": N, "updated": N}}`
+* `POST /api/sync/local-to-online` - Sync from local → online
+  * Returns: `{"success": true, "beans": {"added": N, "updated": N}, "roasts": {"added": N, "updated": N}}`
+
+#### **7.4. Toast Notification on Sync Complete**
+
+* On successful sync, display a toast notification with summary:
+  * "Sync complete! Beans: X added, Y updated. Roasts: X added, Y updated."
+* On error, display error toast:
+  * "Sync failed: {error message}"
+
+#### **7.5. Default Database & Session Behavior**
+
+* Default database is determined by environment variable `DEFAULT_DB`
+* Values: `"local"` or `"online"`
+* If not set, defaults to `"local"`
+* User's selection persists in Flask session cookie
+* **All CRUD operations** (add/edit/delete beans, create/edit/end roasts, etc.) **use the currently selected database**
+* Application dynamically references the active DB via helper functions (`get_beans_collection()`, `get_roasts_collection()`)
+
+-----
+
+### **8. Deployment & Environment (Render)**
 
 * **Database:** Use a free **MongoDB Atlas** M0 cluster. The application will connect to this using a connection string.
 * **Environment Variables:**
   * `FLASK_APP=app.py`
   * `FLASK_ENV=production`
   * `SECRET_KEY`: A long, random string for Flask sessions.
-  * `MONGO_URI`: The full connection string from MongoDB Atlas, including username and password. (e.g., `mongodb+srv://<username>:<password>@cluster...`)
+  * `MONGO_URI`: The full connection string for the **online** MongoDB Atlas (e.g., `mongodb+srv://<username>:<password>@cluster...`)
+  * `MONGO_URI_LOCAL`: The connection string for the **local** MongoDB instance (e.g., `mongodb://localhost:27017/roastlogger`)
+  * `DEFAULT_DB`: Default database to use on startup. Values: `"local"` or `"online"`. Defaults to `"local"` if not set.
   * `TEMP_SENSOR_URL`: URL of the K-Type temperature sensor endpoint (e.g., `http://192.168.0.47/temp`). Defaults to `http://192.168.0.47/temp` if not set.
 * **`requirements.txt`:** Must include `Flask`, `pymongo`, `gunicorn`, `python-dotenv`, `requests`.
 * **`render.yaml`:**
   * **Service Type:** Web Service
   * **Build Command:** `pip install -r requirements.txt`
   * **Start Command:** `gunicorn app:app` (assuming your Flask app instance is named `app` in `app.py`).
-* **Free Plan:** Be aware the Render free plan will spin down the service after 15 minutes of inactivity, causing a \~30-second delay on the next visit. This is acceptable for a personal project.
+* **Free Plan:** Be aware the Render free plan will spin down the service after 15 minutes of inactivity, causing a ~30-second delay on the next visit. This is acceptable for a personal project.

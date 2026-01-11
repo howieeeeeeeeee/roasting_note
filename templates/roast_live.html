@@ -2,6 +2,12 @@
 
 {% block title %}Live Roast - {{ roast.title }} - RoastLogger{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <h1>Live Roasting</h1>
@@ -43,6 +49,18 @@
                     <label for="original_weight">Green Weight (grams)</label>
                     <input type="number" id="original_weight" name="original_weight" min="0"
                         value="{{ roast.original_weight_grams or '' }}" placeholder="e.g., 250">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ambient_temp">Ambient Temp (°C)</label>
+                    <input type="number" id="ambient_temp" name="ambient_temp" step="0.1"
+                        value="{{ roast.ambient_temp_celsius or '' }}" placeholder="e.g., 22">
+                </div>
+                <div class="form-group">
+                    <label for="ambient_humidity">Humidity (%)</label>
+                    <input type="number" id="ambient_humidity" name="ambient_humidity" min="0" max="100" step="1"
+                        value="{{ roast.ambient_humidity or '' }}" placeholder="e.g., 55">
                 </div>
             </div>
         </div>
@@ -111,7 +129,7 @@
                         <input type="number" id="temperature" name="temperature" placeholder="e.g., 190">
                     </div>
                     <div class="form-group">
-                        <label>Fan Setting (1-9)</label>
+                        <label>Fan</label>
                         <div class="stepper-control">
                             <button type="button" class="btn-stepper" onclick="adjustFan(-1)">
                                 <span class="material-icons">remove</span>
@@ -124,7 +142,7 @@
                         <input type="hidden" id="fan_setting" name="fan_setting" value="9">
                     </div>
                     <div class="form-group">
-                        <label>Power Setting (1-9)</label>
+                        <label>Power</label>
                         <div class="stepper-control">
                             <button type="button" class="btn-stepper" onclick="adjustPower(-1)">
                                 <span class="material-icons">remove</span>
@@ -148,46 +166,83 @@
             </section>
         </div>
 
-        <!-- Right Panel: Temperature and Event Log (Newest First) -->
+        <!-- Right Panel: Chart and Timeline with Tabs -->
         <div class="right-panel">
-            <section class="timeline-section">
-                <h2>Roast Timeline</h2>
-                <div id="timelineList" class="timeline-list">
-                    {% set all_events = [] %}
+            <div class="panel-tabs">
+                <button class="panel-tab active" data-tab="curve" onclick="switchTab('curve')">
+                    <span class="material-icons">show_chart</span>
+                    Curve
+                </button>
+                <button class="panel-tab" data-tab="log" onclick="switchTab('log')">
+                    <span class="material-icons">list</span>
+                    Log
+                </button>
+            </div>
 
-                    {% for timing in roast.key_timings %}
-                    {% set _ = all_events.append({'time': timing.time_seconds, 'type': 'key', 'data': timing}) %}
-                    {% endfor %}
-
-                    {% for event in roast.temp_curve %}
-                    {% set _ = all_events.append({'time': event.time_seconds, 'type': 'temp', 'data': event}) %}
-                    {% endfor %}
-
-                    {% if all_events %}
-                    {% for event in all_events | sort(attribute='time', reverse=True) %}
-                    {% if event.type == 'key' %}
-                    <div class="timeline-item timeline-key">
-                        <div class="timeline-time">{{ event.time | format_seconds }}</div>
-                        <div class="timeline-content">
-                            <strong class="timeline-label">{{ event.data.event_name }}</strong>
+            <!-- Curve Tab Content -->
+            <div id="curveTabContent" class="tab-content active">
+                {% if not roast.roast_end_time %}
+                <section class="chart-section-full">
+                    <div class="chart-container-large">
+                        <canvas id="roastCurveChart"></canvas>
+                    </div>
+                    <!-- Power/Fan Timeline Bars -->
+                    <div class="pf-timeline-bars">
+                        <div class="pf-timeline-row">
+                            <span class="pf-label">Power</span>
+                            <canvas id="powerTimeline" class="pf-timeline-canvas"></canvas>
+                        </div>
+                        <div class="pf-timeline-row">
+                            <span class="pf-label">Fan</span>
+                            <canvas id="fanTimeline" class="pf-timeline-canvas"></canvas>
                         </div>
                     </div>
-                    {% else %}
-                    <div class="timeline-item timeline-temp">
-                        <div class="timeline-time">{{ event.time | format_seconds }}</div>
-                        <div class="timeline-content">
-                            <span class="timeline-temp-value">{{ event.data.temperature }}°C</span>
-                            <span class="timeline-settings">Fan: {{ event.data.fan_setting }} | Power: {{
-                                event.data.power_setting }}</span>
+                </section>
+                {% else %}
+                <p class="empty-log">Roast has ended. View curve in roast details.</p>
+                {% endif %}
+            </div>
+
+            <!-- Log Tab Content -->
+            <div id="logTabContent" class="tab-content">
+                <section class="timeline-section">
+                    <div id="timelineList" class="timeline-list">
+                        {% set all_events = [] %}
+
+                        {% for timing in roast.key_timings %}
+                        {% set _ = all_events.append({'time': timing.time_seconds, 'type': 'key', 'data': timing}) %}
+                        {% endfor %}
+
+                        {% for event in roast.temp_curve %}
+                        {% set _ = all_events.append({'time': event.time_seconds, 'type': 'temp', 'data': event}) %}
+                        {% endfor %}
+
+                        {% if all_events %}
+                        {% for event in all_events | sort(attribute='time', reverse=True) %}
+                        {% if event.type == 'key' %}
+                        <div class="timeline-item timeline-key">
+                            <div class="timeline-time">{{ event.time | format_seconds }}</div>
+                            <div class="timeline-content">
+                                <strong class="timeline-label">{{ event.data.event_name }}</strong>
+                            </div>
                         </div>
+                        {% else %}
+                        <div class="timeline-item timeline-temp">
+                            <div class="timeline-time">{{ event.time | format_seconds }}</div>
+                            <div class="timeline-content">
+                                <span class="timeline-temp-value">{{ event.data.temperature }}°C</span>
+                                <span class="timeline-settings">Fan: {{ event.data.fan_setting }} | Power: {{
+                                    event.data.power_setting }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% else %}
+                        <p class="empty-log">No events logged yet</p>
+                        {% endif %}
                     </div>
-                    {% endif %}
-                    {% endfor %}
-                    {% else %}
-                    <p class="empty-log">No events logged yet</p>
-                    {% endif %}
-                </div>
-            </section>
+                </section>
+            </div>
         </div>
     </div>
 </div>
@@ -218,6 +273,326 @@
     const roastTitleInput = document.getElementById('roast_title');
     const tempValueDisplay = document.getElementById('tempValue');
     const rorDisplay = document.getElementById('rorValue');
+
+    // ============================================
+    // Roast Curve Chart Setup
+    // ============================================
+    let roastChart = null;
+    const chartData = {
+        labels: [],       // Time labels (MM:SS)
+        tempData: [],     // Temperature values
+        rorData: [],      // RoR values
+        fanData: [],      // Fan setting values (1-10)
+        powerData: [],    // Power setting values (1-10)
+        events: []        // Key events for marking
+    };
+    let currentMaxMinutes = 8;  // Start with 8-minute x-axis
+
+    function initChart() {
+        const canvas = document.getElementById('roastCurveChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        roastChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: chartData.tempData,
+                        borderColor: '#6B5B4D',  // primary-color
+                        backgroundColor: 'rgba(107, 91, 77, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        yAxisID: 'y-temp',
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: 'RoR (°C/min)',
+                        data: chartData.rorData,
+                        borderColor: '#6B8E6F',  // success-color
+                        backgroundColor: 'rgba(107, 142, 111, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        yAxisID: 'y-ror',
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time',
+                            color: '#666'
+                        },
+                        ticks: {
+                            color: '#666',
+                            maxTicksLimit: 10,
+                            callback: function (value, index) {
+                                // Show every ~30 seconds or so
+                                if (index % 30 === 0) {
+                                    return this.getLabelForValue(value);
+                                }
+                                return '';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    'y-temp': {
+                        type: 'linear',
+                        position: 'left',
+                        min: 0,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Temp (°C)',
+                            color: '#6B5B4D'
+                        },
+                        ticks: {
+                            color: '#6B5B4D',
+                            stepSize: 25
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    'y-ror': {
+                        type: 'linear',
+                        position: 'right',
+                        min: 0,
+                        max: 50,
+                        title: {
+                            display: true,
+                            text: 'RoR (°C/min)',
+                            color: '#6B8E6F'
+                        },
+                        ticks: {
+                            color: '#6B8E6F',
+                            stepSize: 10
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            color: '#2C2C2C'
+                        }
+                    },
+                    annotation: {
+                        annotations: {}
+                    }
+                },
+                animation: {
+                    duration: 0  // Disable animation for smooth real-time updates
+                }
+            }
+        });
+    }
+
+    function updateChartData(timeSeconds, temp, ror, fan, power) {
+        if (!roastChart) return;
+
+        const timeLabel = formatTime(timeSeconds);
+        chartData.labels.push(timeLabel);
+        chartData.tempData.push(temp);
+        chartData.rorData.push(ror);
+
+        // Fill empty fan/power with previous values
+        const lastFanValue = chartData.fanData.length > 0 ? chartData.fanData[chartData.fanData.length - 1] : 5;
+        const lastPowerValue = chartData.powerData.length > 0 ? chartData.powerData[chartData.powerData.length - 1] : 3;
+        chartData.fanData.push(fan !== null ? fan : lastFanValue);
+        chartData.powerData.push(power !== null ? power : lastPowerValue);
+
+        // Update P/F timeline canvases
+        updatePFTimelines();
+
+        // Dynamic Y-axis scaling based on temperature
+        // Dynamic Y-axis scaling based on temperature and RoR
+        updateChartScales(temp, ror);
+
+        // Check if we need to expand x-axis (past current max)
+        const currentMinutes = timeSeconds / 60;
+        if (currentMinutes > currentMaxMinutes) {
+            // Round up to nearest 2 minutes
+            currentMaxMinutes = Math.ceil(currentMinutes / 2) * 2;
+        }
+
+        roastChart.update('none');  // Update without animation
+    }
+
+    // Dynamic Y-axis scaling
+    let currentTempMax = 100;
+    let currentRoRMin = 0;
+
+    function updateChartScales(temp, ror) {
+        // Temp Max Scaling
+        let newMax = currentTempMax;
+        if (temp > 180) newMax = 230;
+        else if (temp > 150) newMax = 190;
+        else if (temp > 120) newMax = 160;
+        else if (temp > 90) newMax = 130;
+
+        if (newMax > currentTempMax) {
+            currentTempMax = newMax;
+            if (roastChart) {
+                roastChart.options.scales['y-temp'].max = currentTempMax;
+            }
+        }
+
+        // RoR Min Scaling
+        if (ror !== null && ror < currentRoRMin) {
+            // Round down to nearest 5
+            let newMin = Math.floor(ror / 5) * 5;
+
+            if (newMin < currentRoRMin) {
+                currentRoRMin = newMin;
+                if (roastChart) {
+                    roastChart.options.scales['y-ror'].min = currentRoRMin;
+                }
+            }
+        }
+    }
+
+    // Update Power/Fan timeline canvases
+    function updatePFTimelines() {
+        const powerCanvas = document.getElementById('powerTimeline');
+        const fanCanvas = document.getElementById('fanTimeline');
+
+        if (powerCanvas) drawTimelineBar(powerCanvas, chartData.powerData, '#fcb69f');
+        if (fanCanvas) drawTimelineBar(fanCanvas, chartData.fanData, '#4dd0e1');
+    }
+
+    function drawTimelineBar(canvas, data, color) {
+        if (!canvas || data.length === 0) return;
+
+        const ctx = canvas.getContext('2d');
+        // Use getBoundingClientRect for more accurate width, fallback to parent width
+        let width = canvas.getBoundingClientRect().width;
+        if (width === 0) {
+            width = canvas.parentElement.offsetWidth - 50;
+        }
+        // If still 0 (e.g. hidden tab), use a default or skip
+        if (width <= 0) return;
+
+        const height = 16;
+
+        // Set canvas dimensions if they don't match (prevents stretching)
+        if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        ctx.clearRect(0, 0, width, height);
+
+        const barWidth = Math.max(2, width / Math.max(data.length, 1));
+
+        data.forEach((value, index) => {
+            const x = (index / Math.max(data.length, 1)) * width;
+            const alpha = 0.3 + (value / 9) * 0.7;  // Opacity based on value (1-9)
+
+            // Parse hex color to RGB
+            let r = 0, g = 0, b = 0;
+            if (color.startsWith('#')) {
+                r = parseInt(color.slice(1, 3), 16);
+                g = parseInt(color.slice(3, 5), 16);
+                b = parseInt(color.slice(5, 7), 16);
+            }
+
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            ctx.fillRect(x, 0, barWidth + 1, height);
+        });
+    }
+
+    // Add event marker to chart
+    function addEventMarker(timeSeconds, eventName) {
+        if (!roastChart) return;
+
+        const timeLabel = formatTime(timeSeconds);
+
+        // Add annotation for the event
+        const eventColors = {
+            'Yellowing': '#f0ad4e',
+            'First Crack Start': '#d9534f',
+            'First Crack End': '#c9302c',
+            'Second Crack Start': '#5bc0de',
+            'Second Crack End': '#31b0d5'
+        };
+
+        const color = eventColors[eventName] || '#6B5B4D';
+        const annotationId = 'event-' + timeSeconds;
+
+        // Add to chart annotations
+        if (!roastChart.options.plugins.annotation.annotations) {
+            roastChart.options.plugins.annotation.annotations = {};
+        }
+
+        roastChart.options.plugins.annotation.annotations[annotationId] = {
+            type: 'line',
+            scaleID: 'x',
+            value: timeLabel,
+            borderColor: color,
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+                display: true,
+                content: eventName,
+                position: 'start',
+                backgroundColor: color,
+                color: 'white',
+                font: { size: 10 },
+                yAdjust: -20 // Move label up slightly
+            }
+        };
+
+        // Store event for later reference
+        if (!chartData.events) chartData.events = [];
+        chartData.events.push({ time: timeSeconds, label: timeLabel, name: eventName, color: color });
+
+        roastChart.update();
+    }
+
+    // Tab switching function
+    function switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.panel-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            }
+        });
+
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+
+        if (tabName === 'curve') {
+            document.getElementById('curveTabContent').classList.add('active');
+            // Redraw timelines in case they were hidden/resized
+            setTimeout(updatePFTimelines, 50);
+        } else {
+            document.getElementById('logTabContent').classList.add('active');
+        }
+    }
 
     // Format seconds as MM:SS
     function formatTime(seconds) {
@@ -280,9 +655,10 @@
                     rorDisplay.style.color = '#999';
                 }
 
-                // If accurate reading was logged to DB (indicated by backend), show it in timeline
+                // If accurate reading was logged to DB (indicated by backend), show it in timeline and update chart
                 if (data.logged_to_db) {
                     addLogToTimeline(seconds, data.temperature, fanSetting, powerSetting, data.ror);
+                    updateChartData(seconds, data.temperature, data.ror, fanSetting, powerSetting);
                 }
 
             } else {
@@ -333,28 +709,7 @@
         }
     }
 
-    // Toast notification function
-    function showToast(message, type = 'success') {
-        const toastContainer = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
 
-        toastContainer.appendChild(toast);
-
-        // Trigger animation
-        setTimeout(() => {
-            toast.classList.add('toast-show');
-        }, 10);
-
-        // Remove toast after 3 seconds
-        setTimeout(() => {
-            toast.classList.remove('toast-show');
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
-        }, 3000);
-    }
 
     // Stepper functions for fan and power
     function adjustFan(delta) {
@@ -432,6 +787,7 @@
                 {% endif %}
             }
             startSyncLoop();
+            initChart();  // Initialize the roast curve chart
         }
     });
 
@@ -455,6 +811,8 @@
     startBtn.addEventListener('click', async () => {
         const beanId = document.getElementById('bean_id').value;
         const originalWeight = document.getElementById('original_weight').value;
+        const ambientTemp = document.getElementById('ambient_temp').value;
+        const ambientHumidity = document.getElementById('ambient_humidity').value;
 
         if (!beanId || !originalWeight) {
             alert('Please select a bean and enter the green weight before starting.');
@@ -469,7 +827,9 @@
                 },
                 body: JSON.stringify({
                     bean_id: beanId,
-                    original_weight_grams: originalWeight
+                    original_weight_grams: originalWeight,
+                    ambient_temp_celsius: ambientTemp || null,
+                    ambient_humidity: ambientHumidity || null
                 })
             });
 
@@ -595,6 +955,9 @@
                         </div>
                     `;
                     timelineList.insertBefore(timelineItem, timelineList.firstChild);
+
+                    // Add event marker to chart
+                    addEventMarker(seconds, eventName);
 
                     showToast(`✓ ${eventName} logged at ${formatTime(seconds)}`);
 

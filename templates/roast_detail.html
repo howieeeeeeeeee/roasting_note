@@ -4,6 +4,9 @@
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -18,7 +21,9 @@
                     <span class="material-icons">edit</span>
                     Edit
                 </a>
-                <form action="{{ url_for('api_roast_delete', roast_id=roast._id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this roast?');" class="dropdown-item-form">
+                <form action="{{ url_for('api_roast_delete', roast_id=roast._id) }}" method="POST"
+                    onsubmit="return confirm('Are you sure you want to delete this roast?');"
+                    class="dropdown-item-form">
                     <button type="submit" class="dropdown-item dropdown-item-danger">
                         <span class="material-icons">delete</span>
                         Delete
@@ -49,6 +54,14 @@
             <div class="detail-item">
                 <strong>Temperature Method:</strong> {{ roast.temp_measurement_method or 'Not specified' }}
             </div>
+            <div class="detail-item">
+                <strong>Ambient Temp:</strong> {% if roast.ambient_temp_celsius %}{{ roast.ambient_temp_celsius }}°C{%
+                else %}Not recorded{% endif %}
+            </div>
+            <div class="detail-item">
+                <strong>Humidity:</strong> {% if roast.ambient_humidity %}{{ roast.ambient_humidity }}%{% else %}Not
+                recorded{% endif %}
+            </div>
         </div>
     </section>
 
@@ -56,13 +69,16 @@
         <h2>Weights & Loss</h2>
         <div class="detail-grid">
             <div class="detail-item">
-                <strong>Green Weight:</strong> {{ roast.original_weight_grams or 'Not set' }}{% if roast.original_weight_grams %}g{% endif %}
+                <strong>Green Weight:</strong> {{ roast.original_weight_grams or 'Not set' }}{% if
+                roast.original_weight_grams %}g{% endif %}
             </div>
             <div class="detail-item">
-                <strong>Roasted Weight:</strong> {{ roast.roasted_weight_grams or 'Not set' }}{% if roast.roasted_weight_grams %}g{% endif %}
+                <strong>Roasted Weight:</strong> {{ roast.roasted_weight_grams or 'Not set' }}{% if
+                roast.roasted_weight_grams %}g{% endif %}
             </div>
             <div class="detail-item">
-                <strong>Weight Loss:</strong> {{ roast.weight_loss_percentage or 'N/A' }}{% if roast.weight_loss_percentage %}%{% endif %}
+                <strong>Weight Loss:</strong> {{ roast.weight_loss_percentage or 'N/A' }}{% if
+                roast.weight_loss_percentage %}%{% endif %}
             </div>
         </div>
     </section>
@@ -71,13 +87,16 @@
         <h2>Roast Duration</h2>
         <div class="detail-grid">
             <div class="detail-item">
-                <strong>Start Time:</strong> {{ roast.roast_start_time | format_date if roast.roast_start_time else 'Not started' }}
+                <strong>Start Time:</strong> {{ roast.roast_start_time | format_date if roast.roast_start_time else 'Not
+                started' }}
             </div>
             <div class="detail-item">
-                <strong>End Time:</strong> {{ roast.roast_end_time | format_date if roast.roast_end_time else 'Not ended' }}
+                <strong>End Time:</strong> {{ roast.roast_end_time | format_date if roast.roast_end_time else 'Not
+                ended' }}
             </div>
             <div class="detail-item">
-                <strong>Duration:</strong> {{ roast.roast_duration_seconds | format_seconds if roast.roast_duration_seconds else 'N/A' }}
+                <strong>Duration:</strong> {{ roast.roast_duration_seconds | format_seconds if
+                roast.roast_duration_seconds else 'N/A' }}
             </div>
         </div>
     </section>
@@ -94,28 +113,30 @@
                         {% for i in range(score) %}★{% endfor %}
                         {% for i in range(5 - score) %}☆{% endfor %}
                     </div>
-                    <span class="review-date">{{ review.review_date | format_date if review.review_date else 'N/A' }}</span>
+                    <span class="review-date">{{ review.review_date | format_date if review.review_date else 'N/A'
+                        }}</span>
                 </div>
                 <div class="review-card-body">
                     {% if review.get('extraction_method') %}
                     <div class="review-detail-item">
                         {% set method = review.get('extraction_method', '').lower() %}
                         {% if 'espresso' in method %}
-                            {% set method_color = '#8B4513' %}
+                        {% set method_color = '#8B4513' %}
                         {% elif 'pour' in method or 'v60' in method or 'chemex' in method %}
-                            {% set method_color = '#6B8E6F' %}
+                        {% set method_color = '#6B8E6F' %}
                         {% elif 'french' in method or 'press' in method %}
-                            {% set method_color = '#9B7E5C' %}
+                        {% set method_color = '#9B7E5C' %}
                         {% elif 'aeropress' in method %}
-                            {% set method_color = '#7A9B8E' %}
+                        {% set method_color = '#7A9B8E' %}
                         {% elif 'drip' in method %}
-                            {% set method_color = '#8E6B6F' %}
+                        {% set method_color = '#8E6B6F' %}
                         {% elif 'cold' in method %}
-                            {% set method_color = '#5C7E9B' %}
+                        {% set method_color = '#5C7E9B' %}
                         {% else %}
-                            {% set method_color = '#8B7D6B' %}
+                        {% set method_color = '#8B7D6B' %}
                         {% endif %}
-                        <span class="extraction-method-label" style="background-color: {{ method_color }}4D; color: {{ method_color }};">
+                        <span class="extraction-method-label"
+                            style="background-color: {{ method_color }}4D; color: {{ method_color }};">
                             {{ review.get('extraction_method', '') | replace('_', ' ') | title }}
                         </span>
                     </div>
@@ -138,95 +159,110 @@
     </section>
 
     {% if roast.key_timings or roast.temp_curve %}
-    <section class="detail-section">
-        <h2>Roast Events</h2>
-        <div class="table-wrapper">
-            <table class="data-table combined-events-table">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Event / Note</th>
-                        <th>Temp (°C)</th>
-                        <th>RoR (°C/min)</th>
-                        <th>Fan</th>
-                        <th>Power</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set all_events = [] %}
+    <section class="detail-section roast-data-section">
+        <h2>Roast Data</h2>
 
-                    {# Collect key timings #}
-                    {% for timing in roast.key_timings %}
+        <!-- Tabs -->
+        <div class="panel-tabs">
+            <button class="panel-tab active" data-tab="curve" onclick="switchDataTab('curve')">
+                <span class="material-icons">show_chart</span>
+                Curve
+            </button>
+            <button class="panel-tab" data-tab="data" onclick="switchDataTab('data')">
+                <span class="material-icons">table_chart</span>
+                Data
+            </button>
+        </div>
+
+        <!-- Curve Tab -->
+        <div id="curveDataTab" class="tab-content active">
+            {% if roast.temp_curve %}
+            <div class="chart-container-large">
+                <canvas id="roastCurveChart"></canvas>
+            </div>
+            {% else %}
+            <p class="empty-log">No temperature curve data available</p>
+            {% endif %}
+        </div>
+
+        <!-- Data Tab -->
+        <div id="dataDataTab" class="tab-content">
+            <div class="table-wrapper">
+                <table class="data-table combined-events-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Event / Note</th>
+                            <th>Temp (°C)</th>
+                            <th>RoR (°C/min)</th>
+                            <th>Fan</th>
+                            <th>Power</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set all_events = [] %}
+
+                        {# Collect key timings #}
+                        {% for timing in roast.key_timings %}
                         {% set _ = all_events.append({
-                            'time': timing.time_seconds,
-                            'type': 'key',
-                            'event_name': timing.event_name,
-                            'temperature': timing.get('temperature'),
-                            'fan_setting': timing.get('fan_setting'),
-                            'power_setting': timing.get('power_setting')
+                        'time': timing.time_seconds,
+                        'type': 'key',
+                        'event_name': timing.event_name,
+                        'temperature': timing.get('temperature'),
+                        'fan_setting': timing.get('fan_setting'),
+                        'power_setting': timing.get('power_setting')
                         }) %}
-                    {% endfor %}
+                        {% endfor %}
 
-                    {# Collect temperature curve events #}
-                    {% for event in roast.temp_curve %}
+                        {# Collect temperature curve events #}
+                        {% for event in roast.temp_curve %}
                         {% set _ = all_events.append({
-                            'time': event.time_seconds,
-                            'type': 'temp',
-                            'note': event.get('note', ''),
-                            'temperature': event.temperature,
-                            'fan_setting': event.fan_setting,
-                            'power_setting': event.power_setting,
-                            'ror': event.get('ror')
+                        'time': event.time_seconds,
+                        'type': 'temp',
+                        'note': event.get('note', ''),
+                        'temperature': event.temperature,
+                        'fan_setting': event.fan_setting,
+                        'power_setting': event.power_setting,
+                        'ror': event.get('ror')
                         }) %}
-                    {% endfor %}
+                        {% endfor %}
 
-                    {# Sort all events by time #}
-                    {% for event in all_events | sort(attribute='time') %}
-                    <tr class="{% if event.type == 'key' %}event-row-key{% else %}event-row-temp{% endif %}">
-                        <td class="event-time">{{ event.time | format_seconds }}</td>
-                        <td class="event-description">
-                            {% if event.type == 'key' %}
+                        {# Sort all events by time #}
+                        {% for event in all_events | sort(attribute='time') %}
+                        <tr class="{% if event.type == 'key' %}event-row-key{% else %}event-row-temp{% endif %}">
+                            <td class="event-time">{{ event.time | format_seconds }}</td>
+                            <td class="event-description">
+                                {% if event.type == 'key' %}
                                 <strong class="key-event-name">{{ event.event_name }}</strong>
-                            {% else %}
-                                {% if event.note %}
-                                    <span class="temp-note">{{ event.note }}</span>
                                 {% else %}
-                                    <span class="text-muted">—</span>
+                                {% if event.note %}
+                                <span class="temp-note">{{ event.note }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
                                 {% endif %}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if event.temperature %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if event.temperature %}
                                 {{ event.temperature }}°C
-                            {% else %}
+                                {% else %}
                                 <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if event.ror is not none %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if event.ror is not none %}
                                 {{ event.ror }}
-                            {% else %}
+                                {% else %}
                                 <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if event.fan_setting is not none %}
-                                {{ event.fan_setting }}
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if event.power_setting is not none %}
-                                {{ event.power_setting }}
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                {% endif %}
+                            </td>
+                            <td>{{ event.fan_setting if event.fan_setting is not none else '—' }}</td>
+                            <td>{{ event.power_setting if event.power_setting is not none else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </section>
     {% endif %}
@@ -318,12 +354,14 @@
 
                     <div class="form-group">
                         <label for="notes">Notes</label>
-                        <textarea id="notes" name="notes" rows="4" placeholder="Flavor profile, tasting notes, brew details, etc."></textarea>
+                        <textarea id="notes" name="notes" rows="4"
+                            placeholder="Flavor profile, tasting notes, brew details, etc."></textarea>
                     </div>
 
                     <div class="modal-actions">
                         <button type="submit" class="btn btn-primary btn-full-width">Save</button>
-                        <button type="button" class="btn btn-secondary btn-full-width" onclick="closeReviewModal()">Cancel</button>
+                        <button type="button" class="btn btn-secondary btn-full-width"
+                            onclick="closeReviewModal()">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -339,14 +377,14 @@
     // Store reviews data for JavaScript access
     const reviewsData = {
         {% for review in roast.reviews %}
-        '{{ review._id }}': {
-            overall_score: {{ review.overall_score if review.overall_score else review.get('rating', 3) }},
-            extraction_method: '{{ review.get('extraction_method', '') }}',
-            notes: {{ review.notes | tojson }},
-            review_date: '{{ review.review_date | format_date if review.review_date else '' }}',
+    '{{ review._id }}': {
+        overall_score: { { review.overall_score if review.overall_score else review.get('rating', 3) } },
+        extraction_method: '{{ review.get('extraction_method', '') }}',
+            notes: { { review.notes | tojson } },
+        review_date: '{{ review.review_date | format_date if review.review_date else '' }}',
             updated_at: '{{ review.updated_at | format_date if review.get('updated_at') and review.updated_at != review.created_at else '' }}'
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
+    } {% if not loop.last %}, {% endif %}
+    {% endfor %}
     };
 
     function showReviewModal(reviewId, mode) {
@@ -486,7 +524,7 @@
     }
 
     // Close modal when clicking outside
-    window.onclick = function(event) {
+    window.onclick = function (event) {
         const modal = document.getElementById('reviewModal');
         if (event.target === modal) {
             closeReviewModal();
@@ -502,7 +540,7 @@
     }
 
     // Render markdown for general notes
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const generalNotesDiv = document.getElementById('generalNotes');
         if (generalNotesDiv && typeof marked !== 'undefined') {
             const markdownText = generalNotesDiv.getAttribute('data-markdown');
@@ -519,5 +557,160 @@
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     });
+</script>
+<script>
+    function switchDataTab(tabName) {
+        document.querySelectorAll('.roast-data-section .panel-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            }
+        });
+
+        document.getElementById('curveDataTab').classList.remove('active');
+        document.getElementById('dataDataTab').classList.remove('active');
+
+        if (tabName === 'curve') {
+            document.getElementById('curveDataTab').classList.add('active');
+        } else {
+            document.getElementById('dataDataTab').classList.add('active');
+        }
+    }
+
+    {% if roast.temp_curve %}
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('roastCurveChart');
+        if (!canvas) return;
+
+        const tempCurve = {{ roast.temp_curve | tojson
+    }};
+    const keyTimings = {{ roast.key_timings | tojson if roast.key_timings else '[]' }};
+
+    // Prepare annotations
+    const eventColors = {
+        'Yellowing': '#f0ad4e',
+        'First Crack Start': '#d9534f',
+        'First Crack End': '#c9302c',
+        'Second Crack Start': '#5bc0de',
+        'Second Crack End': '#31b0d5'
+    };
+
+    const annotations = {};
+    keyTimings.forEach(timing => {
+        const timeLabel = formatTime(timing.time_seconds);
+        const color = eventColors[timing.event_name] || '#6B5B4D';
+        const annotationId = 'event-' + timing.time_seconds;
+
+        annotations[annotationId] = {
+            type: 'line',
+            scaleID: 'x',
+            value: timeLabel,
+            borderColor: color,
+            borderWidth: 2,
+            borderDash: [5, 5],
+            label: {
+                display: true,
+                content: timing.event_name,
+                position: 'start',
+                backgroundColor: color,
+                color: 'white',
+                font: { size: 10 },
+                yAdjust: -20
+            }
+        };
+    });
+
+    const labels = tempCurve.map(e => formatTime(e.time_seconds));
+    const tempData = tempCurve.map(e => e.temperature);
+    const rorData = tempCurve.map(e => e.ror || null);
+
+    // Calculate dynamic Y-axis max
+    const maxTemp = Math.max(...tempData);
+    let tempMax = 100;
+    if (maxTemp > 180) tempMax = 230;
+    else if (maxTemp > 150) tempMax = 190;
+    else if (maxTemp > 120) tempMax = 160;
+    else if (maxTemp > 90) tempMax = 130;
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Temperature (°C)',
+                    data: tempData,
+                    borderColor: '#6B5B4D',
+                    backgroundColor: 'rgba(107, 91, 77, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    yAxisID: 'y-temp',
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                },
+                {
+                    label: 'RoR (°C/min)',
+                    data: rorData,
+                    borderColor: '#6B8E6F',
+                    backgroundColor: 'rgba(107, 142, 111, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    yAxisID: 'y-ror',
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Time', color: '#666' },
+                    ticks: { color: '#666', maxTicksLimit: 12 }
+                },
+                'y-temp': {
+                    type: 'linear',
+                    position: 'left',
+                    min: 0,
+                    max: tempMax,
+                    title: { display: true, text: 'Temp (°C)', color: '#6B5B4D' },
+                    ticks: { color: '#6B5B4D', stepSize: 25 },
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                },
+                'y-ror': {
+                    type: 'linear',
+                    position: 'right',
+                    min: 0,
+                    max: 50,
+                    title: { display: true, text: 'RoR (°C/min)', color: '#6B8E6F' },
+                    ticks: { color: '#6B8E6F', stepSize: 10 },
+                    grid: { drawOnChartArea: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, padding: 15, color: '#2C2C2C' }
+                },
+                annotation: {
+                    annotations: annotations
+                }
+            }
+        }
+    });
+    });
+    {% endif %}
 </script>
 {% endblock %}
