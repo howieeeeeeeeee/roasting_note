@@ -40,6 +40,13 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-i
 # ============================================
 DEFAULT_DB = os.environ.get('DEFAULT_DB', 'local')
 
+# RoR Calculation Settings
+ROR_WINDOW_SECONDS = 20      # How far back to look for comparison temp
+ROR_TOLERANCE_SECONDS = 5    # Acceptable deviation from target time
+
+# Database Logging Settings
+DB_LOG_INTERVAL_SECONDS = 1  # How often to log to MongoDB (1 = every second)
+
 # Online DB (MongoDB Atlas)
 MONGO_URI_ONLINE = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
 mongo_online = MongoClient(MONGO_URI_ONLINE)
@@ -81,6 +88,17 @@ def get_current_time_with_tz():
 # Temperature Sensor Helper Functions
 # ============================================
 
+# Default sensor URL (can be overridden via settings)
+DEFAULT_TEMP_SENSOR_URL = 'http://192.168.0.47/temp'
+
+# Data logging configuration
+MAX_ROAST_TIME_SECONDS = 7200  # Maximum valid roast time (2 hours)
+
+def get_temp_sensor_url():
+    """Get temperature sensor URL from session or default"""
+    return session.get('temp_sensor_url', DEFAULT_TEMP_SENSOR_URL)
+
+
 def fetch_temperature_from_sensor_fast():
     """
     Fast single-request temperature fetch for display updates.
@@ -89,7 +107,7 @@ def fetch_temperature_from_sensor_fast():
     Returns:
         int: Rounded temperature reading, or None if request fails
     """
-    TEMP_SENSOR_URL = os.environ.get('TEMP_SENSOR_URL', 'http://192.168.0.47/temp')
+    TEMP_SENSOR_URL = get_temp_sensor_url()
     TIMEOUT = 0.2  # 200ms timeout for fast but reliable response
 
     try:
@@ -117,7 +135,7 @@ def fetch_temperature_from_sensor():
     Returns:
         int: Rounded average of the two highest successful readings, or None if fewer than 2 successful readings
     """
-    TEMP_SENSOR_URL = os.environ.get('TEMP_SENSOR_URL', 'http://192.168.0.47/temp')
+    TEMP_SENSOR_URL = get_temp_sensor_url()
     TIMEOUT = 0.1  # 100ms timeout
 
     successful_readings = []
@@ -488,10 +506,15 @@ def api_roast_update_title(roast_id):
 def api_roast_add_timing(roast_id):
     """Add timing event to key_timings array with optional temp/fan/power"""
     data = request.get_json()
+    time_seconds = int(data['time_seconds'])
+
+    # Validate time_seconds
+    if time_seconds < 0 or time_seconds > MAX_ROAST_TIME_SECONDS:
+        return jsonify({'success': False, 'error': f'Invalid time_seconds: {time_seconds}'})
 
     timing_event = {
         'event_name': data['event_name'],
-        'time_seconds': int(data['time_seconds'])
+        'time_seconds': time_seconds
     }
 
     # Handle temperature - auto-fetch from sensor if not provided
@@ -531,6 +554,12 @@ def api_roast_add_timing(roast_id):
 def api_roast_add_event(roast_id):
     """Add temperature/settings event to temp_curve array and optionally log to local CSV"""
     data = request.get_json()
+    time_seconds = int(data['time_seconds'])
+
+    # Validate time_seconds
+    if time_seconds < 0 or time_seconds > MAX_ROAST_TIME_SECONDS:
+        return jsonify({'success': False, 'error': f'Invalid time_seconds: {time_seconds}'})
+
     roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id)})
 
     # Get fan and power settings, with default values if not provided and no previous events
@@ -559,7 +588,7 @@ def api_roast_add_event(roast_id):
         if power_setting is None: power_setting = 3
 
     temp_event = {
-        'time_seconds': int(data['time_seconds']),
+        'time_seconds': time_seconds,
         'fan_setting': int(fan_setting),
         'power_setting': int(power_setting)
     }
@@ -573,7 +602,7 @@ def api_roast_add_event(roast_id):
     if data.get('ror') is not None:
         temp_event['ror'] = float(data['ror'])
     elif data.get('temperature') is not None:
-        ror = calculate_ror(roast_id, float(data['temperature']), int(data['time_seconds']))
+        ror = calculate_ror(roast_id, float(data['temperature']), time_seconds)
         if ror is not None:
             temp_event['ror'] = ror
 
@@ -657,7 +686,7 @@ def api_roast_delete(roast_id):
 @app.route('/api/roast/add_review/<roast_id>', methods=['POST'])
 def api_roast_add_review(roast_id):
     """Add review to roast"""
-    data = request.get_json() or request.form.to_dict()
+    data = request.get_json(silent=True) or request.form.to_dict()
 
     current_time_utc = get_current_time_with_tz()
     review = {
@@ -687,7 +716,7 @@ def api_roast_add_review(roast_id):
 @app.route('/api/roast/update_review/<roast_id>/<review_id>', methods=['POST'])
 def api_roast_update_review(roast_id, review_id):
     """Update an existing review"""
-    data = request.get_json() or request.form.to_dict()
+    data = request.get_json(silent=True) or request.form.to_dict()
 
     current_time_utc = get_current_time_with_tz()
     # Build the update for the specific review in the array
@@ -797,44 +826,42 @@ roast_temp_history = {}
 def calculate_ror(roast_id, current_temp, current_time):
     """
     Calculate Rate of Rise (RoR) based on temperature history.
-    RoR = (Current Temp - Temp 30s ago) * (60 / 30) = (Delta) * 2
+    Uses ROR_WINDOW_SECONDS (default 20s) lookback window.
     Returns None if insufficient data.
     """
     if roast_id not in roast_temp_history:
         roast_temp_history[roast_id] = {
-            'history': collections.deque(maxlen=60), # Keep last 60 readings
+            'history': collections.deque(maxlen=60),
             'last_db_log_time': -1
         }
-    
+
     state = roast_temp_history[roast_id]
     history = state['history']
-    
-    # Add current reading
+
     history.append({'time': current_time, 'temp': current_temp})
-    
-    # Find reading ~30 seconds ago
-    target_time = current_time - 30
-    past_reading = None
-    
-    # Search for reading closest to target_time
-    # Since deque is ordered by time, we can iterate
+
+    target_time = current_time - ROR_WINDOW_SECONDS
+
+    if current_time < ROR_WINDOW_SECONDS:
+        return None
+
+    best_reading = None
+    best_diff = float('inf')
+
     for reading in history:
-        if reading['time'] >= target_time:
-            # If we found a reading that is exactly or just after target_time
-            # Check if it's within a reasonable window (e.g., +/- 2 seconds of target)
-            if reading['time'] <= target_time + 2:
-                past_reading = reading
-            break
-            
-    if past_reading:
-        temp_diff = current_temp - past_reading['temp']
-        time_diff = current_time - past_reading['time']
-        
+        time_diff_from_target = abs(reading['time'] - target_time)
+        if time_diff_from_target <= ROR_TOLERANCE_SECONDS and time_diff_from_target < best_diff:
+            best_reading = reading
+            best_diff = time_diff_from_target
+
+    if best_reading:
+        temp_diff = current_temp - best_reading['temp']
+        time_diff = current_time - best_reading['time']
+
         if time_diff > 0:
-            # Normalize to per minute
             ror = (temp_diff / time_diff) * 60
             return round(ror, 1)
-            
+
     return None
 
 
@@ -855,6 +882,16 @@ def api_roast_sync_state(roast_id):
     fan_setting = int(data.get('fan_setting', 0))
     power_setting = int(data.get('power_setting', 0))
 
+    # Validate time_seconds - reject negative or unreasonably large values
+    if client_time < 0 or client_time > MAX_ROAST_TIME_SECONDS:
+        return jsonify({
+            'success': False,
+            'error': f'Invalid time_seconds: {client_time}. Must be between 0 and {MAX_ROAST_TIME_SECONDS}.',
+            'temperature': None,
+            'ror': None,
+            'logged_to_db': False
+        })
+
     # Initialize state if needed
     if roast_id not in roast_temp_history:
         roast_temp_history[roast_id] = {
@@ -871,9 +908,8 @@ def api_roast_sync_state(roast_id):
                        (power_setting != state.get('last_power', -1))
 
     # Determine if we should log to DB based on time interval OR setting change
-    # Log if we crossed a 5-second boundary since last log OR settings changed
-    current_interval = client_time // 5
-    last_interval = state['last_db_log_time'] // 5
+    current_interval = client_time // DB_LOG_INTERVAL_SECONDS
+    last_interval = state['last_db_log_time'] // DB_LOG_INTERVAL_SECONDS
     is_db_log_interval = ((current_interval > last_interval) and (client_time > 0)) or settings_changed
 
     # Update last known settings
@@ -961,12 +997,35 @@ def api_set_db_settings():
     """Set database mode (local or online)"""
     data = request.get_json() or {}
     mode = data.get('mode', 'local')
-    
+
     if mode not in ['local', 'online']:
         return jsonify({'success': False, 'error': 'Invalid mode'}), 400
-    
+
     session['db_mode'] = mode
     return jsonify({'success': True, 'mode': mode})
+
+
+@app.route('/api/settings/sensor', methods=['GET'])
+def api_get_sensor_settings():
+    """Get current temperature sensor URL"""
+    return jsonify({
+        'url': session.get('temp_sensor_url', DEFAULT_TEMP_SENSOR_URL),
+        'default': DEFAULT_TEMP_SENSOR_URL
+    })
+
+
+@app.route('/api/settings/sensor', methods=['POST'])
+def api_set_sensor_settings():
+    """Set temperature sensor URL"""
+    data = request.get_json() or {}
+    url = data.get('url', '').strip()
+
+    # If empty, use default
+    if not url:
+        url = DEFAULT_TEMP_SENSOR_URL
+
+    session['temp_sensor_url'] = url
+    return jsonify({'success': True, 'url': url})
 
 
 def sync_collection(source_col, target_col):
@@ -1023,6 +1082,43 @@ def api_sync_local_to_online():
             'success': True,
             'beans': beans_result,
             'roasts': roasts_result
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/db/clean-test-data', methods=['POST'])
+def api_clean_test_data():
+    """Delete all test data (documents with test_data: True) from local database only"""
+    try:
+        # Delete beans marked as test data
+        beans_deleted = db_local.beans.delete_many({'test_data': True}).deleted_count
+        
+        # Delete roasts marked as test data
+        roasts_deleted = db_local.roasts.delete_many({'test_data': True}).deleted_count
+        
+        # Clean temp log files for test roasts
+        temp_logs_deleted = 0
+        temp_logs_dir = os.path.join(os.getcwd(), 'temp_logs')
+        if os.path.exists(temp_logs_dir):
+            for filename in os.listdir(temp_logs_dir):
+                if filename.endswith('.csv'):
+                    filepath = os.path.join(temp_logs_dir, filename)
+                    roast_id = filename.replace('.csv', '')
+                    try:
+                        # If roast doesn't exist, delete the orphaned file
+                        roast = db_local.roasts.find_one({'_id': ObjectId(roast_id)})
+                        if roast is None:
+                            os.remove(filepath)
+                            temp_logs_deleted += 1
+                    except:
+                        pass  # Invalid filename format, skip
+        
+        return jsonify({
+            'success': True,
+            'beans_deleted': beans_deleted,
+            'roasts_deleted': roasts_deleted,
+            'temp_logs_deleted': temp_logs_deleted
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

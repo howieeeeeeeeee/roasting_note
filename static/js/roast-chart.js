@@ -130,9 +130,10 @@ const RoastChart = {
                             color: '#666',
                             stepSize: 60,  // Show tick every 60 seconds
                             callback: function (value) {
-                                // Format seconds to MM:SS
-                                const mins = Math.floor(value / 60);
-                                const secs = value % 60;
+                                // Format seconds to MM:SS (round to avoid floating point display)
+                                const totalSeconds = Math.round(value);
+                                const mins = Math.floor(totalSeconds / 60);
+                                const secs = totalSeconds % 60;
                                 return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
                             }
                         },
@@ -191,6 +192,17 @@ const RoastChart = {
                     },
                     annotation: {
                         annotations: {}
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function (context) {
+                                // Format tooltip title as MM:SS
+                                const seconds = Math.round(context[0].parsed.x);
+                                const mins = Math.floor(seconds / 60);
+                                const secs = seconds % 60;
+                                return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                            }
+                        }
                     }
                 },
                 animation: this.config.isLive ? { duration: 0 } : {},

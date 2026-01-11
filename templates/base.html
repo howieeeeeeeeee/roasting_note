@@ -44,6 +44,28 @@
             </div>
             <div class="modal-body">
                 <div class="settings-section">
+                    <h3>Temperature Sensor</h3>
+                    <p class="settings-hint">Configure your ESP32 temperature sensor connection</p>
+                    <div class="sensor-url-container">
+                        <div class="sensor-url-input-wrapper">
+                            <input type="text" id="sensorUrl" class="input-field"
+                                placeholder="http://192.168.0.47/temp">
+                        </div>
+                        <div class="sensor-button-group">
+                            <button class="btn btn-secondary" onclick="saveSensorUrl()">
+                                <span class="material-icons">save</span>
+                                Save
+                            </button>
+                            <button class="btn btn-secondary" onclick="testSensorConnection()">
+                                <span class="material-icons">wifi_tethering</span>
+                                Test Connection
+                            </button>
+                        </div>
+                    </div>
+                    <p class="settings-hint" id="sensorStatus">Status: <span id="sensorStatusText">Not tested</span></p>
+                </div>
+
+                <div class="settings-section">
                     <h3>Database Connection</h3>
                     <div class="db-toggle-container">
                         <label class="db-option">
@@ -77,7 +99,15 @@
 
                 <div class="settings-section settings-danger">
                     <h3>Danger Zone</h3>
-                    <p class="settings-hint">This will permanently delete all beans and roasts from your local database.
+                    <p class="settings-hint">Delete test data (documents marked with test_data flag) from local
+                        database.
+                    </p>
+                    <button class="btn btn-secondary" id="cleanTestDataBtn" onclick="cleanTestData()">
+                        <span class="material-icons">science</span>
+                        Clean Up Test Data
+                    </button>
+                    <div style="margin: 1.5rem 0; border-top: 1px solid var(--border-color);"></div>
+                    <p class="settings-hint">This will permanently delete ALL beans and roasts from your local database.
                     </p>
                     <button class="btn btn-danger" id="cleanLocalDbBtn" onclick="cleanLocalDb()">
                         <span class="material-icons">delete_forever</span>
@@ -110,6 +140,59 @@
         function openSettingsModal() {
             document.getElementById('settingsModal').style.display = 'block';
             loadDbSettings();
+            loadSensorSettings();
+        }
+
+        // Sensor URL Settings
+        async function loadSensorSettings() {
+            try {
+                const response = await fetch('/api/settings/sensor');
+                const data = await response.json();
+                document.getElementById('sensorUrl').value = data.url || '';
+            } catch (error) {
+                console.error('Error loading sensor settings:', error);
+            }
+        }
+
+        async function saveSensorUrl() {
+            const url = document.getElementById('sensorUrl').value.trim();
+            try {
+                const response = await fetch('/api/settings/sensor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Sensor URL saved', 'success');
+                } else {
+                    showToast('Failed to save sensor URL', 'error');
+                }
+            } catch (error) {
+                showToast('Error saving sensor URL', 'error');
+            }
+        }
+
+        async function testSensorConnection() {
+            const statusText = document.getElementById('sensorStatusText');
+            statusText.textContent = 'Testing...';
+            statusText.className = '';
+
+            try {
+                const response = await fetch('/api/temp/current_fast');
+                const data = await response.json();
+
+                if (data.status === 'success' && data.temperature !== null) {
+                    statusText.textContent = `Connected! Current temp: ${data.temperature}°C`;
+                    statusText.className = 'status-success';
+                } else {
+                    statusText.textContent = 'Not connected or sensor unavailable';
+                    statusText.className = 'status-error';
+                }
+            } catch (error) {
+                statusText.textContent = 'Connection test failed';
+                statusText.className = 'status-error';
+            }
         }
 
         function closeSettingsModal() {
@@ -196,6 +279,38 @@
                 toast.classList.add('toast-fade-out');
                 setTimeout(() => toast.remove(), 300);
             }, 8000);
+        }
+
+        // Clean Up Test Data (documents with test_data: True)
+        async function cleanTestData() {
+            if (!confirm('Delete all test data (documents marked with test_data flag) from local database?')) {
+                return;
+            }
+
+            const btn = document.getElementById('cleanTestDataBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons spinning">science</span> Deleting...';
+
+            try {
+                const response = await fetch('/api/db/clean-test-data', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    let msg = `Test data cleaned! ${data.beans_deleted} beans, ${data.roasts_deleted} roasts`;
+                    if (data.temp_logs_deleted > 0) {
+                        msg += `, ${data.temp_logs_deleted} temp logs`;
+                    }
+                    msg += ' deleted.';
+                    showToast(msg, 'success');
+                } else {
+                    showToast(`Failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showToast('Failed: Network error', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-icons">science</span> Clean Up Test Data';
+            }
         }
 
         // Clean Up Local DB

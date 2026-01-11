@@ -50,9 +50,11 @@ The live roasting page provides a comprehensive interface for monitoring and con
 
 ### Rate of Rise (RoR)
 
-- Calculated using 20-second sliding window
-- Formula: `(current_temp - temp_20s_ago) × 3`
-- Displays after 20 seconds of data collected
+- Calculated using configurable sliding window (default: 20 seconds)
+- Settings in `app.py`: `ROR_WINDOW_SECONDS`, `ROR_TOLERANCE_SECONDS`
+- Formula: `(current_temp - past_temp) / time_diff × 60`
+- Finds closest reading within tolerance window (default: ±5 seconds)
+- Displays after enough data collected
 - Rounded to 1 decimal place
 
 ### Fan & Power Controls
@@ -84,7 +86,8 @@ The live roasting page provides a comprehensive interface for monitoring and con
 
 - Temperature fetched every 1 second
 - Logged to local CSV every second (`temp_logs/{roast_id}.csv`)
-- Logged to database every 3 seconds with RoR value
+- Logged to database every second (configurable via `DB_LOG_INTERVAL_SECONDS`)
+- RoR calculated and stored with each database entry
 
 ### Manual Events
 

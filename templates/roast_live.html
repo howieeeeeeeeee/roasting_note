@@ -157,12 +157,13 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="event_note">Note</label>
-                    <input type="text" id="event_note" name="event_note">
+                <div class="note-button-row">
+                    <div class="form-group note-input-group">
+                        <label for="event_note">Note</label>
+                        <input type="text" id="event_note" name="event_note">
+                    </div>
+                    <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Event</button>
                 </div>
-
-                <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Event</button>
             </section>
         </div>
 
@@ -374,7 +375,7 @@
                         type: 'linear',
                         position: 'right',
                         min: 0,
-                        max: 30,  // Will expand dynamically as needed
+                        max: 40,  // Initial max, will expand dynamically as needed
                         title: {
                             display: true,
                             text: 'RoR (°C/min)',
@@ -400,6 +401,17 @@
                     },
                     annotation: {
                         annotations: {}
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function (context) {
+                                // Format tooltip title as MM:SS
+                                const seconds = context[0].parsed.x;
+                                const mins = Math.floor(seconds / 60);
+                                const secs = Math.round(seconds % 60);
+                                return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                            }
+                        }
                     }
                 },
                 animation: {
@@ -452,7 +464,7 @@
     // Dynamic Y-axis scaling
     let currentTempMax = 100;
     let currentRoRMin = 0;
-    let currentRoRMax = 30;
+    let currentRoRMax = 40;
 
     function updateChartScales(temp, ror) {
         // Temp Max Scaling
@@ -766,6 +778,15 @@
                 const startTime = new Date('{{ roast.roast_start_time }}').getTime();
                 const now = new Date().getTime();
                 seconds = Math.floor((now - startTime) / 1000);
+
+                // Clamp to valid range - prevent negative or unreasonably large values
+                if (seconds < 0) {
+                    console.warn('Calculated negative elapsed time, clamping to 0:', seconds);
+                    seconds = 0;
+                } else if (seconds > 7200) {  // 2 hours max
+                    console.warn('Calculated elapsed time exceeds 2 hours, may be stale data:', seconds);
+                }
+
                 timerDisplay.textContent = formatTime(seconds);
 
                 // Also restart the timer interval

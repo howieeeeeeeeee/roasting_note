@@ -86,8 +86,12 @@ All REST API routes for RoastLogger.
 |-------|--------|-------------|
 | `/api/settings/db` | GET | Get current database mode |
 | `/api/settings/db` | POST | Switch database mode |
+| `/api/settings/sensor` | GET | Get current sensor URL |
+| `/api/settings/sensor` | POST | Set sensor URL |
 | `/api/sync/online-to-local` | POST | Sync online DB to local |
 | `/api/sync/local-to-online` | POST | Sync local DB to online |
+| `/api/db/clean-test-data` | POST | Delete test data (`test_data: True`) from local DB |
+| `/api/db/clean-local` | POST | Delete ALL data from local DB |
 
 ### Database Mode Response
 
@@ -104,6 +108,17 @@ All REST API routes for RoastLogger.
   "success": true,
   "beans": { "added": 5, "updated": 2 },
   "roasts": { "added": 10, "updated": 3 }
+}
+```
+
+### Clean Test Data Response
+
+```json
+{
+  "success": true,
+  "beans_deleted": 3,
+  "roasts_deleted": 5,
+  "temp_logs_deleted": 2
 }
 ```
 

@@ -3,7 +3,17 @@
     "allow": [
       "Bash(mkdir:*)",
       "Read(//Users/howieee/Library/Containers/at.EternalStorms.Yoink/Data/Documents/YoinkPromisedFiles.noIndex/yoinkFilePromiseCreationFolderBC41E80D-FBB4-4BC5-8A5C-738BCC57B45F/addBC41E80D-FBB4-4BC5-8A5C-738BCC57B45F/**)",
-      "Bash(python -m py_compile:*)"
+      "Bash(python -m py_compile:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "Bash(pip install:*)",
+      "Bash(pytest:*)",
+      "Bash(uv pip install:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run python:*)"
     ],
     "deny": [],
     "ask": []

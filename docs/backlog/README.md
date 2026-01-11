@@ -39,16 +39,19 @@ Examples:
 
 | ID | Type | Description | File |
 |----|------|-------------|------|
-| 1 | [TODO] | Add test framework for beans/roasts CRUD | [pending-test-framework.md](./pending-test-framework.md) |
+| 1 | [TODO] | Original test framework (legacy) | [2026-01-pending-test-framework.md](./2026-01-pending-test-framework.md) |
+| 2 | [TODO] | UI testing | [2026-01-pending-ui-testing.md](./2026-01-pending-ui-testing.md) |
 
 ### Resolved (Recent)
 
 | ID | Type | Description | File |
 |----|------|-------------|------|
-| 1 | [BUG] | Chart visualization fixes | [2025-01-resolved-chart-fixes.md](./2025-01-resolved-chart-fixes.md) |
-| 2 | [FEATURE] | Real-time graph with temp/RoR | [2025-01-resolved-realtime-graph.md](./2025-01-resolved-realtime-graph.md) |
-| 3 | [FEATURE] | Database sync/switch | [2025-01-resolved-db-sync.md](./2025-01-resolved-db-sync.md) |
-| 4 | [FEATURE] | Ambient temp/humidity fields | [2025-01-resolved-ambient-data.md](./2025-01-resolved-ambient-data.md) |
+| 1 | [IMPROVEMENT] | Data collection (RoR + DB logging) | [2026-01-resolved-data-collection-improvements.md](./2026-01-resolved-data-collection-improvements.md) |
+| 2 | [TODO] | API testing framework (58 tests) | [2026-01-resolved-api-testing.md](./2026-01-resolved-api-testing.md) |
+| 3 | [BUG] | Chart visualization fixes | [2025-01-resolved-chart-fixes.md](./2025-01-resolved-chart-fixes.md) |
+| 4 | [FEATURE] | Real-time graph with temp/RoR | [2025-01-resolved-realtime-graph.md](./2025-01-resolved-realtime-graph.md) |
+| 5 | [FEATURE] | Database sync/switch | [2025-01-resolved-db-sync.md](./2025-01-resolved-db-sync.md) |
+| 6 | [FEATURE] | Ambient temp/humidity fields | [2025-01-resolved-ambient-data.md](./2025-01-resolved-ambient-data.md) |
 
 ---
 
