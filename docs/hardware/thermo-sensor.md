@@ -6,19 +6,24 @@ This is a **PlatformIO-based ESP32 project** that creates a WiFi-connected tempe
 
 ## Project Structure
 
+The firmware code is located in the `thermo/` folder at the project root:
+
 ```
-Thermo/
-├── platformio.ini          # PlatformIO configuration (board, libs, settings)
-├── src/
-│   └── main.cpp            # Main application code
-├── include/                # Project header files (currently empty)
-├── lib/                    # Private/custom libraries (currently empty)
-├── test/                   # Unit tests directory
-├── .pio/                   # Build artifacts & library dependencies (auto-generated)
-│   ├── build/              # Compiled binaries
-│   └── libdeps/            # Downloaded library dependencies
-└── .vscode/                # VS Code configuration files
+roasting_note/
+└── thermo/                 # ESP32 firmware project
+    ├── platformio.ini      # PlatformIO configuration (board, libs, settings)
+    ├── src/
+    │   └── main.cpp        # Main application code
+    ├── include/            # Project header files (currently empty)
+    ├── lib/                # Private/custom libraries (currently empty)
+    ├── test/               # Unit tests directory
+    ├── .pio/               # Build artifacts & library dependencies (auto-generated)
+    │   ├── build/          # Compiled binaries
+    │   └── libdeps/        # Downloaded library dependencies
+    └── .vscode/            # VS Code configuration files
 ```
+
+**Note:** To build and upload the firmware, navigate to the `thermo/` directory and use PlatformIO commands from there.
 
 ### Key Files
 
@@ -112,6 +117,9 @@ Defined in platformio.ini:
 ## Complete Workflow
 
 ```bash
+# Navigate to the thermo directory
+cd thermo/
+
 # 1. Build only (verify code compiles)
 #    Click ✓ in toolbar or run:
 pio run

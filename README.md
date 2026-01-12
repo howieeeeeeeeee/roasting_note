@@ -35,6 +35,12 @@ uv run python app.py
 
 Open `http://localhost:5000` in your browser.
 
+## Hardware/Firmware
+
+The ESP32 firmware code for the temperature sensor board is located in the `thermo/` folder. This is a PlatformIO project that can be built and uploaded to your ESP32 device.
+
+See **[Hardware Setup](docs/hardware/)** for complete setup and usage instructions.
+
 ## Documentation
 
 For detailed information, see the `docs/` folder:

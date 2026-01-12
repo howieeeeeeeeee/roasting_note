@@ -16,5 +16,6 @@ The temperature sensor is a separate hardware project (Thermo) that provides rea
 - **Sensor:** MAX31855 K-Type Thermocouple Amplifier
 - **Communication:** WiFi HTTP server
 - **Default IP:** 192.168.0.47
+- **Firmware Location:** The ESP32 firmware code is located in the `thermo/` folder at the project root
 
 See [thermo-sensor.md](./thermo-sensor.md) for complete setup and usage instructions.
