@@ -10,14 +10,18 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" id="pageHeader">
     <h1>Live Roasting</h1>
+    <button id="fullscreenBtn" class="btn btn-secondary" onclick="toggleFullscreen()">
+        <span class="material-icons">fullscreen</span>
+        Fullscreen
+    </button>
 </div>
 
 <!-- Toast notification container -->
 <div id="toastContainer" class="toast-container"></div>
 
-<div class="live-roast-container">
+<div class="live-roast-container" id="liveRoastContainer">
     <!-- Pre-roast Setup - Collapsible during roasting -->
     <section class="setup-section" id="setupSection">
         <h2 onclick="toggleSetup()"
@@ -67,12 +71,83 @@
         </div>
     </section>
 
+    <!-- Fullscreen Readings Panel (shown only in fullscreen mode) -->
+    <section class="fullscreen-readings" id="fullscreenReadings" style="display: none;">
+        <div class="fs-readings-left">
+            <div class="fs-reading-item fs-time">
+                <span class="fs-label">Time</span>
+                <span class="fs-value" id="fsTimerDisplay">00:00</span>
+                <span id="fsFcTimeDisplay" class="fs-fc-badge" style="display: none;"></span>
+            </div>
+            <div class="fs-reading-item fs-temp">
+                <span class="fs-label">Temp</span>
+                <span class="fs-value"><span id="fsTempValue">--</span><span class="fs-unit">°C</span></span>
+            </div>
+            <div class="fs-reading-item fs-ror">
+                <span class="fs-label">RoR</span>
+                <span class="fs-value"><span id="fsRorValue">--</span><span class="fs-unit">°C/min</span></span>
+            </div>
+        </div>
+        <div class="fs-readings-right">
+            <button id="fsStartBtn" class="btn btn-success fs-action-btn" style="display: none;">
+                <span class="material-icons">play_arrow</span>
+                Start
+            </button>
+            <button id="fsEndBtn" class="btn btn-danger fs-action-btn" style="display: none;">
+                <span class="material-icons">stop</span>
+                End Roast
+            </button>
+            <button id="exitFullscreenBtn" class="exit-fullscreen-btn" onclick="toggleFullscreen()">
+                <span class="material-icons">fullscreen_exit</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Fullscreen Controls Bar (shown when left panel is hidden in compact mode) -->
+    <section class="fs-controls-bar" id="fsControlsBar" style="display: none;">
+        <div class="fs-controls-row">
+            <div class="fs-event-buttons">
+                <button class="btn btn-secondary fs-event-btn" data-event="Yellowing" disabled>Y</button>
+                <button class="btn btn-secondary fs-event-btn" data-event="First Crack Start" disabled>FC</button>
+                <button class="btn btn-secondary fs-event-btn" data-event="First Crack End" disabled>FC-end</button>
+                <button class="btn btn-secondary fs-event-btn" data-event="Second Crack Start" disabled>SC</button>
+                <button class="btn btn-secondary fs-event-btn" data-event="Second Crack End" disabled>SC-end</button>
+            </div>
+            <div class="fs-settings">
+                <div class="fs-setting-group">
+                    <label>Temp</label>
+                    <input type="number" id="fsTemperature" class="fs-input">
+                </div>
+                <div class="fs-setting-group">
+                    <label>Fan</label>
+                    <div class="fs-stepper">
+                        <button type="button" class="btn-stepper" onclick="adjustFan(-1)"><span class="material-icons">remove</span></button>
+                        <span class="fs-stepper-value" id="fsFanValue">9</span>
+                        <button type="button" class="btn-stepper" onclick="adjustFan(1)"><span class="material-icons">add</span></button>
+                    </div>
+                </div>
+                <div class="fs-setting-group">
+                    <label>Power</label>
+                    <div class="fs-stepper">
+                        <button type="button" class="btn-stepper" onclick="adjustPower(-1)"><span class="material-icons">remove</span></button>
+                        <span class="fs-stepper-value" id="fsPowerValue">3</span>
+                        <button type="button" class="btn-stepper" onclick="adjustPower(1)"><span class="material-icons">add</span></button>
+                    </div>
+                </div>
+            </div>
+            <div class="fs-log-action">
+                <input type="text" id="fsEventNote" placeholder="Note" class="fs-input fs-note-input">
+                <button id="fsLogEventBtn" class="btn btn-primary" disabled>Log</button>
+            </div>
+        </div>
+    </section>
+
     <!-- Full Width Layout: Left Panel + Right Panel -->
-    <div class="roast-panels">
+    <div class="roast-panels" id="roastPanels">
         <!-- Left Panel: Timer and Log Input -->
-        <div class="left-panel">
+        <div class="left-panel" id="leftPanel">
             <!-- Timer, Temperature and Controls -->
-            <section class="timer-section">
+            <section class="timer-section" id="timerSection">
                 <div class="timer-panel-main">
                     <div class="panel-label">Time</div>
                     <div class="panel-value">
@@ -103,7 +178,7 @@
             </section>
 
             <!-- Combined Event Logging -->
-            <section class="data-entry-section">
+            <section class="data-entry-section" id="dataEntrySection">
                 <h2>Log Event</h2>
 
                 <!-- Quick Key Events -->
@@ -124,36 +199,40 @@
                 </div>
 
                 <!-- Temperature & Settings -->
-                <div class="settings-row">
-                    <div class="form-group">
-                        <label for="temperature">Temp</label>
-                        <input type="number" id="temperature" name="temperature">
-                    </div>
-                    <div class="form-group">
-                        <label>Fan</label>
-                        <div class="stepper-control">
-                            <button type="button" class="btn-stepper" onclick="adjustFan(-1)">
-                                <span class="material-icons">remove</span>
-                            </button>
-                            <span class="stepper-value" id="fanValue">9</span>
-                            <button type="button" class="btn-stepper" onclick="adjustFan(1)">
-                                <span class="material-icons">add</span>
-                            </button>
+                <div class="settings-group">
+                    <div class="settings-row-temp">
+                        <div class="form-group">
+                            <label for="temperature">Temp</label>
+                            <input type="number" id="temperature" name="temperature">
                         </div>
-                        <input type="hidden" id="fan_setting" name="fan_setting" value="9">
                     </div>
-                    <div class="form-group">
-                        <label>Power</label>
-                        <div class="stepper-control">
-                            <button type="button" class="btn-stepper" onclick="adjustPower(-1)">
-                                <span class="material-icons">remove</span>
-                            </button>
-                            <span class="stepper-value" id="powerValue">3</span>
-                            <button type="button" class="btn-stepper" onclick="adjustPower(1)">
-                                <span class="material-icons">add</span>
-                            </button>
+                    <div class="settings-row-fp">
+                        <div class="form-group">
+                            <label>Fan</label>
+                            <div class="stepper-control">
+                                <button type="button" class="btn-stepper" onclick="adjustFan(-1)">
+                                    <span class="material-icons">remove</span>
+                                </button>
+                                <span class="stepper-value" id="fanValue">9</span>
+                                <button type="button" class="btn-stepper" onclick="adjustFan(1)">
+                                    <span class="material-icons">add</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="fan_setting" name="fan_setting" value="9">
                         </div>
-                        <input type="hidden" id="power_setting" name="power_setting" value="3">
+                        <div class="form-group">
+                            <label>Power</label>
+                            <div class="stepper-control">
+                                <button type="button" class="btn-stepper" onclick="adjustPower(-1)">
+                                    <span class="material-icons">remove</span>
+                                </button>
+                                <span class="stepper-value" id="powerValue">3</span>
+                                <button type="button" class="btn-stepper" onclick="adjustPower(1)">
+                                    <span class="material-icons">add</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="power_setting" name="power_setting" value="3">
+                        </div>
                     </div>
                 </div>
 
@@ -167,8 +246,11 @@
             </section>
         </div>
 
+        <!-- Resize Handle (for fullscreen landscape mode) -->
+        <div class="resize-handle" id="resizeHandle"></div>
+
         <!-- Right Panel: Chart and Timeline with Tabs -->
-        <div class="right-panel">
+        <div class="right-panel" id="rightPanel">
             <div class="panel-tabs">
                 <button class="panel-tab active" data-tab="curve" onclick="switchTab('curve')">
                     <span class="material-icons">show_chart</span>
@@ -186,17 +268,6 @@
                 <section class="chart-section-full">
                     <div class="chart-container-large">
                         <canvas id="roastCurveChart"></canvas>
-                    </div>
-                    <!-- Power/Fan Timeline Bars -->
-                    <div class="pf-timeline-bars">
-                        <div class="pf-timeline-row">
-                            <span class="pf-label">Power</span>
-                            <canvas id="powerTimeline" class="pf-timeline-canvas"></canvas>
-                        </div>
-                        <div class="pf-timeline-row">
-                            <span class="pf-label">Fan</span>
-                            <canvas id="fanTimeline" class="pf-timeline-canvas"></canvas>
-                        </div>
                     </div>
                 </section>
                 {% else %}
@@ -307,7 +378,8 @@
                         tension: 0.3,
                         yAxisID: 'y-temp',
                         pointRadius: 0,
-                        pointHoverRadius: 4
+                        pointHoverRadius: 4,
+                        order: 1
                     },
                     {
                         label: 'RoR (°C/min)',
@@ -318,7 +390,36 @@
                         tension: 0.3,
                         yAxisID: 'y-ror',
                         pointRadius: 0,
-                        pointHoverRadius: 4
+                        pointHoverRadius: 4,
+                        order: 2
+                    },
+                    {
+                        label: 'Power',
+                        data: [],
+                        borderColor: 'rgba(139, 115, 85, 0.4)',
+                        backgroundColor: 'rgba(139, 115, 85, 0.2)',
+                        borderWidth: 1,
+                        borderDash: [4, 3],
+                        stepped: 'before',
+                        fill: 'origin',
+                        yAxisID: 'y-pf',
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        order: 10
+                    },
+                    {
+                        label: 'Fan',
+                        data: [],
+                        borderColor: 'rgba(90, 122, 94, 0.4)',
+                        backgroundColor: 'rgba(90, 122, 94, 0.2)',
+                        borderWidth: 1,
+                        borderDash: [4, 3],
+                        stepped: 'before',
+                        fill: 'origin',
+                        yAxisID: 'y-pf',
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        order: 11
                     }
                 ]
             },
@@ -374,8 +475,8 @@
                     'y-ror': {
                         type: 'linear',
                         position: 'right',
-                        min: 0,
-                        max: 40,  // Initial max, will expand dynamically as needed
+                        min: -10,
+                        max: 40,
                         title: {
                             display: true,
                             text: 'RoR (°C/min)',
@@ -388,6 +489,16 @@
                         grid: {
                             drawOnChartArea: false
                         }
+                    },
+                    'y-pf': {
+                        type: 'linear',
+                        position: 'right',
+                        min: 0,
+                        max: 36,  // 9/36 = 25% of chart height
+                        display: false,
+                        grid: {
+                            drawOnChartArea: false
+                        }
                     }
                 },
                 plugins: {
@@ -395,8 +506,15 @@
                         position: 'top',
                         labels: {
                             usePointStyle: true,
-                            padding: 15,
-                            color: '#2C2C2C'
+                            pointStyleWidth: 8,
+                            boxHeight: 8,
+                            padding: 12,
+                            font: { size: 11 },
+                            color: '#2C2C2C',
+                            filter: function(item) {
+                                // Hide Power and Fan from legend
+                                return !['Power', 'Fan'].includes(item.text);
+                            }
                         }
                     },
                     annotation: {
@@ -410,6 +528,26 @@
                                 const mins = Math.floor(seconds / 60);
                                 const secs = Math.round(seconds % 60);
                                 return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                            },
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                if (label === 'Power' || label === 'Fan') {
+                                    return `${label}: ${value}`;
+                                }
+                                if (label === 'RoR (°C/min)' && value !== null) {
+                                    return `${label}: ${value.toFixed(1)}`;
+                                }
+                                return `${label}: ${value}`;
+                            },
+                            labelColor: function(context) {
+                                const dataset = context.dataset || {};
+                                const backgroundColor = dataset.backgroundColor || dataset.borderColor || '#999';
+                                const borderColor = dataset.borderColor || backgroundColor;
+                                return {
+                                    borderColor: borderColor,
+                                    backgroundColor: backgroundColor
+                                };
                             }
                         }
                     }
@@ -424,31 +562,36 @@
                 }
             }
         });
+
     }
 
     function updateChartData(timeSeconds, temp, ror, fan, power) {
         if (!roastChart) return;
 
-        // Store data for timeline bars
+        // Store data for reference
         chartData.labels.push(timeSeconds);  // Store numeric seconds
         chartData.tempData.push(temp);
         chartData.rorData.push(ror);
 
         // Fill empty fan/power with previous values
-        const lastFanValue = chartData.fanData.length > 0 ? chartData.fanData[chartData.fanData.length - 1] : 5;
+        const lastFanValue = chartData.fanData.length > 0 ? chartData.fanData[chartData.fanData.length - 1] : 9;
         const lastPowerValue = chartData.powerData.length > 0 ? chartData.powerData[chartData.powerData.length - 1] : 3;
-        chartData.fanData.push(fan !== null ? fan : lastFanValue);
-        chartData.powerData.push(power !== null ? power : lastPowerValue);
+        const currentFan = fan !== null ? fan : lastFanValue;
+        const currentPower = power !== null ? power : lastPowerValue;
+        chartData.fanData.push(currentFan);
+        chartData.powerData.push(currentPower);
+
+        // Filter RoR: only include if <= 30 (matches detail page behavior)
+        const filteredRor = (ror !== null && ror !== undefined && ror <= 30) ? ror : null;
 
         // Add data points using {x, y} format for linear x-axis
         roastChart.data.datasets[0].data.push({ x: timeSeconds, y: temp });
-        roastChart.data.datasets[1].data.push({ x: timeSeconds, y: ror });
-
-        // Update P/F timeline canvases
-        updatePFTimelines();
+        roastChart.data.datasets[1].data.push({ x: timeSeconds, y: filteredRor });
+        roastChart.data.datasets[2].data.push({ x: timeSeconds, y: currentPower });  // Power
+        roastChart.data.datasets[3].data.push({ x: timeSeconds, y: currentFan });    // Fan
 
         // Dynamic Y-axis scaling based on temperature and RoR
-        updateChartScales(temp, ror);
+        updateChartScales(temp, filteredRor);
 
         // Check if we need to expand x-axis (past current max)
         const currentMinutes = timeSeconds / 60;
@@ -463,8 +606,6 @@
 
     // Dynamic Y-axis scaling
     let currentTempMax = 100;
-    let currentRoRMin = 0;
-    let currentRoRMax = 40;
 
     function updateChartScales(temp, ror) {
         // Temp Max Scaling
@@ -481,41 +622,6 @@
             }
         }
 
-        // RoR flexible scaling - round to nearest 10
-        if (ror !== null) {
-            let needsUpdate = false;
-
-            // Check if we need to expand minimum (for negative values)
-            if (ror < currentRoRMin) {
-                currentRoRMin = Math.floor(ror / 10) * 10;
-                needsUpdate = true;
-            }
-
-            // Check if we need to expand maximum
-            if (ror > currentRoRMax - 5) {
-                currentRoRMax = Math.ceil(ror / 10) * 10 + 10;
-                needsUpdate = true;
-            }
-
-            if (needsUpdate && roastChart) {
-                roastChart.options.scales['y-ror'].min = currentRoRMin;
-                roastChart.options.scales['y-ror'].max = currentRoRMax;
-            }
-        }
-    }
-
-    // Update Power/Fan timeline canvases using shared segmented bar drawing
-    function updatePFTimelines() {
-        const powerCanvas = document.getElementById('powerTimeline');
-        const fanCanvas = document.getElementById('fanTimeline');
-
-        // Use RoastChart's segmented bar drawing for colored segments with labels
-        if (powerCanvas) {
-            RoastChart.drawSegmentedTimelineBar(powerCanvas, chartData.powerData, 'power', 'P');
-        }
-        if (fanCanvas) {
-            RoastChart.drawSegmentedTimelineBar(fanCanvas, chartData.fanData, 'fan', 'F');
-        }
     }
 
     // Add event marker to chart
@@ -530,7 +636,8 @@
             'First Crack Start': '#d9534f',
             'First Crack End': '#c9302c',
             'Second Crack Start': '#5bc0de',
-            'Second Crack End': '#31b0d5'
+            'Second Crack End': '#31b0d5',
+            'Drop': '#8B4513'  // Saddle brown for drop event
         };
 
         const color = eventColors[eventName] || '#6B5B4D';
@@ -585,8 +692,6 @@
 
         if (tabName === 'curve') {
             document.getElementById('curveTabContent').classList.add('active');
-            // Redraw timelines in case they were hidden/resized
-            setTimeout(updatePFTimelines, 50);
         } else {
             document.getElementById('logTabContent').classList.add('active');
         }
@@ -877,7 +982,10 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                },
+                body: JSON.stringify({
+                    elapsed_seconds: seconds
+                })
             });
 
             if (response.ok) {
@@ -1051,5 +1159,346 @@
             alert('Error logging data. Please try again.');
         }
     });
+
+    // ============================================
+    // Fullscreen Mode
+    // ============================================
+    let isFullscreen = false;
+    let isCompactMode = false;
+    const fsStartBtn = document.getElementById('fsStartBtn');
+    const fsEndBtn = document.getElementById('fsEndBtn');
+    const fsControlsBar = document.getElementById('fsControlsBar');
+
+    // Wire up fullscreen Start/End buttons to trigger original buttons
+    if (fsStartBtn) {
+        fsStartBtn.addEventListener('click', () => {
+            startBtn.click();
+        });
+    }
+    if (fsEndBtn) {
+        fsEndBtn.addEventListener('click', () => {
+            endBtn.click();
+        });
+    }
+
+    function toggleFullscreen() {
+        isFullscreen = !isFullscreen;
+        const body = document.body;
+        const container = document.getElementById('liveRoastContainer');
+        const pageHeader = document.getElementById('pageHeader');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
+        const fullscreenReadings = document.getElementById('fullscreenReadings');
+        const setupSection = document.getElementById('setupSection');
+        const navbar = document.querySelector('.navbar');
+        const footer = document.querySelector('footer');
+        const mainContainer = document.querySelector('.container');
+
+        if (isFullscreen) {
+            body.classList.add('fullscreen-mode');
+            container.classList.add('fullscreen-active');
+            pageHeader.style.display = 'none';
+            fullscreenBtn.style.display = 'none';
+            exitFullscreenBtn.style.display = 'flex';
+            fullscreenReadings.style.display = 'flex';
+            setupSection.style.display = 'none';
+            if (navbar) navbar.style.display = 'none';
+            if (footer) footer.style.display = 'none';
+            if (mainContainer) mainContainer.classList.add('fullscreen-container');
+
+            // Sync fullscreen display values and button states
+            syncFullscreenDisplays();
+            syncFullscreenButtons();
+
+            // Set orientation classes
+            handleOrientationChange();
+
+            // Resize chart after layout change
+            setTimeout(() => {
+                if (roastChart) {
+                    roastChart.resize();
+                }
+            }, 150);
+        } else {
+            body.classList.remove('fullscreen-mode');
+            container.classList.remove('fullscreen-active');
+            container.classList.remove('fullscreen-landscape');
+            container.classList.remove('fullscreen-portrait');
+            container.classList.remove('fullscreen-compact');
+            pageHeader.style.display = 'flex';
+            fullscreenBtn.style.display = 'inline-flex';
+            exitFullscreenBtn.style.display = 'none';
+            fullscreenReadings.style.display = 'none';
+            if (fsControlsBar) fsControlsBar.style.display = 'none';
+            setupSection.style.display = 'block';
+            if (navbar) navbar.style.display = 'block';
+            if (footer) footer.style.display = 'block';
+            if (mainContainer) mainContainer.classList.remove('fullscreen-container');
+
+            // Reset left panel width and compact mode
+            const leftPanel = document.getElementById('leftPanel');
+            if (leftPanel) {
+                leftPanel.style.width = '';
+            }
+            isCompactMode = false;
+
+            // Resize chart after layout change
+            setTimeout(() => {
+                if (roastChart) {
+                    roastChart.resize();
+                }
+            }, 150);
+        }
+    }
+
+    function syncFullscreenDisplays() {
+        // Sync timer
+        const fsTimer = document.getElementById('fsTimerDisplay');
+        if (fsTimer) {
+            fsTimer.textContent = timerDisplay.textContent;
+        }
+
+        // Sync FC time badge
+        const fsFcTime = document.getElementById('fsFcTimeDisplay');
+        const fcTime = document.getElementById('fcTimeDisplay');
+        if (fsFcTime && fcTime) {
+            fsFcTime.textContent = fcTime.textContent;
+            fsFcTime.style.display = fcTime.style.display;
+        }
+
+        // Sync temperature
+        const fsTemp = document.getElementById('fsTempValue');
+        if (fsTemp && tempValueDisplay) {
+            fsTemp.textContent = tempValueDisplay.textContent;
+        }
+
+        // Sync RoR
+        const fsRor = document.getElementById('fsRorValue');
+        if (fsRor && rorDisplay) {
+            fsRor.textContent = rorDisplay.textContent;
+        }
+    }
+
+    function syncFullscreenButtons() {
+        // Sync Start button visibility
+        if (fsStartBtn && startBtn) {
+            fsStartBtn.style.display = startBtn.style.display === 'none' ? 'none' : 'inline-flex';
+        }
+        // Sync End button visibility
+        if (fsEndBtn && endBtn) {
+            fsEndBtn.style.display = endBtn.style.display === 'none' ? 'none' : 'inline-flex';
+        }
+    }
+
+    // Update fullscreen displays when values change
+    const originalUpdateTimer = updateTimer;
+    updateTimer = function() {
+        originalUpdateTimer();
+        if (isFullscreen) {
+            syncFullscreenDisplays();
+        }
+    };
+
+    function handleOrientationChange() {
+        if (!isFullscreen) return;
+
+        const container = document.getElementById('liveRoastContainer');
+        const isLandscape = window.innerWidth > window.innerHeight;
+
+        if (isLandscape) {
+            container.classList.add('fullscreen-landscape');
+            container.classList.remove('fullscreen-portrait');
+        } else {
+            container.classList.add('fullscreen-portrait');
+            container.classList.remove('fullscreen-landscape');
+        }
+
+        // Resize chart after orientation change
+        setTimeout(() => {
+            if (roastChart) {
+                roastChart.resize();
+            }
+        }, 150);
+    }
+
+    // Listen for orientation changes
+    window.addEventListener('resize', handleOrientationChange);
+    window.addEventListener('orientationchange', handleOrientationChange);
+
+    // Also update fullscreen displays in syncState
+    const originalSyncState = syncState;
+    syncState = async function() {
+        await originalSyncState();
+        if (isFullscreen) {
+            syncFullscreenDisplays();
+            syncFullscreenButtons();
+        }
+    };
+
+    // Observe changes to original button visibility
+    const buttonObserver = new MutationObserver(() => {
+        if (isFullscreen) {
+            syncFullscreenButtons();
+        }
+    });
+    if (startBtn) buttonObserver.observe(startBtn, { attributes: true, attributeFilter: ['style'] });
+    if (endBtn) buttonObserver.observe(endBtn, { attributes: true, attributeFilter: ['style'] });
+
+    // ============================================
+    // Fullscreen Controls Bar (compact mode)
+    // ============================================
+    const fsTemperature = document.getElementById('fsTemperature');
+    const fsFanValue = document.getElementById('fsFanValue');
+    const fsPowerValue = document.getElementById('fsPowerValue');
+    const fsEventNote = document.getElementById('fsEventNote');
+    const fsLogEventBtn = document.getElementById('fsLogEventBtn');
+    const fsEventButtons = document.querySelectorAll('.fs-event-btn');
+    const originalEventButtons = document.querySelectorAll('.event-btn-compact');
+
+    // Sync controls bar with original controls
+    function syncControlsBar() {
+        if (fsFanValue) fsFanValue.textContent = document.getElementById('fanValue').textContent;
+        if (fsPowerValue) fsPowerValue.textContent = document.getElementById('powerValue').textContent;
+        if (fsTemperature) fsTemperature.value = document.getElementById('temperature').value || '';
+        if (fsEventNote) fsEventNote.value = document.getElementById('event_note').value || '';
+
+        // Sync event button states
+        fsEventButtons.forEach((btn, i) => {
+            if (originalEventButtons[i]) {
+                btn.disabled = originalEventButtons[i].disabled;
+            }
+        });
+
+        // Sync log button state
+        if (fsLogEventBtn && addEventBtn) {
+            fsLogEventBtn.disabled = addEventBtn.disabled;
+        }
+    }
+
+    // Wire up controls bar inputs to sync with original
+    if (fsTemperature) {
+        fsTemperature.addEventListener('input', () => {
+            document.getElementById('temperature').value = fsTemperature.value;
+        });
+    }
+    if (fsEventNote) {
+        fsEventNote.addEventListener('input', () => {
+            document.getElementById('event_note').value = fsEventNote.value;
+        });
+    }
+
+    // Wire up controls bar event buttons
+    fsEventButtons.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+            if (originalEventButtons[i]) {
+                originalEventButtons[i].click();
+            }
+        });
+    });
+
+    // Wire up log button
+    if (fsLogEventBtn) {
+        fsLogEventBtn.addEventListener('click', () => {
+            addEventBtn.click();
+        });
+    }
+
+    // Toggle compact mode
+    function setCompactMode(compact) {
+        isCompactMode = compact;
+        const container = document.getElementById('liveRoastContainer');
+        if (compact) {
+            container.classList.add('fullscreen-compact');
+            syncControlsBar();
+        } else {
+            container.classList.remove('fullscreen-compact');
+        }
+    }
+
+    // ============================================
+    // Resizable Panel (for landscape fullscreen)
+    // ============================================
+    (function() {
+        const resizeHandle = document.getElementById('resizeHandle');
+        const leftPanel = document.getElementById('leftPanel');
+        const roastPanels = document.getElementById('roastPanels');
+        const COMPACT_THRESHOLD = 100; // Switch to compact when dragged below this
+
+        let isResizing = false;
+        let startX = 0;
+        let startWidth = 0;
+
+        if (resizeHandle && leftPanel) {
+            resizeHandle.addEventListener('mousedown', startResize);
+            resizeHandle.addEventListener('touchstart', startResize, { passive: false });
+        }
+
+        function startResize(e) {
+            if (!isFullscreen || isCompactMode) return;
+
+            isResizing = true;
+            resizeHandle.classList.add('dragging');
+
+            if (e.type === 'touchstart') {
+                startX = e.touches[0].clientX;
+            } else {
+                startX = e.clientX;
+            }
+            startWidth = leftPanel.offsetWidth;
+
+            document.addEventListener('mousemove', doResize);
+            document.addEventListener('mouseup', stopResize);
+            document.addEventListener('touchmove', doResize, { passive: false });
+            document.addEventListener('touchend', stopResize);
+
+            e.preventDefault();
+        }
+
+        function doResize(e) {
+            if (!isResizing) return;
+
+            let clientX;
+            if (e.type === 'touchmove') {
+                clientX = e.touches[0].clientX;
+            } else {
+                clientX = e.clientX;
+            }
+
+            const diff = clientX - startX;
+            const newWidth = startWidth + diff;
+            const minWidth = 280;
+            const maxWidth = window.innerWidth * 0.5;
+
+            // If dragged very small, switch to compact mode
+            if (newWidth < COMPACT_THRESHOLD) {
+                setCompactMode(true);
+                stopResize();
+                return;
+            }
+
+            if (newWidth >= minWidth && newWidth <= maxWidth) {
+                leftPanel.style.width = newWidth + 'px';
+            }
+
+            e.preventDefault();
+        }
+
+        function stopResize() {
+            isResizing = false;
+            resizeHandle.classList.remove('dragging');
+
+            document.removeEventListener('mousemove', doResize);
+            document.removeEventListener('mouseup', stopResize);
+            document.removeEventListener('touchmove', doResize);
+            document.removeEventListener('touchend', stopResize);
+
+            // Resize chart after panel resize
+            setTimeout(() => {
+                if (roastChart) {
+                    roastChart.resize();
+                }
+            }, 50);
+        }
+    })();
 </script>
 {% endblock %}

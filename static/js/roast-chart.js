@@ -13,15 +13,12 @@ const RoastChart = {
         events: []
     },
     currentTempMax: 100,
-    currentRoRMin: 0,
     currentMaxMinutes: 8,
 
     // Configuration
     config: {
         isLive: false,
-        chartContainerId: 'roastCurveChart',
-        powerCanvasId: 'powerTimeline',
-        fanCanvasId: 'fanTimeline'
+        chartContainerId: 'roastCurveChart'
     },
 
     // Event colors for annotations
@@ -30,22 +27,10 @@ const RoastChart = {
         'First Crack Start': '#d9534f',
         'First Crack End': '#c9302c',
         'Second Crack Start': '#5bc0de',
-        'Second Crack End': '#31b0d5'
+        'Second Crack End': '#31b0d5',
+        'Drop': '#8B4513'  // Saddle brown for drop event
     },
 
-    // Color palettes for power and fan segments (1-9 scale) - muted earth tones
-    colorPalettes: {
-        power: {
-            1: '#F5F0EB', 2: '#E8DDD4', 3: '#D4C4B5',
-            4: '#C0AB96', 5: '#A89282', 6: '#8F7A6A',
-            7: '#7A6658', 8: '#6B5B4D', 9: '#5A4D42'
-        },
-        fan: {
-            1: '#EDF3EE', 2: '#DAE7DC', 3: '#C4D9C7',
-            4: '#ADCAB2', 5: '#96BA9C', 6: '#7FAA87',
-            7: '#6B9A74', 8: '#6B8E6F', 9: '#5A7A5E'
-        }
-    },
 
     /**
      * Initialize the chart component
@@ -70,7 +55,6 @@ const RoastChart = {
             events: []
         };
         this.currentTempMax = 100;
-        this.currentRoRMin = 0;
         this.currentMaxMinutes = 8;
     },
 
@@ -95,7 +79,8 @@ const RoastChart = {
                         tension: 0.3,
                         yAxisID: 'y-temp',
                         pointRadius: 0,
-                        pointHoverRadius: 4
+                        pointHoverRadius: 4,
+                        order: 1
                     },
                     {
                         label: 'RoR (\u00B0C/min)',
@@ -106,7 +91,36 @@ const RoastChart = {
                         tension: 0.3,
                         yAxisID: 'y-ror',
                         pointRadius: 0,
-                        pointHoverRadius: 4
+                        pointHoverRadius: 4,
+                        order: 2
+                    },
+                    {
+                        label: 'Power',
+                        data: [],
+                        borderColor: 'rgba(139, 115, 85, 0.4)',
+                        backgroundColor: 'rgba(139, 115, 85, 0.2)',
+                        borderWidth: 1,
+                        borderDash: [4, 3],
+                        stepped: 'before',
+                        fill: 'origin',
+                        yAxisID: 'y-pf',
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        order: 10
+                    },
+                    {
+                        label: 'Fan',
+                        data: [],
+                        borderColor: 'rgba(90, 122, 94, 0.4)',
+                        backgroundColor: 'rgba(90, 122, 94, 0.2)',
+                        borderWidth: 1,
+                        borderDash: [4, 3],
+                        stepped: 'before',
+                        fill: 'origin',
+                        yAxisID: 'y-pf',
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        order: 11
                     }
                 ]
             },
@@ -162,8 +176,8 @@ const RoastChart = {
                     'y-ror': {
                         type: 'linear',
                         position: 'right',
-                        min: -10,  // Start with room for negative values
-                        max: 30,   // Will expand dynamically
+                        min: -10,
+                        max: 40,
                         title: {
                             display: true,
                             text: 'RoR (\u00B0C/min)',
@@ -173,6 +187,16 @@ const RoastChart = {
                             color: '#6B8E6F',
                             stepSize: 10
                         },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    'y-pf': {
+                        type: 'linear',
+                        position: 'right',
+                        min: 0,
+                        max: 36,  // 9/36 = 25% of chart height
+                        display: false,
                         grid: {
                             drawOnChartArea: false
                         }
@@ -187,7 +211,11 @@ const RoastChart = {
                             boxHeight: 8,
                             padding: 12,
                             font: { size: 11 },
-                            color: '#2C2C2C'
+                            color: '#2C2C2C',
+                            filter: function(item) {
+                                // Hide Power and Fan from legend
+                                return !['Power', 'Fan'].includes(item.text);
+                            }
                         }
                     },
                     annotation: {
@@ -201,6 +229,29 @@ const RoastChart = {
                                 const mins = Math.floor(seconds / 60);
                                 const secs = seconds % 60;
                                 return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                            },
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                if (label === 'Power') {
+                                    return `Power: ${value}`;
+                                }
+                                if (label === 'Fan') {
+                                    return `Fan: ${value}`;
+                                }
+                                if (label === 'RoR (\u00B0C/min)' && value !== null) {
+                                    return `${label}: ${value.toFixed(1)}`;
+                                }
+                                return `${label}: ${value}`;
+                            },
+                            labelColor: function(context) {
+                                const dataset = context.dataset || {};
+                                const backgroundColor = dataset.backgroundColor || dataset.borderColor || '#999';
+                                const borderColor = dataset.borderColor || backgroundColor;
+                                return {
+                                    borderColor: borderColor,
+                                    backgroundColor: backgroundColor
+                                };
                             }
                         }
                     }
@@ -224,9 +275,6 @@ const RoastChart = {
     initFromData(tempCurve, keyTimings = [], roastDuration = null) {
         if (!tempCurve || tempCurve.length === 0) return;
 
-        // Track min/max for RoR
-        let minRor = 0;
-        let maxRor = 30;
         let maxTime = 0;
 
         // Populate chart data using {x, y} format
@@ -238,21 +286,20 @@ const RoastChart = {
             // Filter RoR: only include if <= 30 (avoids spikes at beginning)
             const rorValue = (entry.ror !== null && entry.ror !== undefined && entry.ror <= 30) ? entry.ror : null;
             this.chartData.rorData.push(rorValue);
-            this.chartData.fanData.push(entry.fan_setting || 0);
-            this.chartData.powerData.push(entry.power_setting || 0);
+            const fanValue = entry.fan_setting || 0;
+            const powerValue = entry.power_setting || 0;
+            this.chartData.fanData.push(fanValue);
+            this.chartData.powerData.push(powerValue);
 
             // Add to chart datasets using {x, y} format
             this.chart.data.datasets[0].data.push({ x: timeSeconds, y: entry.temperature });
             this.chart.data.datasets[1].data.push({ x: timeSeconds, y: rorValue });
+            this.chart.data.datasets[2].data.push({ x: timeSeconds, y: powerValue });  // Power band
+            this.chart.data.datasets[3].data.push({ x: timeSeconds, y: fanValue });    // Fan band
 
             // Track max time
             if (timeSeconds > maxTime) maxTime = timeSeconds;
 
-            // Track RoR range (only for valid values)
-            if (rorValue !== null) {
-                if (rorValue < minRor) minRor = Math.floor(rorValue / 10) * 10;
-                if (rorValue > maxRor - 5) maxRor = Math.ceil(rorValue / 10) * 10 + 10;
-            }
         });
 
         // Calculate dynamic Y-axis max for temperature
@@ -278,8 +325,8 @@ const RoastChart = {
 
             // Set y-axis scales
             this.chart.options.scales['y-temp'].max = this.currentTempMax;
-            this.chart.options.scales['y-ror'].min = minRor;
-            this.chart.options.scales['y-ror'].max = maxRor;
+            this.chart.options.scales['y-ror'].min = -10;
+            this.chart.options.scales['y-ror'].max = 40;
 
             // Add event annotations
             keyTimings.forEach(timing => {
@@ -288,9 +335,6 @@ const RoastChart = {
 
             this.chart.update('none');
         }
-
-        // Draw timeline bars
-        this.updatePFTimelines();
     },
 
     /**
@@ -317,8 +361,16 @@ const RoastChart = {
             ? this.chartData.powerData[this.chartData.powerData.length - 1]
             : 3;
 
-        this.chartData.fanData.push(fan || prevFan);
-        this.chartData.powerData.push(power || prevPower);
+        const currentFan = fan || prevFan;
+        const currentPower = power || prevPower;
+        this.chartData.fanData.push(currentFan);
+        this.chartData.powerData.push(currentPower);
+
+        // Add to chart datasets
+        this.chart.data.datasets[0].data.push({ x: timeSeconds, y: temp });
+        this.chart.data.datasets[1].data.push({ x: timeSeconds, y: ror });
+        this.chart.data.datasets[2].data.push({ x: timeSeconds, y: currentPower });  // Power band
+        this.chart.data.datasets[3].data.push({ x: timeSeconds, y: currentFan });    // Fan band
 
         // Dynamically expand Y-axis
         this.updateYAxisScale(temp, ror);
@@ -330,7 +382,6 @@ const RoastChart = {
         }
 
         this.chart.update('none');
-        this.updatePFTimelines();
     },
 
     /**
@@ -351,12 +402,6 @@ const RoastChart = {
             this.chart.options.scales['y-temp'].max = newTempMax;
         }
 
-        // RoR scale for negative values
-        if (ror !== null && ror < this.currentRoRMin) {
-            const newMin = Math.floor(ror / 10) * 10 - 10;
-            this.currentRoRMin = newMin;
-            this.chart.options.scales['y-ror'].min = newMin;
-        }
     },
 
     /**
@@ -403,107 +448,6 @@ const RoastChart = {
         });
 
         this.chart.update('none');
-    },
-
-    /**
-     * Update Power/Fan timeline bars
-     */
-    updatePFTimelines() {
-        const powerCanvas = document.getElementById(this.config.powerCanvasId);
-        const fanCanvas = document.getElementById(this.config.fanCanvasId);
-
-        if (powerCanvas) {
-            this.drawSegmentedTimelineBar(powerCanvas, this.chartData.powerData, 'power', 'P');
-        }
-        if (fanCanvas) {
-            this.drawSegmentedTimelineBar(fanCanvas, this.chartData.fanData, 'fan', 'F');
-        }
-    },
-
-    /**
-     * Detect segments where value changes
-     * @param {Array} data - Array of values
-     * @returns {Array} Segments with startIndex, endIndex, value
-     */
-    detectSegments(data) {
-        const segments = [];
-        if (data.length === 0) return segments;
-
-        let currentSegment = { startIndex: 0, value: data[0] };
-
-        for (let i = 1; i < data.length; i++) {
-            if (data[i] !== currentSegment.value) {
-                currentSegment.endIndex = i - 1;
-                segments.push({ ...currentSegment });
-                currentSegment = { startIndex: i, value: data[i] };
-            }
-        }
-
-        // Close final segment
-        currentSegment.endIndex = data.length - 1;
-        segments.push(currentSegment);
-
-        return segments;
-    },
-
-    /**
-     * Draw segmented timeline bar with colors and labels
-     * @param {HTMLCanvasElement} canvas - Canvas element
-     * @param {Array} data - Array of values (1-9)
-     * @param {string} type - 'power' or 'fan'
-     * @param {string} labelPrefix - 'P' or 'F'
-     */
-    drawSegmentedTimelineBar(canvas, data, type, labelPrefix) {
-        if (!canvas || data.length === 0) return;
-
-        const ctx = canvas.getContext('2d');
-        let width = canvas.getBoundingClientRect().width;
-        if (width <= 0) {
-            width = canvas.parentElement ? canvas.parentElement.offsetWidth - 50 : 300;
-        }
-        if (width <= 0) return;
-
-        const height = 22;
-
-        if (canvas.width !== width || canvas.height !== height) {
-            canvas.width = width;
-            canvas.height = height;
-        }
-
-        ctx.clearRect(0, 0, width, height);
-
-        const segments = this.detectSegments(data);
-        const totalPoints = data.length;
-        const palette = this.colorPalettes[type];
-
-        segments.forEach(segment => {
-            const startX = (segment.startIndex / totalPoints) * width;
-            const endX = ((segment.endIndex + 1) / totalPoints) * width;
-            const segmentWidth = endX - startX;
-
-            // Get color for value (clamp to 1-9)
-            const value = Math.max(1, Math.min(9, segment.value || 1));
-            const color = palette[value] || '#ccc';
-
-            // Draw segment background
-            ctx.fillStyle = color;
-            ctx.fillRect(startX, 0, segmentWidth, height);
-
-            // Draw segment border
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(startX, 0, segmentWidth, height);
-
-            // Draw label if segment is wide enough (> 20px)
-            if (segmentWidth > 20) {
-                // Text color based on background lightness
-                ctx.fillStyle = value >= 5 ? '#fff' : '#333';
-                ctx.font = 'bold 11px Inter, -apple-system, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(`${labelPrefix}${value}`, startX + segmentWidth / 2, height / 2);
-            }
-        });
     },
 
     /**

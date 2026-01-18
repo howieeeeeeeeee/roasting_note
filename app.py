@@ -435,34 +435,49 @@ def api_roast_start(roast_id):
 
 @app.route('/api/roast/end/<roast_id>', methods=['POST'])
 def api_roast_end(roast_id):
-    """End roast timer and log final temperature if available"""
+    """End roast timer, log final temperature, and add Drop event"""
     roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id)})
 
     if not roast:
         return jsonify({'success': False, 'error': 'Roast not found'}), 404
 
+    data = request.get_json() or {}
     end_time = get_current_time_with_tz()
+    elapsed_seconds = 0
 
     # Calculate elapsed time for final temperature log
     if roast.get('roast_start_time'):
-        start_time = roast['roast_start_time']
-        # Ensure start_time is timezone-aware (handle legacy data)
-        if start_time.tzinfo is None:
-            start_time = local_tz.localize(start_time)
-        elapsed_seconds = int((end_time - start_time).total_seconds())
+        # Prefer client-provided elapsed time (more accurate than server-side calculation)
+        if data.get('elapsed_seconds') is not None:
+            elapsed_seconds = int(data['elapsed_seconds'])
+        else:
+            # Fallback to server-side calculation
+            start_time = roast['roast_start_time']
+            # Ensure start_time is timezone-aware (handle legacy data)
+            if start_time.tzinfo is None:
+                start_time = local_tz.localize(start_time)
+            elapsed_seconds = int((end_time - start_time).total_seconds())
 
-        # Try to get final temperature reading (single request)
+        # Validate elapsed_seconds - must be positive and within reasonable range
+        if elapsed_seconds < 0:
+            # This shouldn't happen, but handle it gracefully
+            elapsed_seconds = 0
+        elif elapsed_seconds > MAX_ROAST_TIME_SECONDS:
+            # Cap at max roast time
+            elapsed_seconds = MAX_ROAST_TIME_SECONDS
+
+        # Try to get final temperature reading
         temperature = fetch_temperature_from_sensor()
 
-        if temperature is not None:
-            # Get current fan/power settings from most recent temp_curve entry
-            last_fan = 0
-            last_power = 0
-            if roast.get('temp_curve') and len(roast['temp_curve']) > 0:
-                last_entry = roast['temp_curve'][-1]
-                last_fan = last_entry.get('fan_setting', 0)
-                last_power = last_entry.get('power_setting', 0)
+        # Get current fan/power settings from most recent temp_curve entry
+        last_fan = 0
+        last_power = 0
+        if roast.get('temp_curve') and len(roast['temp_curve']) > 0:
+            last_entry = roast['temp_curve'][-1]
+            last_fan = last_entry.get('fan_setting', 0)
+            last_power = last_entry.get('power_setting', 0)
 
+        if temperature is not None:
             # Log final temperature reading
             final_temp_event = {
                 'time_seconds': elapsed_seconds,
@@ -475,6 +490,23 @@ def api_roast_end(roast_id):
                 {'_id': ObjectId(roast_id)},
                 {'$push': {'temp_curve': final_temp_event}}
             )
+
+        # Add "Drop" event to key_timings
+        drop_event = {
+            'event_name': 'Drop',
+            'time_seconds': elapsed_seconds
+        }
+        if temperature is not None:
+            drop_event['temperature'] = float(temperature)
+        if last_fan:
+            drop_event['fan_setting'] = last_fan
+        if last_power:
+            drop_event['power_setting'] = last_power
+
+        get_roasts_collection().update_one(
+            {'_id': ObjectId(roast_id)},
+            {'$push': {'key_timings': drop_event}}
+        )
 
     # Set roast end time
     get_roasts_collection().update_one(

@@ -181,17 +181,6 @@
             <div class="chart-container-large">
                 <canvas id="roastCurveChart"></canvas>
             </div>
-            <!-- Power/Fan Timeline Bars -->
-            <div class="pf-timeline-bars">
-                <div class="pf-timeline-row">
-                    <span class="pf-label">Power</span>
-                    <canvas id="powerTimeline" class="pf-timeline-canvas"></canvas>
-                </div>
-                <div class="pf-timeline-row">
-                    <span class="pf-label">Fan</span>
-                    <canvas id="fanTimeline" class="pf-timeline-canvas"></canvas>
-                </div>
-            </div>
             {% else %}
             <p class="empty-log">No temperature curve data available</p>
             {% endif %}
@@ -598,12 +587,10 @@
         // Initialize shared chart component
         RoastChart.init({
             isLive: false,
-            chartContainerId: 'roastCurveChart',
-            powerCanvasId: 'powerTimeline',
-            fanCanvasId: 'fanTimeline'
+            chartContainerId: 'roastCurveChart'
         });
 
-        // Load data and render chart with timeline bars
+        // Load data and render chart
         RoastChart.initFromData(tempCurve, keyTimings, roastDuration);
     });
     {% endif %}

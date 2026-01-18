@@ -20,8 +20,8 @@ Used by:
 
 ### RoR Line (Right Y-Axis)
 - Orange line showing rate of rise
-- Scale: Dynamic based on data (rounds to nearest 10)
-- Supports negative values
+- Scale: Fixed -10 to 40
+- Supports negative values within fixed range
 - Filtered: Only plots values <= 30 to avoid spikes
 
 ### X-Axis (Time)
@@ -34,39 +34,14 @@ Used by:
 - Labels positioned inside chart (yAdjust: 15)
 - Events: Yellowing, First Crack, Second Crack
 
-## Power/Fan Timeline Bars
+## Power/Fan Bands
 
-Below the main chart, segmented bars show power and fan settings.
-
-### Segment Detection
-- Scans data to detect when settings change
-- Creates distinct segments for each setting period
+Power and fan settings are shown as stepped, dashed bands inside the chart using a dedicated axis (`y-pf`).
 
 ### Visual Style
-- Power: Brown/red gradient (1=light, 9=dark)
-- Fan: Green gradient (1=light, 9=dark)
-- Labels (P4, F9) shown on segments > 20px wide
-- Borders between segments
-
-### Color Palettes
-
-**Power (Earth Tones):**
-```javascript
-{
-  1: '#F5F0EB', 2: '#E8DDD4', 3: '#D4C4B5',
-  4: '#C0AB96', 5: '#A89282', 6: '#8F7A6A',
-  7: '#7A6658', 8: '#6B5B4D', 9: '#5A4D42'
-}
-```
-
-**Fan (Greens):**
-```javascript
-{
-  1: '#EDF3EE', 2: '#DAE7DC', 3: '#C4D9C7',
-  4: '#ADCAB2', 5: '#96BA9C', 6: '#7FAA87',
-  7: '#6B9A74', 8: '#6B8E6F', 9: '#5A7A5E'
-}
-```
+- Power: Brown shaded band
+- Fan: Green shaded band
+- Both use stepped lines with fill for band appearance
 
 ## API
 
@@ -77,9 +52,7 @@ Initialize the chart component.
 ```javascript
 RoastChart.init({
   isLive: true,
-  chartContainerId: 'roastCurveChart',
-  powerCanvasId: 'powerTimeline',
-  fanCanvasId: 'fanTimeline'
+  chartContainerId: 'roastCurveChart'
 });
 ```
 
@@ -141,7 +114,4 @@ legend: {
   height: 370px;
 }
 
-.pf-timeline-canvas {
-  height: 22px;
-}
 ```

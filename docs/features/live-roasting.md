@@ -21,8 +21,7 @@ The live roasting page provides a comprehensive interface for monitoring and con
 ┌─────────────────────┐  ┌─────────────────────────────────────┐
 │   Current Readings  │  │            Chart                    │
 │   Temp: 185°C       │  │   [Temperature/RoR Graph]           │
-│   RoR: 12.5°C/min   │  │   [Power Timeline Bar]              │
-│                     │  │   [Fan Timeline Bar]                │
+│   RoR: 12.5°C/min   │  │   [Power/Fan Bands in Chart]        │
 │   Fan:  [−] 9 [+]   │  └─────────────────────────────────────┤
 │   Power:[−] 5 [+]   │  │            Data Tab                 │
 │                     │  │   [Event Log Table]                 │

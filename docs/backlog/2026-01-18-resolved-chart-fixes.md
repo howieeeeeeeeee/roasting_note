@@ -41,11 +41,6 @@ Multiple issues with the roast chart visualization on detail and edit pages.
 - Functions: `init()`, `initFromData()`, `addDataPoint()`, `addEventMarker()`
 - Used by: roast_live.html, roast_detail.html, roast_edit.html
 
-### Implemented Segmented Timeline Bars
-- `detectSegments()` - Identifies when settings change
-- `drawSegmentedTimelineBar()` - Renders colored segments with labels
-- Color palettes: Muted earth tones for power (browns) and fan (greens)
-
 ### Fixed Chart Configuration
 - Changed X-axis from category to linear type
 - Changed event marker yAdjust from -20 to 15

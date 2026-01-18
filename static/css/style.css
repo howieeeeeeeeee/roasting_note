@@ -647,7 +647,40 @@ body {
     cursor: not-allowed;
 }
 
-/* Settings row - all inputs in one row */
+/* Settings group - contains temp row and fan/power row */
+.settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Temperature row - full width */
+.settings-row-temp {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+/* Fan/Power row - side by side */
+.settings-row-fp {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.settings-row-temp .form-group,
+.settings-row-fp .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-row-temp .form-group input,
+.settings-row-fp .form-group .stepper-control {
+    height: 44px;
+    min-height: 44px;
+}
+
+/* Legacy settings-row for backwards compatibility */
 .settings-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -842,37 +875,6 @@ body {
     width: 100%;
 }
 
-/* Power/Fan Timeline Bars */
-.pf-timeline-bars {
-    padding: 0.5rem 1rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.pf-timeline-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.25rem;
-}
-
-.pf-timeline-row:last-child {
-    margin-bottom: 0;
-}
-
-.pf-label {
-    width: 45px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #666;
-    flex-shrink: 0;
-}
-
-.pf-timeline-canvas {
-    flex: 1;
-    height: 22px;
-    border-radius: 4px;
-    background: #f5f5f5;
-}
 
 /* ============================================
    Empty States
@@ -2655,5 +2657,555 @@ select.modern-select:hover,
 
     .toast {
         max-width: 100%;
+    }
+}
+
+/* ============================================
+   Fullscreen Mode - Live Roast
+   ============================================ */
+
+/* Fullscreen button styling */
+#fullscreenBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#fullscreenBtn .material-icons {
+    font-size: 1.25rem;
+}
+
+/* Fullscreen mode body */
+body.fullscreen-mode {
+    overflow: hidden;
+}
+
+/* Fullscreen container */
+.fullscreen-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 100vh !important;
+}
+
+/* Fullscreen active state */
+.live-roast-container.fullscreen-active {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    max-width: 100vw;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Fullscreen readings panel - top bar */
+.fullscreen-readings {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.fs-readings-left {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+}
+
+.fs-readings-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.fs-reading-item {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.fs-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fs-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-family: 'Courier New', monospace;
+    line-height: 1;
+}
+
+.fs-unit {
+    font-size: 1rem;
+    color: var(--text-light);
+    margin-left: 0.125rem;
+}
+
+.fs-fc-badge {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    font-family: 'Courier New', monospace;
+    margin-left: 0.5rem;
+}
+
+/* Action buttons in readings bar */
+.fs-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.fs-action-btn .material-icons {
+    font-size: 1.25rem;
+}
+
+/* Exit fullscreen button */
+.exit-fullscreen-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.exit-fullscreen-btn:hover {
+    background-color: var(--border-color);
+}
+
+.exit-fullscreen-btn .material-icons {
+    font-size: 1.5rem;
+}
+
+/* Hide timer section entirely in fullscreen (buttons moved to top bar) */
+.fullscreen-active #timerSection {
+    display: none !important;
+}
+
+/* ============================================
+   Fullscreen Controls Bar (compact mode)
+   ============================================ */
+.fs-controls-bar {
+    display: none;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    flex-shrink: 0;
+}
+
+.fs-controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+.fs-event-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.fs-event-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    min-width: 50px;
+}
+
+.fs-settings {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.fs-setting-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fs-setting-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+}
+
+.fs-input {
+    width: 70px;
+    height: 36px;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.fs-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.25rem;
+}
+
+.fs-stepper .btn-stepper {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fs-stepper .btn-stepper .material-icons {
+    font-size: 1rem;
+}
+
+.fs-stepper-value {
+    min-width: 24px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--primary-color);
+}
+
+.fs-log-action {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
+}
+
+.fs-note-input {
+    width: 120px;
+}
+
+.fs-log-action .btn {
+    height: 36px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* Compact mode: show controls bar, hide left panel */
+.fullscreen-compact .fs-controls-bar {
+    display: block;
+}
+
+.fullscreen-compact .left-panel {
+    display: none !important;
+}
+
+.fullscreen-compact .resize-handle {
+    display: none !important;
+}
+
+.fullscreen-compact .right-panel {
+    margin-left: 0 !important;
+}
+
+/* ============================================
+   Fullscreen Landscape Mode
+   ============================================ */
+.fullscreen-landscape .roast-panels {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    gap: 0;
+    overflow: hidden;
+    padding: 1rem;
+    background: var(--bg-color);
+}
+
+.fullscreen-landscape .left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    min-width: 280px;
+    max-width: 50%;
+    width: 280px;  /* Default to 60% of original 380px = ~228px, but min 280px for usability */
+    flex-shrink: 0;
+}
+
+.fullscreen-landscape #dataEntrySection {
+    flex: 1;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 1.25rem;
+    overflow-y: auto;
+}
+
+.fullscreen-landscape #dataEntrySection h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+/* Make controls reflow when panel is narrow */
+.fullscreen-landscape .event-buttons-compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fullscreen-landscape .event-btn-compact {
+    flex: 1 1 auto;
+    min-width: 60px;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Fullscreen landscape settings layout */
+.fullscreen-landscape .settings-group {
+    gap: 0.75rem;
+}
+
+.fullscreen-landscape .settings-row-temp {
+    gap: 0.5rem;
+}
+
+.fullscreen-landscape .settings-row-fp {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.fullscreen-landscape .settings-row-fp .form-group label {
+    font-size: 0.8rem;
+}
+
+.fullscreen-landscape .settings-row-fp .stepper-control {
+    height: 40px;
+    min-height: 40px;
+}
+
+.fullscreen-landscape .note-button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.fullscreen-landscape .note-button-row .note-input-group {
+    flex: 1 1 150px;
+}
+
+.fullscreen-landscape .note-button-row .btn {
+    flex-shrink: 0;
+}
+
+/* Resizable divider */
+.resize-handle {
+    width: 12px;
+    background: transparent;
+    cursor: col-resize;
+    flex-shrink: 0;
+    display: none;
+    position: relative;
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 40px;
+    background: var(--border-color);
+    border-radius: 2px;
+    transition: background-color 0.2s;
+}
+
+.resize-handle:hover::after,
+.resize-handle.dragging::after {
+    background: var(--primary-color);
+}
+
+.fullscreen-landscape .resize-handle {
+    display: block;
+}
+
+/* Right panel in landscape */
+.fullscreen-landscape .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin-left: 1rem;
+    min-width: 300px;
+}
+
+.fullscreen-landscape .chart-section-full {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem;
+}
+
+.fullscreen-landscape .chart-container-large {
+    flex: 1;
+    height: auto !important;
+    min-height: 200px;
+}
+
+.fullscreen-landscape .tab-content {
+    flex: 1;
+    overflow: auto;
+    padding: 0.75rem;
+}
+
+.fullscreen-landscape .tab-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   Fullscreen Portrait Mode
+   ============================================ */
+.fullscreen-portrait .fullscreen-readings {
+    padding: 0.75rem 1rem;
+}
+
+.fullscreen-portrait .fs-readings-left {
+    gap: 1.5rem;
+}
+
+.fullscreen-portrait .fs-reading-item {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.fullscreen-portrait .fs-value {
+    font-size: 1.75rem;
+}
+
+.fullscreen-portrait .fs-action-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.fullscreen-portrait .roast-panels {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    padding: 0.75rem;
+    padding-bottom: 0;
+    background: var(--bg-color);
+}
+
+.fullscreen-portrait .left-panel {
+    display: none;
+}
+
+.fullscreen-portrait .resize-handle {
+    display: none;
+}
+
+.fullscreen-portrait .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--card-bg);
+    border-radius: 12px 12px 0 0;
+    box-shadow: var(--shadow);
+    margin-bottom: 0;
+}
+
+.fullscreen-portrait .chart-section-full {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem;
+}
+
+.fullscreen-portrait .chart-container-large {
+    flex: 1;
+    height: auto !important;
+    min-height: 150px;
+}
+
+.fullscreen-portrait .tab-content {
+    flex: 1;
+    overflow: auto;
+}
+
+/* Portrait mode: controls in a bottom sheet */
+.fullscreen-portrait .fs-controls-sheet {
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 1rem;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Fullscreen Mode - Responsive
+   ============================================ */
+@media (min-width: 768px) {
+    .fullscreen-landscape .left-panel {
+        width: 400px;
+    }
+
+    .fullscreen-landscape .fs-value {
+        font-size: 2.25rem;
+    }
+
+    .fullscreen-portrait .fs-value {
+        font-size: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .fullscreen-landscape .left-panel {
+        width: 420px;
+    }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+    .fullscreen-readings {
+        padding-top: max(1rem, env(safe-area-inset-top));
+    }
+
+    .fullscreen-landscape .roast-panels {
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+    }
+
+    .fullscreen-portrait .roast-panels {
+        padding-left: max(0.75rem, env(safe-area-inset-left));
+        padding-right: max(0.75rem, env(safe-area-inset-right));
     }
 }

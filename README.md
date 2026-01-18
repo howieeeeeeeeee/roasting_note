@@ -51,7 +51,3 @@ For detailed information, see the `docs/` folder:
 - **[Hardware Setup](docs/hardware/)** - K-Type temperature sensor integration
 - **[Deployment](docs/deployment/)** - Render deployment guide
 - **[Testing](tests/README.md)** - Running and writing tests
-
-## License
-
-MIT License - Feel free to use this for your own coffee roasting adventures!

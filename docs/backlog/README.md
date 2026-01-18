@@ -24,12 +24,14 @@ Tracking for bugs, features, improvements, and todos.
 ## File Naming Convention
 
 ```
-YYYY-MM-{status}-{short-description}.md
+YYYY-MM-DD-{status}-{short-description}.md
 ```
 
 Examples:
-- `2025-01-resolved-chart-visualization.md`
-- `2025-01-pending-test-framework.md`
+- `2025-01-18-resolved-chart-visualization.md`
+- `2025-01-18-pending-test-framework.md`
+
+Note: older tickets may still use `YYYY-MM-...` until they are renamed.
 
 ---
 
@@ -46,12 +48,14 @@ Examples:
 
 | ID | Type | Description | File |
 |----|------|-------------|------|
-| 1 | [IMPROVEMENT] | Data collection (RoR + DB logging) | [2026-01-resolved-data-collection-improvements.md](./2026-01-resolved-data-collection-improvements.md) |
-| 2 | [TODO] | API testing framework (58 tests) | [2026-01-resolved-api-testing.md](./2026-01-resolved-api-testing.md) |
-| 3 | [BUG] | Chart visualization fixes | [2025-01-resolved-chart-fixes.md](./2025-01-resolved-chart-fixes.md) |
-| 4 | [FEATURE] | Real-time graph with temp/RoR | [2025-01-resolved-realtime-graph.md](./2025-01-resolved-realtime-graph.md) |
-| 5 | [FEATURE] | Database sync/switch | [2025-01-resolved-db-sync.md](./2025-01-resolved-db-sync.md) |
-| 6 | [FEATURE] | Ambient temp/humidity fields | [2025-01-resolved-ambient-data.md](./2025-01-resolved-ambient-data.md) |
+| 1 | [BUG] | Live chart and data recording issues (RoR filter, Drop event, layout) | [2026-01-resolved-live-chart-improvements.md](./2026-01-resolved-live-chart-improvements.md) |
+| 2 | [FEATURE] | Fullscreen mode for live roast page | [2026-01-resolved-fullscreen-mode.md](./2026-01-resolved-fullscreen-mode.md) |
+| 3 | [IMPROVEMENT] | Data collection (RoR + DB logging) | [2026-01-resolved-data-collection-improvements.md](./2026-01-resolved-data-collection-improvements.md) |
+| 4 | [TODO] | API testing framework (58 tests) | [2026-01-resolved-api-testing.md](./2026-01-resolved-api-testing.md) |
+| 5 | [BUG] | Chart visualization fixes | [2025-01-resolved-chart-fixes.md](./2025-01-resolved-chart-fixes.md) |
+| 6 | [FEATURE] | Real-time graph with temp/RoR | [2025-01-resolved-realtime-graph.md](./2025-01-resolved-realtime-graph.md) |
+| 7 | [FEATURE] | Database sync/switch | [2025-01-resolved-db-sync.md](./2025-01-resolved-db-sync.md) |
+| 8 | [FEATURE] | Ambient temp/humidity fields | [2025-01-resolved-ambient-data.md](./2025-01-resolved-ambient-data.md) |
 
 ---
 
