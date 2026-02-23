@@ -14,7 +14,10 @@
       "Bash(uv pip install:*)",
       "Bash(uv run pytest:*)",
       "Bash(uv run python:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(openspec new:*)",
+      "Bash(openspec status:*)",
+      "Bash(openspec instructions:*)"
     ],
     "deny": [],
     "ask": []

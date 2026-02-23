@@ -27,11 +27,23 @@ TEMP_SENSOR_URL=http://192.168.0.47/temp
 
 Note: Code handles both `temperature_celsius` and `temperatur_celsius` for compatibility.
 
-## API Endpoint
+## API Endpoints
+
+### GET /api/temp/current_fast
+
+Fast single-request fetch for live UI polling.
+
+**Process:**
+1. Makes 1 request to sensor URL with 200ms timeout
+2. Returns temperature immediately on success, or `null` on failure
+
+**Response format is the same as `/api/temp/current`.**
+
+---
 
 ### GET /api/temp/current
 
-Retrieves current temperature with retry logic.
+Accurate temperature fetch with retry logic for database logging.
 
 **Process:**
 1. Makes 3 consecutive requests to sensor URL
@@ -61,7 +73,7 @@ Retrieves current temperature with retry logic.
 
 ### Display Polling
 
-- Polls `/api/temp/current` every 5 seconds
+- Polls `/api/temp/current_fast` every 1 second
 - Updates temperature display immediately
 - Shows "Offline" when sensor unavailable
 - Continues polling on errors

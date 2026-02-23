@@ -37,9 +37,11 @@ All REST API routes for RoastLogger.
 | `/api/roast/delete/<roast_id>` | POST | Archive roast (soft delete, restore stock) |
 | `/api/roast/start/<roast_id>` | POST | Set `roast_start_time` |
 | `/api/roast/end/<roast_id>` | POST | Set `roast_end_time` |
+| `/api/roast/update_title/<roast_id>` | POST | Update roast title |
 | `/api/roast/add_timing/<roast_id>` | POST | Add key timing event |
 | `/api/roast/add_event/<roast_id>` | POST | Add temp curve event |
 | `/api/roast/log_temp_local/<roast_id>` | POST | Log to local CSV file |
+| `/api/roast/sync_state/<roast_id>` | POST | Sync live roast state (temp, RoR, settings) to DB |
 
 ---
 
@@ -57,7 +59,8 @@ All REST API routes for RoastLogger.
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/api/temp/current` | GET | Get current temperature from sensor |
+| `/api/temp/current_fast` | GET | Fast single-request temperature fetch for UI polling (200ms timeout) |
+| `/api/temp/current` | GET | Accurate temperature fetch — 3 requests, averages top 2 (100ms timeout each) |
 
 ### Response Format
 

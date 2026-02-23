@@ -90,7 +90,8 @@ Key events during roasting (Yellowing, First Crack, etc.)
   "time_seconds": "Integer",
   "temperature": "Float",
   "fan_setting": "Integer",
-  "power_setting": "Integer"
+  "power_setting": "Integer",
+  "ror": "Float"
 }
 ```
 
