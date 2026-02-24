@@ -25,6 +25,7 @@ All REST API routes for RoastLogger.
 | `/api/beans/add` | POST | Create new bean |
 | `/api/beans/edit/<bean_id>` | POST | Update bean |
 | `/api/beans/delete/<bean_id>` | POST | Archive bean (soft delete) |
+| `/api/beans/<bean_id>/label` | POST | Save label creator data for a bean |
 
 ---
 
@@ -157,6 +158,28 @@ All REST API routes for RoastLogger.
   "note": "Increased power"
 }
 ```
+
+### Save Bean Label
+
+**POST** `/api/beans/<bean_id>/label`
+
+```json
+{
+  "name": "Ethiopia Yirgacheffe",
+  "origin": "Ethiopia",
+  "process": "Washed",
+  "roastLevel": "Medium",
+  "flavorNotes": "Berry, Citrus",
+  "roastDate": "2025-02-23",
+  "templateId": "minimal",
+  "imageSrc": "/static/img/nova.png",
+  "accentColor": "#6B8E6F",
+  "exportWidthCm": 5,
+  "exportHeightCm": 4
+}
+```
+
+**Response:** `{ "success": true }` or `404` if bean not found.
 
 ### Add Review
 

@@ -384,6 +384,50 @@ def api_beans_delete(bean_id):
     return redirect(url_for('beans_list'))
 
 
+@app.route('/api/label/images', methods=['GET'])
+def api_label_images():
+    """List available images in static/img/ for label creator"""
+    img_dir = os.path.join(app.static_folder, 'img')
+    images = []
+    if os.path.isdir(img_dir):
+        for f in sorted(os.listdir(img_dir)):
+            if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.svg')):
+                images.append(f)
+    return jsonify({'images': images})
+
+
+@app.route('/api/beans/<bean_id>/label', methods=['POST'])
+def api_beans_label(bean_id):
+    """Save label data for a bean"""
+    bean = get_beans_collection().find_one({'_id': ObjectId(bean_id), 'archived': {'$ne': True}})
+    if not bean:
+        return jsonify({'success': False, 'error': 'Bean not found'}), 404
+
+    data = request.get_json()
+    label_data = {
+        'name': data.get('name', ''),
+        'origin': data.get('origin', ''),
+        'process': data.get('process', ''),
+        'roastLevel': data.get('roastLevel', ''),
+        'flavorNotes': data.get('flavorNotes', ''),
+        'roastDate': data.get('roastDate', ''),
+        'accentColor': data.get('accentColor', ''),
+        'templateId': data.get('templateId', 'classic'),
+        'imageSrc': data.get('imageSrc', ''),
+        'exportWidthCm': data.get('exportWidthCm', 5),
+        'exportHeightCm': data.get('exportHeightCm', 4),
+    }
+
+    get_beans_collection().update_one(
+        {'_id': ObjectId(bean_id)},
+        {'$set': {
+            'label': label_data,
+            'updated_at': get_current_time_with_tz()
+        }}
+    )
+    return jsonify({'success': True})
+
+
 # ============================================
 # API Routes - Roasts
 # ============================================

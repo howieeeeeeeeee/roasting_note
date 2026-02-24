@@ -263,6 +263,75 @@ class TestBeanStock:
         assert bean_after_delete['stock_grams'] == stock_after_start + 150
 
 
+class TestBeanLabel:
+    """Tests for bean label API endpoint."""
+
+    def test_save_label_data(self, client, beans_collection, created_test_bean):
+        """Test saving label data to a bean."""
+        bean_id = created_test_bean
+
+        label_data = {
+            'name': 'Ethiopia Yirgacheffe',
+            'origin': 'Ethiopia',
+            'process': 'Washed',
+            'roastLevel': 'Medium',
+            'templateId': 'minimal',
+            'customFields': {}
+        }
+
+        response = client.post(
+            f'/api/beans/{bean_id}/label',
+            json=label_data,
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+
+        bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
+        assert bean['label']['name'] == 'Ethiopia Yirgacheffe'
+        assert bean['label']['templateId'] == 'minimal'
+        assert bean['label']['roastLevel'] == 'Medium'
+
+    def test_save_label_invalid_bean(self, client):
+        """Test saving label data for a non-existent bean returns 404."""
+        fake_id = str(ObjectId())
+
+        response = client.post(
+            f'/api/beans/{fake_id}/label',
+            json={'name': 'Test', 'templateId': 'minimal', 'customFields': {}},
+            content_type='application/json'
+        )
+
+        assert response.status_code == 404
+
+    def test_save_label_with_image(self, client, beans_collection, created_test_bean):
+        """Test saving label data with image selection."""
+        bean_id = created_test_bean
+
+        label_data = {
+            'name': 'Test Bean',
+            'origin': 'Colombia',
+            'process': 'Natural',
+            'roastLevel': 'Dark',
+            'templateId': 'minimal',
+            'imageSrc': '/static/img/nova.png'
+        }
+
+        response = client.post(
+            f'/api/beans/{bean_id}/label',
+            json=label_data,
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+
+        bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
+        assert bean['label']['imageSrc'] == '/static/img/nova.png'
+        assert bean['label']['templateId'] == 'minimal'
+
+
 class TestBeanFormValidation:
     """Tests for bean form validation and data handling."""
 

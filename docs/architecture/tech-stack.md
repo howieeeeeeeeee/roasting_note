@@ -22,8 +22,10 @@ Technologies and dependencies used in RoastLogger.
 | Vanilla JavaScript | Interactivity, API calls |
 | Chart.js | Temperature/RoR charts |
 | chartjs-plugin-annotation | Event markers on charts |
+| Flatpickr | Date/datetime picker (bean purchase date, roast date, label roast date) |
 | Material Icons | UI icons |
 | Inter Font | Typography |
+| Roboto Slab | Label creator (Classic template) |
 
 ## Database
 

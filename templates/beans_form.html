@@ -33,7 +33,9 @@
     <div class="form-row">
         <div class="form-group">
             <label for="purchase_date">Purchase Date</label>
-            <input type="date" id="purchase_date" name="purchase_date" value="{{ bean.purchase_date.strftime('%Y-%m-%d') if bean and bean.purchase_date else '' }}">
+            <input type="text" id="purchase_date" name="purchase_date" class="form-control flatpickr-date"
+                value="{{ bean.purchase_date.strftime('%Y-%m-%d') if bean and bean.purchase_date else '' }}"
+                placeholder="Select date" readonly data-flatpickr data-flatpickr-mode="date">
         </div>
 
         <div class="form-group">

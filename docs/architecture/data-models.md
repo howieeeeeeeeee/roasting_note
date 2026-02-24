@@ -47,6 +47,43 @@ Stores information about each type of green coffee bean in inventory.
 | `stock_grams` | Integer | Yes | 0 | Current available stock |
 | `color` | String | No | "#6B8E6F" | Hex color for visual identification |
 | `archived` | Boolean | No | false | Soft delete flag |
+| `label` | Object | No | - | Label creator data (see below) |
+
+### Embedded: `label` Object
+
+Optional label configuration for the bean label creator.
+
+```json
+{
+  "name": "String",
+  "origin": "String",
+  "process": "String",
+  "roastLevel": "String",
+  "flavorNotes": "String",
+  "roastDate": "String",
+  "templateId": "String",
+  "imageSrc": "String",
+  "accentColor": "String",
+  "exportWidthCm": "Number",
+  "exportHeightCm": "Number",
+  "customFields": {}
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | String | Display name on label (may differ from bean name) |
+| `origin` | String | Origin text for label |
+| `process` | String | Process method text for label |
+| `roastLevel` | String | Roast level text (e.g., "Medium", "Light") |
+| `flavorNotes` | String | Flavor notes text for label |
+| `roastDate` | String | Roast date (YYYY-MM-DD) |
+| `templateId` | String | Selected template ID ("minimal", "classic", "compact") |
+| `imageSrc` | String | Path to selected image (e.g. `/static/img/nova.png`) or empty for none |
+| `accentColor` | String | Hex color for accent bar (typically bean color) |
+| `exportWidthCm` | Number | Export width in cm |
+| `exportHeightCm` | Number | Export height in cm |
+| `customFields` | Object | Per-field overrides keyed by field name, each with optional `fontSize`, `fontFamily`, `color`, `x`, `y` |
 
 ---
 

@@ -1777,6 +1777,220 @@ select.modern-select:hover,
     max-width: 400px;
 }
 
+/* Label Creator Modal */
+.label-modal-content {
+    max-width: 1320px;
+    width: 95%;
+}
+
+.label-modal-content .modal-body {
+    padding: 1.25rem 1.5rem;
+}
+
+.label-modal-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.label-modal-layout {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.label-form-panel {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1rem;
+    row-gap: 0.5rem;
+}
+
+.label-form-panel .form-group {
+    margin-bottom: 0;
+}
+
+.label-form-panel .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 0.2rem;
+}
+
+.label-form-panel .form-group input,
+.label-form-panel .form-group select {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    min-height: 34px;
+}
+
+.label-form-panel .label-form-export-row span.form-control {
+    min-height: 34px;
+    line-height: 34px;
+}
+
+.label-form-panel .label-form-row-full {
+    grid-column: 1 / -1;
+}
+
+.label-form-panel .label-form-row-full.label-form-export-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.label-form-panel .label-form-export-row .form-group {
+    flex: 1;
+    min-width: 0;
+}
+
+.label-form-panel .label-form-export-row .form-group:last-child {
+    flex: 1.2;
+}
+
+/* Flatpickr date picker - shared across beans form, roast edit, label modal */
+.flatpickr-date,
+.flatpickr-datetime,
+.label-date-input {
+    cursor: pointer;
+    background-color: var(--card-bg);
+}
+/* Flatpickr theme: match app primary color */
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+.flatpickr-day:hover {
+    background: rgba(107, 91, 77, 0.12) !important;
+    border-color: rgba(107, 91, 77, 0.12) !important;
+}
+.flatpickr-day.today {
+    border-color: var(--primary-color);
+}
+.flatpickr-months .flatpickr-month {
+    background: var(--primary-color) !important;
+}
+/* Cleaner month/year header: arrow-only navigation, consistent white text */
+.flatpickr-current-month {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    color: white;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month .numInputWrapper,
+.flatpickr-current-month span,
+.flatpickr-current-month select {
+    background: transparent !important;
+    border: none !important;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white !important;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+.flatpickr-current-month .numInputWrapper:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-radius: 4px;
+}
+.flatpickr-current-month .numInputWrapper input {
+    color: white !important;
+    font-weight: 600;
+    background: transparent !important;
+    border: none !important;
+}
+.flatpickr-current-month .arrowUp,
+.flatpickr-current-month .arrowDown {
+    display: none;
+}
+.flatpickr-prev-month,
+.flatpickr-next-month {
+    color: white !important;
+    fill: white !important;
+}
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    fill: white !important;
+}
+
+.label-preview-panel {
+    flex: 1;
+    max-width: 50%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    background: #F5F5F5;
+    border-radius: 8px;
+    padding: 0.75rem;
+    min-width: 0;
+}
+
+.label-preview-panel canvas {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+.label-customize-section {
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.75rem;
+}
+
+.label-customize-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    padding: 0.25rem 0;
+    font-family: inherit;
+}
+
+.label-customize-toggle:hover {
+    color: var(--primary-color);
+}
+
+.label-customize-panel {
+    margin-top: 0.75rem;
+}
+
+.label-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Keep modal content visible without scroll on typical viewports */
+.label-modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+    .label-modal-layout {
+        flex-direction: column;
+    }
+
+    .label-form-panel {
+        flex: 1 1 auto;
+        grid-template-columns: 1fr;
+    }
+
+    .label-preview-panel {
+        order: -1;
+    }
+}
+
 /* Slider Styles */
 .slider-container {
     padding: 1rem 0;

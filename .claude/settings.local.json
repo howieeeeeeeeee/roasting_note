@@ -17,7 +17,8 @@
       "Bash(git branch:*)",
       "Bash(openspec new:*)",
       "Bash(openspec status:*)",
-      "Bash(openspec instructions:*)"
+      "Bash(openspec instructions:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

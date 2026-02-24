@@ -9,6 +9,9 @@
         {{ bean.name }}
     </h1>
     <div class="header-actions">
+        <button type="button" class="btn btn-primary" onclick="openLabelModal()">
+            <span class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 4px;">label</span>Create Label
+        </button>
         <a href="{{ url_for('beans_edit_form', bean_id=bean._id) }}" class="btn btn-primary">Edit Bean</a>
         <form action="{{ url_for('api_beans_delete', bean_id=bean._id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to archive this bean?');">
             <button type="submit" class="btn btn-danger">Archive Bean</button>
@@ -151,6 +154,89 @@
     </section>
 </div>
 
+<!-- Label Creator Modal -->
+<div id="labelModal" class="modal">
+    <div class="modal-content label-modal-content">
+        <div class="modal-header">
+            <h2>Create Label</h2>
+            <span class="modal-close" onclick="closeLabelModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="label-modal-top">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="autoFillLabel()">Auto-fill from Bean</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveLabelInfo()">Save Label Info</button>
+                <span id="labelSaveStatus" style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--success-color);"></span>
+            </div>
+
+            <div class="label-modal-layout">
+                <div class="label-form-panel">
+                    <div class="form-group">
+                        <label for="labelName">Name</label>
+                        <input type="text" id="labelName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="labelOrigin">Origin</label>
+                        <input type="text" id="labelOrigin" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="labelProcess">Process</label>
+                        <input type="text" id="labelProcess" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="labelRoastLevel">Roast Level</label>
+                        <input type="text" id="labelRoastLevel" class="form-control">
+                    </div>
+                    <div class="form-group label-form-row-full">
+                        <label for="labelFlavorNotes">Flavor Notes</label>
+                        <input type="text" id="labelFlavorNotes" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="labelRoastDate">Roast Date</label>
+                        <input type="text" id="labelRoastDate" class="form-control label-date-input" readonly
+                            data-flatpickr data-flatpickr-mode="date" data-flatpickr-default-today="true" data-flatpickr-onchange="updatePreview">
+                    </div>
+                    <div class="form-group">
+                        <label for="labelTemplate">Template</label>
+                        <select id="labelTemplate" class="form-control" onchange="onTemplateChange()">
+                            <option value="classic">Classic</option>
+                            <option value="minimal">Minimal</option>
+                            <option value="compact">Compact</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="labelImage">Image</label>
+                        <select id="labelImage" class="form-control" onchange="onImageChange()">
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                    <div class="label-form-row-full label-form-export-row">
+                        <div class="form-group">
+                            <label for="labelExportW">Export W (cm)</label>
+                            <input type="number" id="labelExportW" class="form-control" value="5" min="1" max="30" step="0.5" oninput="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label for="labelExportH">Export H (cm)</label>
+                            <input type="number" id="labelExportH" class="form-control" value="4" min="1" max="30" step="0.5" oninput="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Export px</label>
+                            <span id="labelExportInfo" class="form-control" style="background: var(--bg-color); display: block; font-size: 0.8rem;">2500 × 2000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="label-preview-panel">
+                    <canvas id="labelCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="label-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="downloadLabelPNG()">Download PNG</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Reviews Modal -->
 <div id="reviewsModal" class="modal">
     <div class="modal-content">
@@ -262,10 +348,216 @@
 
     // Close modal when clicking outside
     window.onclick = function(event) {
-        const modal = document.getElementById('reviewsModal');
-        if (event.target === modal) {
+        const reviewsModal = document.getElementById('reviewsModal');
+        const labelModal = document.getElementById('labelModal');
+        if (event.target === reviewsModal) {
             closeReviewsModal();
         }
+        if (event.target === labelModal) {
+            closeLabelModal();
+        }
+    }
+</script>
+
+<script src="/static/js/label-creator.js"></script>
+<script>
+    const beanData = {
+        id: '{{ bean._id }}',
+        name: {{ bean.name | tojson }},
+        origin: {{ (bean.origin or '') | tojson }},
+        process: {{ (bean.process or '') | tojson }},
+        color: {{ (bean.color or '#6B8E6F') | tojson }},
+        label: {{ (bean.label or {}) | tojson }}
+    };
+
+    var selectedImageSrc = '';
+
+    function getTodayStr() {
+        return new Date().toISOString().slice(0, 10);
+    }
+
+    function openLabelModal() {
+        var modal = document.getElementById('labelModal');
+        var saved = beanData.label;
+
+        if (saved && (saved.name || saved.imageSrc || saved.templateId)) {
+            document.getElementById('labelName').value = saved.name || '';
+            document.getElementById('labelOrigin').value = saved.origin || '';
+            document.getElementById('labelProcess').value = saved.process || '';
+            document.getElementById('labelRoastLevel').value = saved.roastLevel || '';
+            document.getElementById('labelFlavorNotes').value = saved.flavorNotes || '';
+            document.getElementById('labelRoastDate').value = saved.roastDate || getTodayStr();
+            if (saved.templateId) {
+                document.getElementById('labelTemplate').value = saved.templateId;
+            }
+        } else {
+            document.getElementById('labelName').value = '';
+            document.getElementById('labelOrigin').value = '';
+            document.getElementById('labelProcess').value = '';
+            document.getElementById('labelRoastLevel').value = '';
+            document.getElementById('labelFlavorNotes').value = '';
+            document.getElementById('labelRoastDate').value = getTodayStr();
+            document.getElementById('labelTemplate').value = 'classic';
+        }
+        document.getElementById('labelSaveStatus').textContent = '';
+
+        var tpl = LabelCreator.getTemplate(document.getElementById('labelTemplate').value);
+        var savedW = (saved && saved.exportWidthCm) || tpl.exportWidthCm || 5;
+        var savedH = (saved && saved.exportHeightCm) || tpl.exportHeightCm || 4;
+        document.getElementById('labelExportW').value = savedW;
+        document.getElementById('labelExportH').value = savedH;
+
+        modal.style.display = 'block';
+
+        var dateEl = document.getElementById('labelRoastDate');
+        var dateVal = dateEl.value || getTodayStr();
+        dateEl.value = dateVal;
+        if (dateEl._flatpickr) dateEl._flatpickr.setDate(dateVal);
+
+        loadImageOptions().then(function() {
+            if (saved && saved.imageSrc) {
+                document.getElementById('labelImage').value = saved.imageSrc;
+                selectedImageSrc = saved.imageSrc;
+            }
+            onImageChange();
+        });
+    }
+
+    function closeLabelModal() {
+        document.getElementById('labelModal').style.display = 'none';
+    }
+
+    function loadImageOptions() {
+        return fetch('/api/label/images')
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                var select = document.getElementById('labelImage');
+                var current = select.value;
+                select.innerHTML = '<option value="">None</option>';
+                (data.images || []).forEach(function(filename) {
+                    var opt = document.createElement('option');
+                    opt.value = '/static/img/' + filename;
+                    opt.textContent = filename;
+                    select.appendChild(opt);
+                });
+                if (current) select.value = current;
+            });
+    }
+
+    function onImageChange() {
+        var src = document.getElementById('labelImage').value;
+        selectedImageSrc = src;
+        if (src) {
+            LabelCreator.loadImage(src).then(function() {
+                updatePreview();
+            });
+        } else {
+            updatePreview();
+        }
+    }
+
+    function autoFillLabel() {
+        document.getElementById('labelName').value = beanData.name;
+        document.getElementById('labelOrigin').value = beanData.origin;
+        document.getElementById('labelProcess').value = beanData.process;
+        document.getElementById('labelRoastLevel').value = '';
+        document.getElementById('labelFlavorNotes').value = '';
+        var dateEl = document.getElementById('labelRoastDate');
+        dateEl.value = getTodayStr();
+        if (dateEl._flatpickr) dateEl._flatpickr.setDate(getTodayStr());
+        updatePreview();
+    }
+
+    function getFieldValues() {
+        var roastDate = document.getElementById('labelRoastDate').value;
+        return {
+            name: document.getElementById('labelName').value,
+            origin: document.getElementById('labelOrigin').value,
+            process: document.getElementById('labelProcess').value,
+            roastLevel: document.getElementById('labelRoastLevel').value,
+            flavorNotes: document.getElementById('labelFlavorNotes').value,
+            roastDate: roastDate || getTodayStr()
+        };
+    }
+
+    function getSelectedTemplate() {
+        var id = document.getElementById('labelTemplate').value;
+        return LabelCreator.getTemplate(id);
+    }
+
+    function getExportSize() {
+        var wCm = parseFloat(document.getElementById('labelExportW').value) || 5;
+        var hCm = parseFloat(document.getElementById('labelExportH').value) || 4;
+        return { width: wCm, height: hCm };
+    }
+
+    function updatePreview() {
+        var canvas = document.getElementById('labelCanvas');
+        var template = getSelectedTemplate();
+        var accentColor = beanData.color || '#6B8E6F';
+        var exportSize = getExportSize();
+        LabelCreator.renderLabel(canvas, template, getFieldValues(), accentColor, selectedImageSrc, exportSize);
+
+        var pxW = canvas.width;
+        var pxH = canvas.height;
+        document.getElementById('labelExportInfo').textContent = pxW + ' × ' + pxH;
+    }
+
+    function onTemplateChange() {
+        var tpl = getSelectedTemplate();
+        document.getElementById('labelExportW').value = tpl.exportWidthCm || 5;
+        document.getElementById('labelExportH').value = tpl.exportHeightCm || 4;
+        updatePreview();
+    }
+
+    ['labelName', 'labelOrigin', 'labelProcess', 'labelRoastLevel', 'labelFlavorNotes', 'labelRoastDate'].forEach(function(id) {
+        document.getElementById(id).addEventListener('input', updatePreview);
+    });
+
+    async function saveLabelInfo() {
+        var values = getFieldValues();
+        var templateId = document.getElementById('labelTemplate').value;
+        var exportSize = getExportSize();
+        var payload = {
+            name: values.name,
+            origin: values.origin,
+            process: values.process,
+            roastLevel: values.roastLevel,
+            flavorNotes: values.flavorNotes,
+            roastDate: values.roastDate,
+            templateId: templateId,
+            imageSrc: selectedImageSrc,
+            accentColor: beanData.color || '',
+            exportWidthCm: exportSize.width,
+            exportHeightCm: exportSize.height
+        };
+
+        try {
+            var resp = await fetch('/api/beans/' + beanData.id + '/label', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await resp.json();
+            if (data.success) {
+                beanData.label = payload;
+                document.getElementById('labelSaveStatus').textContent = 'Saved!';
+                setTimeout(function() {
+                    document.getElementById('labelSaveStatus').textContent = '';
+                }, 2000);
+            }
+        } catch (e) {
+            document.getElementById('labelSaveStatus').textContent = 'Error saving';
+            document.getElementById('labelSaveStatus').style.color = 'var(--danger-color)';
+        }
+    }
+
+    function downloadLabelPNG() {
+        var canvas = document.getElementById('labelCanvas');
+        var link = document.createElement('a');
+        link.download = beanData.name.replace(/\s+/g, '_') + '_label.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
     }
 </script>
 {% endblock %}
