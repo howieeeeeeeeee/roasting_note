@@ -166,7 +166,9 @@ body {
    Buttons
    ============================================ */
 .btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
     padding: 0.625rem 1.25rem;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -213,8 +215,11 @@ body {
     border-color: var(--success-color);
 }
 
+/* Must beat .btn:hover border (otherwise hover shows primary outline) */
 .btn-success:hover {
-    opacity: 0.9;
+    background-color: #5d7d61;
+    border-color: #5d7d61;
+    color: #fff;
 }
 
 .btn-danger {
@@ -224,7 +229,9 @@ body {
 }
 
 .btn-danger:hover {
-    opacity: 0.9;
+    background-color: #a34e4e;
+    border-color: #a34e4e;
+    color: #fff;
 }
 
 .btn-sm {
@@ -3602,6 +3609,22 @@ body.dark-mode .live-ev-btn.fired {
     gap: 0.75rem;
 }
 
+.live-topbar .tb-end .btn-lg {
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.2;
+}
+
+.live-topbar .tb-end .btn-lg .material-icons {
+    font-size: 1.375rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 /* Chart area */
 .live-chart-area {
     flex: 1;
@@ -3680,11 +3703,33 @@ body.dark-mode .live-ev-btn.fired {
 
 .live-ev-btn.fired .ev-full { color: var(--success-color); opacity: 0.7; }
 
-/* Input strip */
+/* Input strip — stretch so note + log align with fan/power label + stepper rows */
 .live-input-strip {
+    --live-control-height: 44px;
+    display: flex;
+    align-items: stretch;
+    gap: 0.625rem;
+}
+
+/* One shared height for stepper, note field, and log button (do not let inputs flex-grow) */
+.live-input-strip .stepper-control {
+    height: var(--live-control-height);
+    min-height: var(--live-control-height);
+    max-height: var(--live-control-height);
+    flex-shrink: 0;
+}
+
+.live-input-strip .sg-label {
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-light);
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    justify-content: center;
+    min-height: 14px;
+    line-height: 1;
 }
 
 .live-stepper-group {
@@ -3695,21 +3740,56 @@ body.dark-mode .live-ev-btn.fired {
     flex-shrink: 0;
 }
 
-.live-stepper-group .sg-label {
-    font-size: 0.5rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-light);
+/* Matches fan/power column: label row + control row (same height as .stepper-control) */
+.live-note-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.live-log-action-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.live-log-action-group .sg-label--strip-spacer {
+    visibility: hidden;
+    user-select: none;
+}
+
+.live-log-event-btn {
+    height: var(--live-control-height);
+    min-height: var(--live-control-height);
+    max-height: var(--live-control-height);
+    padding: 0 1rem;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    white-space: nowrap;
 }
 
 .live-note-input {
-    flex: 1;
+    flex: 0 0 auto;
     min-width: 0;
-    padding: 0.6rem 0.875rem;
+    align-self: stretch;
+    width: 100%;
+    height: var(--live-control-height);
+    min-height: var(--live-control-height);
+    max-height: var(--live-control-height);
+    box-sizing: border-box;
+    padding: 0 0.875rem;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 0.9375rem;
+    line-height: 1.2;
     font-family: inherit;
     background-color: var(--card-bg);
     color: var(--text-color);
@@ -3728,10 +3808,18 @@ body.dark-mode .live-ev-btn.fired {
     .live-topbar { height: auto; flex-wrap: wrap; }
     .tb-tile { padding: 0.75rem 1rem; flex: 1; min-width: 80px; }
     .tb-value { font-size: 1.75rem; }
+    .tb-end {
+        width: 100%;
+        margin-left: 0;
+        justify-content: center;
+        border-top: 1px solid var(--border-color);
+        padding: 0.75rem 1rem;
+    }
     .live-ev-strip { grid-template-columns: repeat(5, 1fr); gap: 0.375rem; }
     .live-ev-btn { height: 48px; }
     .live-ev-btn .ev-abbr { font-size: 0.875rem; }
     .live-input-strip { flex-wrap: wrap; }
+    .live-note-group { flex: 1 1 100%; min-width: 100%; }
     .live-note-input { width: 100%; }
     .live-chart-area { min-height: 260px; }
 }

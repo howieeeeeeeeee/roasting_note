@@ -249,11 +249,17 @@
                     <input type="hidden" id="power_setting" name="power_setting" value="3">
                 </div>
                 <input type="hidden" id="temperature" name="temperature">
-                <input type="text" id="event_note" name="event_note"
-                    class="live-note-input" placeholder="Note (optional)…">
-                <button id="addEventBtn" class="btn btn-primary" disabled>
-                    <span class="material-icons" style="font-size:1rem;">add</span> Log Event
-                </button>
+                <div class="live-note-group">
+                    <label for="event_note" class="sg-label">Note</label>
+                    <input type="text" id="event_note" name="event_note"
+                        class="live-note-input" placeholder="Note (optional)…">
+                </div>
+                <div class="live-log-action-group">
+                    <span class="sg-label sg-label--strip-spacer" aria-hidden="true">Fan</span>
+                    <button id="addEventBtn" class="btn btn-primary live-log-event-btn" disabled>
+                        <span class="material-icons" style="font-size:1rem;">add</span> Log Event
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -926,7 +932,7 @@
                 timerInterval = setInterval(updateTimer, 1000);
 
                 startBtn.style.display = 'none';
-                endBtn.style.display = 'inline-block';
+                endBtn.style.display = 'inline-flex';
                 eventButtons.forEach(btn => btn.disabled = false);
                 addEventBtn.disabled = false;
                 document.getElementById('bean_id').disabled = true;
