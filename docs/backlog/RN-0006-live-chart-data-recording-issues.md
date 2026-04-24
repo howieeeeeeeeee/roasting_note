@@ -1,11 +1,21 @@
-# [BUG] Live Chart and Data Recording Issues
+---
+id: RN-0006
+title: Live Chart and Data Recording Issues
+type: bug
+status: resolved
+priority: high
+created: 2026-01-18
+resolved: 2026-01-18
+area: live-roasting
+tags:
+  - chart
+  - ror
+  - data-recording
+---
+
+# Live Chart and Data Recording Issues
 
 (this is fixed poorly by Claude code)
-
-**Status:** RESOLVED
-**Created:** 2026-01-18
-**Resolved:** 2026-01-18
-**Priority:** HIGH
 
 ## Description
 

@@ -1,8 +1,17 @@
-# [TODO] UI/Interface Testing Framework
+---
+id: RN-0003
+title: UI/Interface Testing Framework
+type: todo
+status: pending
+priority: medium
+created: 2026-01-11
+area: testing
+tags:
+  - ui
+  - e2e
+---
 
-**Status:** PENDING  
-**Created:** 2026-01-11  
-**Priority:** MEDIUM
+# UI/Interface Testing Framework
 
 ## Description
 

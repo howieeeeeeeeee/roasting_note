@@ -5,7 +5,7 @@ All REST API routes for RoastLogger.
 ## HTML-Rendering Routes
 
 | Route | Method | Description |
-|-------|--------|-------------|
+| --- | --- | --- |
 | `/` | GET | Dashboard (list of roasts) |
 | `/beans` | GET | List of beans |
 | `/beans/add` | GET | Add bean form |
@@ -21,7 +21,7 @@ All REST API routes for RoastLogger.
 ## Bean API Routes
 
 | Route | Method | Description |
-|-------|--------|-------------|
+| --- | --- | --- |
 | `/api/beans/add` | POST | Create new bean |
 | `/api/beans/edit/<bean_id>` | POST | Update bean |
 | `/api/beans/delete/<bean_id>` | POST | Archive bean (soft delete) |
@@ -32,12 +32,13 @@ All REST API routes for RoastLogger.
 ## Roast API Routes
 
 | Route | Method | Description |
-|-------|--------|-------------|
+| --- | --- | --- |
 | `/api/roast/create` | POST | Create draft roast, returns `{ new_roast_id }` |
 | `/api/roast/update/<roast_id>` | POST | Update roast data |
 | `/api/roast/delete/<roast_id>` | POST | Archive roast (soft delete, restore stock) |
 | `/api/roast/start/<roast_id>` | POST | Set `roast_start_time` |
 | `/api/roast/end/<roast_id>` | POST | Set `roast_end_time` |
+| `/api/roast/update_setup/<roast_id>` | POST | Save draft setup fields before roast start |
 | `/api/roast/update_title/<roast_id>` | POST | Update roast title |
 | `/api/roast/add_timing/<roast_id>` | POST | Add key timing event |
 | `/api/roast/add_event/<roast_id>` | POST | Add temp curve event |
@@ -49,7 +50,7 @@ All REST API routes for RoastLogger.
 ## Review API Routes
 
 | Route | Method | Description |
-|-------|--------|-------------|
+| --- | --- | --- |
 | `/api/roast/add_review/<roast_id>` | POST | Add review to roast |
 | `/api/roast/update_review/<roast_id>/<review_id>` | POST | Update review |
 | `/api/roast/delete_review/<roast_id>/<review_id>` | POST | Delete review |
@@ -59,13 +60,14 @@ All REST API routes for RoastLogger.
 ## Temperature API Routes
 
 | Route | Method | Description |
-|-------|--------|-------------|
+| --- | --- | --- |
 | `/api/temp/current_fast` | GET | Fast single-request temperature fetch for UI polling (200ms timeout) |
 | `/api/temp/current` | GET | Accurate temperature fetch — 3 requests, averages top 2 (100ms timeout each) |
 
 ### Response Format
 
 **Success:**
+
 ```json
 {
   "temperature": 190,
@@ -74,6 +76,7 @@ All REST API routes for RoastLogger.
 ```
 
 **Error:**
+
 ```json
 {
   "temperature": null,
@@ -87,7 +90,7 @@ All REST API routes for RoastLogger.
 ## Settings & Sync API Routes
 
 | Route | Method | Description |
-|-------|--------|-------------|
+| --- | --- | --- |
 | `/api/settings/db` | GET | Get current database mode |
 | `/api/settings/db` | POST | Switch database mode |
 | `/api/settings/sensor` | GET | Get current sensor URL |

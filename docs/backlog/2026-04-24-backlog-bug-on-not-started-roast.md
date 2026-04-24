@@ -1,1 +1,0 @@
-I note that once i create a roast, set some info, and go back to dashboard, and then go back to the roast page, i can no longer start the roast, see the curve. It look like a finished roast page. Look into it and fix it.

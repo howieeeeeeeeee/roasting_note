@@ -1,8 +1,19 @@
-# [BUG] Chart Visualization Fixes
+---
+id: RN-0001
+title: Chart Visualization Fixes
+type: bug
+status: resolved
+priority: high
+created: 2025-01-09
+resolved: 2025-01-10
+area: charting
+tags:
+  - roast-detail
+  - live-roasting
+  - chart
+---
 
-**Status:** RESOLVED
-**Created:** 2025-01-09
-**Resolved:** 2025-01-10
+# Chart Visualization Fixes
 
 ## Description
 

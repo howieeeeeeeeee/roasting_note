@@ -1,9 +1,19 @@
-# [FEATURE] Live Roast Page - Fullscreen Mode
+---
+id: RN-0005
+title: Live Roast Page - Fullscreen Mode
+type: feature
+status: resolved
+priority: medium
+created: 2026-01-16
+resolved: 2026-01-16
+area: live-roasting
+tags:
+  - fullscreen
+  - tablet
+  - ipad
+---
 
-**Status:** RESOLVED
-**Created:** 2026-01-16
-**Resolved:** 2026-01-16
-**Priority:** MEDIUM
+# Live Roast Page - Fullscreen Mode
 
 ## Description
 
