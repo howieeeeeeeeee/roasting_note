@@ -458,6 +458,35 @@ class TestRoastUpdate:
         assert roast['original_weight_grams'] == 200
         assert roast['roasted_weight_grams'] == 170
 
+    def test_update_draft_roast_form_does_not_decrement_stock(
+        self, client, roasts_collection, beans_collection, created_test_roast
+    ):
+        """Test editing draft green weight does not affect bean stock before start."""
+        roast_id = created_test_roast['roast_id']
+        bean_id = created_test_roast['bean_id']
+        original_stock = created_test_roast['original_stock']
+
+        form_data = {
+            'title': 'Draft Weight Change',
+            'bean_id': bean_id,
+            'original_weight_grams': '100',
+        }
+
+        response = client.post(
+            f'/api/roast/update/{roast_id}',
+            data=form_data,
+            follow_redirects=False
+        )
+
+        assert response.status_code == 302
+
+        roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+        assert roast['original_weight_grams'] == 100
+        assert roast.get('roast_start_time') is None
+
+        bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
+        assert bean['stock_grams'] == original_stock
+
     def test_update_roast_calculates_weight_loss(
         self, client, roasts_collection, created_test_roast
     ):
