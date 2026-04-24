@@ -114,8 +114,12 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
         weight_loss = ((new_original_weight - new_roasted_weight) / new_original_weight) * 100
         update_doc['weight_loss_percentage'] = round(weight_loss, 2)
 
-    # Update bean stock if original_weight_grams changed
-    if new_original_weight != old_original_weight:
+    # Draft roasts have not deducted stock yet. Only adjust stock after a roast
+    # has started, when the original green weight has actually been consumed.
+    should_adjust_stock = bool(existing_roast.get('roast_start_time'))
+
+    # Update bean stock if original_weight_grams changed after the roast started
+    if should_adjust_stock and new_original_weight != old_original_weight:
         weight_difference = new_original_weight - old_original_weight
 
         # If bean changed, handle both old and new beans
