@@ -166,7 +166,9 @@ body {
    Buttons
    ============================================ */
 .btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
     padding: 0.625rem 1.25rem;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -213,8 +215,11 @@ body {
     border-color: var(--success-color);
 }
 
+/* Must beat .btn:hover border (otherwise hover shows primary outline) */
 .btn-success:hover {
-    opacity: 0.9;
+    background-color: #5d7d61;
+    border-color: #5d7d61;
+    color: #fff;
 }
 
 .btn-danger {
@@ -224,7 +229,9 @@ body {
 }
 
 .btn-danger:hover {
-    opacity: 0.9;
+    background-color: #a34e4e;
+    border-color: #a34e4e;
+    color: #fff;
 }
 
 .btn-sm {
@@ -3422,4 +3429,397 @@ body.fullscreen-mode {
         padding-left: max(0.75rem, env(safe-area-inset-left));
         padding-right: max(0.75rem, env(safe-area-inset-right));
     }
+}
+/* ============================================
+   Dark Mode
+   ============================================ */
+body.dark-mode {
+    --primary-color:   #C9A87A;
+    --primary-hover:   #D9B88A;
+    --secondary-color: #9A8A78;
+    --accent-color:    #7A6A58;
+    --success-color:   #7FB385;
+    --danger-color:    #D07070;
+    --text-color:      #EDE9E3;
+    --text-light:      #8A8680;
+    --bg-color:        #0E0D0B;
+    --card-bg:         #171512;
+    --border-color:    #2A2620;
+    --shadow:          0 1px 4px rgba(0, 0, 0, 0.4);
+    --shadow-hover:    0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .navbar,
+body.dark-mode .setup-section,
+body.dark-mode .timer-section,
+body.dark-mode .data-entry-section,
+body.dark-mode .timeline-section,
+body.dark-mode .right-panel,
+body.dark-mode .live-topbar,
+body.dark-mode .live-controls-bar,
+body.dark-mode .bottom-controls {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .form-group input,
+body.dark-mode .form-group select,
+body.dark-mode .form-group textarea,
+body.dark-mode .live-note-input {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .stepper-control,
+body.dark-mode .timer-panel,
+body.dark-mode .temp-panel,
+body.dark-mode .timer-panel-main {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .panel-tab {
+    color: var(--text-light);
+}
+
+body.dark-mode .panel-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+body.dark-mode .live-ev-btn {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .live-ev-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background-color: rgba(201, 168, 122, 0.1);
+}
+
+body.dark-mode .live-ev-btn.fired {
+    background-color: rgba(127, 179, 133, 0.15);
+    border-color: var(--success-color);
+    color: var(--success-color);
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.dark-mode-toggle:hover {
+    background: var(--bg-color);
+    color: var(--primary-color);
+}
+
+.dark-mode-toggle.active {
+    color: var(--primary-color);
+}
+
+.dark-mode-toggle .material-icons {
+    font-size: 1.25rem;
+}
+
+/* ============================================
+   Live Roasting — Top Bar Layout
+   ============================================ */
+.live-roast-new {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Top bar */
+.live-topbar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: stretch;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    height: 88px;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.tb-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 2rem;
+    border-right: 1px solid var(--border-color);
+    gap: 0.1rem;
+    transition: border-color 0.3s;
+}
+
+.tb-label {
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    opacity: 0.75;
+}
+
+.tb-value {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 2.5rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    transition: color 0.3s;
+}
+
+.tb-value-fc {
+    font-size: 2rem;
+}
+
+.tb-unit {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 0.9375rem;
+    color: var(--text-light);
+}
+
+.tb-sub {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 0.6875rem;
+    color: var(--danger-color);
+    margin-top: 0.15rem;
+    transition: color 0.3s;
+}
+
+.tb-end {
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    margin-left: auto;
+    gap: 0.75rem;
+}
+
+.live-topbar .tb-end .btn-lg {
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.2;
+}
+
+.live-topbar .tb-end .btn-lg .material-icons {
+    font-size: 1.375rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Chart area */
+.live-chart-area {
+    flex: 1;
+    min-height: 380px;
+    position: relative;
+    padding: 0.5rem 1rem 0.375rem;
+    transition: background-color 0.3s;
+}
+
+.live-chart-area canvas {
+    position: absolute;
+    inset: 0.5rem 1rem 0.375rem;
+    width: calc(100% - 2rem) !important;
+    height: calc(100% - 0.875rem) !important;
+}
+
+/* Controls bar */
+.live-controls-bar {
+    flex-shrink: 0;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Event buttons strip */
+.live-ev-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.625rem;
+}
+
+.live-ev-btn {
+    height: 54px;
+    background: var(--bg-color);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Inter', -apple-system, sans-serif;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.live-ev-btn:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(107, 91, 77, 0.08);
+}
+
+.live-ev-btn:active:not(:disabled) { transform: scale(0.97); }
+.live-ev-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.live-ev-btn.fired {
+    background: rgba(107, 142, 111, 0.15);
+    border-color: var(--success-color);
+    color: var(--success-color);
+}
+
+.live-ev-btn .ev-abbr { font-size: 1rem; font-weight: 800; }
+
+.live-ev-btn .ev-full {
+    font-size: 0.5rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.live-ev-btn.fired .ev-full { color: var(--success-color); opacity: 0.7; }
+
+/* Input strip — stretch so note + log align with fan/power label + stepper rows */
+.live-input-strip {
+    --live-control-height: 44px;
+    display: flex;
+    align-items: stretch;
+    gap: 0.625rem;
+}
+
+/* One shared height for stepper, note field, and log button (do not let inputs flex-grow) */
+.live-input-strip .stepper-control {
+    height: var(--live-control-height);
+    min-height: var(--live-control-height);
+    max-height: var(--live-control-height);
+    flex-shrink: 0;
+}
+
+.live-input-strip .sg-label {
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 14px;
+    line-height: 1;
+}
+
+.live-stepper-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+/* Matches fan/power column: label row + control row (same height as .stepper-control) */
+.live-note-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.live-log-action-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.live-log-action-group .sg-label--strip-spacer {
+    visibility: hidden;
+    user-select: none;
+}
+
+.live-log-event-btn {
+    height: var(--live-control-height);
+    min-height: var(--live-control-height);
+    max-height: var(--live-control-height);
+    padding: 0 1rem;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+}
+
+.live-note-input {
+    flex: 0 0 auto;
+    min-width: 0;
+    align-self: stretch;
+    width: 100%;
+    height: var(--live-control-height);
+    min-height: var(--live-control-height);
+    max-height: var(--live-control-height);
+    box-sizing: border-box;
+    padding: 0 0.875rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    font-family: inherit;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    transition: all 0.2s;
+}
+
+.live-note-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(107, 91, 77, 0.1);
+}
+
+.live-note-input::placeholder { color: var(--text-light); opacity: 0.6; }
+
+@media (max-width: 768px) {
+    .live-topbar { height: auto; flex-wrap: wrap; }
+    .tb-tile { padding: 0.75rem 1rem; flex: 1; min-width: 80px; }
+    .tb-value { font-size: 1.75rem; }
+    .tb-end {
+        width: 100%;
+        margin-left: 0;
+        justify-content: center;
+        border-top: 1px solid var(--border-color);
+        padding: 0.75rem 1rem;
+    }
+    .live-ev-strip { grid-template-columns: repeat(5, 1fr); gap: 0.375rem; }
+    .live-ev-btn { height: 48px; }
+    .live-ev-btn .ev-abbr { font-size: 0.875rem; }
+    .live-input-strip { flex-wrap: wrap; }
+    .live-note-group { flex: 1 1 100%; min-width: 100%; }
+    .live-note-input { width: 100%; }
+    .live-chart-area { min-height: 260px; }
 }

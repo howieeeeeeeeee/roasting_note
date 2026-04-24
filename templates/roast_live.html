@@ -142,180 +142,161 @@
         </div>
     </section>
 
-    <!-- Full Width Layout: Left Panel + Right Panel -->
-    <div class="roast-panels" id="roastPanels">
-        <!-- Left Panel: Timer and Log Input -->
-        <div class="left-panel" id="leftPanel">
-            <!-- Timer, Temperature and Controls -->
-            <section class="timer-section" id="timerSection">
-                <div class="timer-panel-main">
-                    <div class="panel-label">Time</div>
-                    <div class="panel-value">
-                        <span id="timerDisplay">00:00</span>
-                        <span id="fcTimeDisplay" class="fc-time-badge" style="display: none;"></span>
-                    </div>
-                </div>
-                {% if not roast.roast_end_time %}
-                <div class="timer-temp-panels">
-                    <div class="temp-panel">
-                        <div class="panel-label">Temperature</div>
-                        <div class="panel-value">
-                            <span id="tempValue">--</span><span class="unit">°C</span>
-                        </div>
-                    </div>
-                    <div class="temp-panel">
-                        <div class="panel-label">RoR</div>
-                        <div class="panel-value">
-                            <span id="rorValue">--</span><span class="unit">°C/min</span>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                <div class="timer-controls">
-                    <button id="startBtn" class="btn btn-success btn-lg">Start Roast</button>
-                    <button id="endBtn" class="btn btn-danger btn-lg" style="display: none;">End Roast</button>
-                </div>
-            </section>
+    <!-- New Top Bar Layout -->
+    <div class="live-roast-new" id="liveRoastNew">
 
-            <!-- Combined Event Logging -->
-            <section class="data-entry-section" id="dataEntrySection">
-                <h2>Log Event</h2>
-
-                <!-- Quick Key Events -->
-                <div class="form-group">
-                    <label>Quick Key Events</label>
-                    <div class="event-buttons-compact">
-                        <button class="btn btn-secondary event-btn-compact" data-event="Yellowing" disabled
-                            title="Yellowing">Y</button>
-                        <button class="btn btn-secondary event-btn-compact" data-event="First Crack Start" disabled
-                            title="First Crack Start">FC</button>
-                        <button class="btn btn-secondary event-btn-compact" data-event="First Crack End" disabled
-                            title="First Crack End">FC-end</button>
-                        <button class="btn btn-secondary event-btn-compact" data-event="Second Crack Start" disabled
-                            title="Second Crack Start">SC</button>
-                        <button class="btn btn-secondary event-btn-compact" data-event="Second Crack End" disabled
-                            title="Second Crack End">SC-end</button>
-                    </div>
+        {% if not roast.roast_end_time %}
+        <!-- Top Bar: Key Metrics -->
+        <div class="live-topbar" id="liveTopbar">
+            <div class="tb-tile">
+                <div class="tb-label">Elapsed</div>
+                <div class="tb-value">
+                    <span id="timerDisplay">00:00</span>
+                    <span id="fcTimeDisplay" class="fc-time-badge" style="display: none;"></span>
                 </div>
-
-                <!-- Temperature & Settings -->
-                <div class="settings-group">
-                    <div class="settings-row-temp">
-                        <div class="form-group">
-                            <label for="temperature">Temp</label>
-                            <input type="number" id="temperature" name="temperature">
-                        </div>
-                    </div>
-                    <div class="settings-row-fp">
-                        <div class="form-group">
-                            <label>Fan</label>
-                            <div class="stepper-control">
-                                <button type="button" class="btn-stepper" onclick="adjustFan(-1)">
-                                    <span class="material-icons">remove</span>
-                                </button>
-                                <span class="stepper-value" id="fanValue">9</span>
-                                <button type="button" class="btn-stepper" onclick="adjustFan(1)">
-                                    <span class="material-icons">add</span>
-                                </button>
-                            </div>
-                            <input type="hidden" id="fan_setting" name="fan_setting" value="9">
-                        </div>
-                        <div class="form-group">
-                            <label>Power</label>
-                            <div class="stepper-control">
-                                <button type="button" class="btn-stepper" onclick="adjustPower(-1)">
-                                    <span class="material-icons">remove</span>
-                                </button>
-                                <span class="stepper-value" id="powerValue">3</span>
-                                <button type="button" class="btn-stepper" onclick="adjustPower(1)">
-                                    <span class="material-icons">add</span>
-                                </button>
-                            </div>
-                            <input type="hidden" id="power_setting" name="power_setting" value="3">
-                        </div>
-                    </div>
+            </div>
+            <div class="tb-tile">
+                <div class="tb-label">Temperature</div>
+                <div class="tb-value">
+                    <span id="tempValue">--</span><span class="tb-unit">°C</span>
                 </div>
-
-                <div class="note-button-row">
-                    <div class="form-group note-input-group">
-                        <label for="event_note">Note</label>
-                        <input type="text" id="event_note" name="event_note">
-                    </div>
-                    <button id="addEventBtn" class="btn btn-primary btn-lg" disabled>Log Event</button>
+            </div>
+            <div class="tb-tile">
+                <div class="tb-label">Rate of Rise</div>
+                <div class="tb-value">
+                    <span id="rorValue">--</span><span class="tb-unit">°/m</span>
                 </div>
-            </section>
-        </div>
-
-        <!-- Resize Handle (for fullscreen landscape mode) -->
-        <div class="resize-handle" id="resizeHandle"></div>
-
-        <!-- Right Panel: Chart and Timeline with Tabs -->
-        <div class="right-panel" id="rightPanel">
-            <div class="panel-tabs">
-                <button class="panel-tab active" data-tab="curve" onclick="switchTab('curve')">
-                    <span class="material-icons">show_chart</span>
-                    Curve
+            </div>
+            <div class="tb-tile" id="fcElapsedTile" style="display:none;">
+                <div class="tb-label">Since FC</div>
+                <div class="tb-value tb-value-fc" id="fcElapsedValue">00:00</div>
+                <div class="tb-sub">development</div>
+            </div>
+            <div class="tb-end">
+                <button id="startBtn" class="btn btn-success btn-lg">
+                    <span class="material-icons">play_arrow</span> Start Roast
                 </button>
-                <button class="panel-tab" data-tab="log" onclick="switchTab('log')">
-                    <span class="material-icons">list</span>
-                    Log
+                <button id="endBtn" class="btn btn-danger btn-lg" style="display: none;">
+                    <span class="material-icons">stop</span> End Roast
                 </button>
             </div>
+        </div>
+        {% else %}
+        <span id="timerDisplay" style="display:none;"></span>
+        <span id="fcTimeDisplay" style="display:none;"></span>
+        <span id="tempValue" style="display:none;"></span>
+        <span id="rorValue" style="display:none;"></span>
+        {% endif %}
 
-            <!-- Curve Tab Content -->
-            <div id="curveTabContent" class="tab-content active">
-                {% if not roast.roast_end_time %}
-                <section class="chart-section-full">
-                    <div class="chart-container-large">
-                        <canvas id="roastCurveChart"></canvas>
-                    </div>
-                </section>
-                {% else %}
-                <p class="empty-log">Roast has ended. View curve in roast details.</p>
-                {% endif %}
+        <!-- Roast Curve Chart -->
+        <div class="live-chart-area">
+            {% if not roast.roast_end_time %}
+            <canvas id="roastCurveChart"></canvas>
+            {% else %}
+            <p class="empty-log" style="padding:2rem;text-align:center;">
+                Roast has ended. <a href="{{ url_for('roast_detail', roast_id=roast._id) }}">View details →</a>
+            </p>
+            {% endif %}
+        </div>
+
+        {% if not roast.roast_end_time %}
+        <!-- Controls Bar -->
+        <div class="live-controls-bar">
+            <!-- Quick Key Events -->
+            <div class="live-ev-strip">
+                <button class="live-ev-btn event-btn-compact" data-event="Yellowing" disabled title="Yellowing">
+                    <span class="ev-abbr">Y</span><span class="ev-full">Yellowing</span>
+                </button>
+                <button class="live-ev-btn event-btn-compact" data-event="First Crack Start" disabled title="First Crack Start">
+                    <span class="ev-abbr">FC</span><span class="ev-full">1st Crack</span>
+                </button>
+                <button class="live-ev-btn event-btn-compact" data-event="First Crack End" disabled title="First Crack End">
+                    <span class="ev-abbr">FC–</span><span class="ev-full">FC End</span>
+                </button>
+                <button class="live-ev-btn event-btn-compact" data-event="Second Crack Start" disabled title="Second Crack Start">
+                    <span class="ev-abbr">SC</span><span class="ev-full">2nd Crack</span>
+                </button>
+                <button class="live-ev-btn event-btn-compact" data-event="Second Crack End" disabled title="Second Crack End">
+                    <span class="ev-abbr">SC–</span><span class="ev-full">SC End</span>
+                </button>
             </div>
-
-            <!-- Log Tab Content -->
-            <div id="logTabContent" class="tab-content">
-                <section class="timeline-section">
-                    <div id="timelineList" class="timeline-list">
-                        {% set all_events = [] %}
-
-                        {% for timing in roast.key_timings %}
-                        {% set _ = all_events.append({'time': timing.time_seconds, 'type': 'key', 'data': timing}) %}
-                        {% endfor %}
-
-                        {% for event in roast.temp_curve %}
-                        {% set _ = all_events.append({'time': event.time_seconds, 'type': 'temp', 'data': event}) %}
-                        {% endfor %}
-
-                        {% if all_events %}
-                        {% for event in all_events | sort(attribute='time', reverse=True) %}
-                        {% if event.type == 'key' %}
-                        <div class="timeline-item timeline-key">
-                            <div class="timeline-time">{{ event.time | format_seconds }}</div>
-                            <div class="timeline-content">
-                                <strong class="timeline-label">{{ event.data.event_name }}</strong>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="timeline-item timeline-temp">
-                            <div class="timeline-time">{{ event.time | format_seconds }}</div>
-                            <div class="timeline-content">
-                                <span class="timeline-temp-value">{{ event.data.temperature }}°C</span>
-                                <span class="timeline-settings">Fan: {{ event.data.fan_setting }} | Power: {{
-                                    event.data.power_setting }}</span>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% endfor %}
-                        {% else %}
-                        <p class="empty-log">No events logged yet</p>
-                        {% endif %}
+            <!-- Fan / Power / Note / Log -->
+            <div class="live-input-strip">
+                <div class="live-stepper-group">
+                    <span class="sg-label">Fan</span>
+                    <div class="stepper-control">
+                        <button type="button" class="btn-stepper" onclick="adjustFan(-1)">
+                            <span class="material-icons">remove</span>
+                        </button>
+                        <span class="stepper-value" id="fanValue">9</span>
+                        <button type="button" class="btn-stepper" onclick="adjustFan(1)">
+                            <span class="material-icons">add</span>
+                        </button>
                     </div>
-                </section>
+                    <input type="hidden" id="fan_setting" name="fan_setting" value="9">
+                </div>
+                <div class="live-stepper-group">
+                    <span class="sg-label">Power</span>
+                    <div class="stepper-control">
+                        <button type="button" class="btn-stepper" onclick="adjustPower(-1)">
+                            <span class="material-icons">remove</span>
+                        </button>
+                        <span class="stepper-value" id="powerValue">3</span>
+                        <button type="button" class="btn-stepper" onclick="adjustPower(1)">
+                            <span class="material-icons">add</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="power_setting" name="power_setting" value="3">
+                </div>
+                <input type="hidden" id="temperature" name="temperature">
+                <div class="live-note-group">
+                    <label for="event_note" class="sg-label">Note</label>
+                    <input type="text" id="event_note" name="event_note"
+                        class="live-note-input" placeholder="Note (optional)…">
+                </div>
+                <div class="live-log-action-group">
+                    <span class="sg-label sg-label--strip-spacer" aria-hidden="true">Fan</span>
+                    <button id="addEventBtn" class="btn btn-primary live-log-event-btn" disabled>
+                        <span class="material-icons" style="font-size:1rem;">add</span> Log Event
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- Hidden event log (populated by JS) -->
+        <div id="timelineList" class="timeline-list" style="display:none;">
+            {% set all_events = [] %}
+            {% for timing in roast.key_timings %}
+            {% set _ = all_events.append({'time': timing.time_seconds, 'type': 'key', 'data': timing}) %}
+            {% endfor %}
+            {% for event in roast.temp_curve %}
+            {% set _ = all_events.append({'time': event.time_seconds, 'type': 'temp', 'data': event}) %}
+            {% endfor %}
+            {% if all_events %}
+            {% for event in all_events | sort(attribute='time', reverse=True) %}
+            {% if event.type == 'key' %}
+            <div class="timeline-item timeline-key">
+                <div class="timeline-time">{{ event.time | format_seconds }}</div>
+                <div class="timeline-content">
+                    <strong class="timeline-label">{{ event.data.event_name }}</strong>
+                </div>
+            </div>
+            {% else %}
+            <div class="timeline-item timeline-temp">
+                <div class="timeline-time">{{ event.time | format_seconds }}</div>
+                <div class="timeline-content">
+                    <span class="timeline-temp-value">{{ event.data.temperature }}°C</span>
+                    <span class="timeline-settings">Fan: {{ event.data.fan_setting }} | Power: {{ event.data.power_setting }}</span>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% else %}
+            <p class="empty-log">No events logged yet</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
     </div>
 </div>
 
@@ -712,10 +693,8 @@
         // Update FC elapsed time if FC has been logged
         if (fcStartTime !== null) {
             const fcElapsed = seconds - fcStartTime;
-            const fcDisplay = document.getElementById('fcTimeDisplay');
-            if (fcDisplay) {
-                fcDisplay.textContent = `(FC +${formatTime(fcElapsed)})`;
-            }
+            const fcElapsedValue = document.getElementById('fcElapsedValue');
+            if (fcElapsedValue) fcElapsedValue.textContent = formatTime(fcElapsed);
         }
     }
 
@@ -953,7 +932,7 @@
                 timerInterval = setInterval(updateTimer, 1000);
 
                 startBtn.style.display = 'none';
-                endBtn.style.display = 'inline-block';
+                endBtn.style.display = 'inline-flex';
                 eventButtons.forEach(btn => btn.disabled = false);
                 addEventBtn.disabled = false;
                 document.getElementById('bean_id').disabled = true;
@@ -1016,11 +995,10 @@
             // Track FC start time
             if (eventName === 'First Crack Start') {
                 fcStartTime = seconds;
-                const fcDisplay = document.getElementById('fcTimeDisplay');
-                if (fcDisplay) {
-                    fcDisplay.textContent = `(FC +00:00)`;
-                    fcDisplay.style.display = 'inline';
-                }
+                const fcElapsedTile = document.getElementById('fcElapsedTile');
+                if (fcElapsedTile) fcElapsedTile.style.display = 'flex';
+                const fcElapsedValue = document.getElementById('fcElapsedValue');
+                if (fcElapsedValue) fcElapsedValue.textContent = '00:00';
             }
 
             const tempInput = document.getElementById('temperature');
@@ -1076,12 +1054,7 @@
 
                     showToast(`✓ ${eventName} logged at ${formatTime(seconds)}`);
 
-                    btn.style.backgroundColor = 'var(--success-color)';
-                    btn.style.color = 'white';
-                    setTimeout(() => {
-                        btn.style.backgroundColor = '';
-                        btn.style.color = '';
-                    }, 500);
+                    btn.classList.add('fired');
 
                     tempInput.value = '';
                 } else {

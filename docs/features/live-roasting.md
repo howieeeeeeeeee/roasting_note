@@ -8,38 +8,41 @@ The live roasting page provides a comprehensive interface for monitoring and con
 
 ## Layout
 
+Top-bar design optimised for tablet use. Chart fills the main area; controls
+are in a fixed bar at the bottom.
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Setup Section (collapsible)                                │
-│  [Bean Dropdown] [Weight Input] [Ambient Temp] [Humidity]   │
-└─────────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────────┐
-│                         TIMER                                │
-│                        12:34                                 │
-│                       (FC 08:45)                             │
-└─────────────────────────────────────────────────────────────┘
-┌─────────────────────┐  ┌─────────────────────────────────────┐
-│   Current Readings  │  │            Chart                    │
-│   Temp: 185°C       │  │   [Temperature/RoR Graph]           │
-│   RoR: 12.5°C/min   │  │   [Power/Fan Bands in Chart]        │
-│   Fan:  [−] 9 [+]   │  └─────────────────────────────────────┤
-│   Power:[−] 5 [+]   │  │            Data Tab                 │
-│                     │  │   [Event Log Table]                 │
-│   Quick Events:     │  │                                     │
-│   [Y][FC][FC-E]     │  │                                     │
-│   [SC][SC-E]        │  │                                     │
-│                     │  │                                     │
-│   [Add Event Form]  │  │                                     │
-└─────────────────────┘  └─────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  Setup Section (collapsible)                                         │
+│  [Bean Dropdown] [Weight Input] [Ambient Temp] [Humidity]            │
+└──────────────────────────────────────────────────────────────────────┘
+┌─────────────┬─────────────┬─────────────┬──────────┬────────────────┐
+│  Elapsed    │ Temperature │ Rate of Rise│ Since FC │  [Start/End]   │
+│   12:34     │   185 °C    │   8.2 °/m   │  02:15   │               │
+└─────────────┴─────────────┴─────────────┴──────────┴────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                                                                      │
+│                  Roast Curve Chart (fills screen)                    │
+│                  Temperature + RoR + Fan/Power bands                 │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  [Y]  [FC]  [FC–]  [SC]  [SC–]                                       │
+│  Fan [−] 9 [+]  Power [−] 3 [+]   [Note…]  [Log Event]             │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+### Dark Mode
+
+Toggle via the moon icon in the navbar. Preference is persisted in
+`localStorage` under the key `roast-dark` and restored on every page load.
 
 ## Features
 
 ### Timer Display
 
-- Large MM:SS format display
-- Shows FC time in parentheses when First Crack logged
-- Updates to latest FC if multiple FC events recorded
+- Large MM:SS format in the Elapsed top-bar tile
+- "Since FC" tile appears automatically when First Crack Start is logged, showing development time elapsed
 
 ### Temperature Display
 
