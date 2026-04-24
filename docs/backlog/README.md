@@ -48,7 +48,7 @@ Note: older tickets may still use `YYYY-MM-...` until they are renamed.
 
 | ID | Type | Description | File |
 |----|------|-------------|------|
-| 0 | [IMPROVEMENT] | Label creator redesign (4 templates, font presets, aspect ratio) | [2026-04-20-backlog-label-creator-update.md](./2026-04-20-backlog-label-creator-update.md) |
+| 0 | [IMPROVEMENT] | Label creator redesign (4 templates, font presets, aspect ratio) | [2026-04-20-resolved-label-creator-update.md](./2026-04-20-resolved-label-creator-update.md) |
 | 1 | [BUG] | Live chart and data recording issues (RoR filter, Drop event, layout) | [2026-01-resolved-live-chart-improvements.md](./2026-01-resolved-live-chart-improvements.md) |
 | 2 | [FEATURE] | Fullscreen mode for live roast page | [2026-01-resolved-fullscreen-mode.md](./2026-01-resolved-fullscreen-mode.md) |
 | 3 | [IMPROVEMENT] | Data collection (RoR + DB logging) | [2026-01-resolved-data-collection-improvements.md](./2026-01-resolved-data-collection-improvements.md) |
