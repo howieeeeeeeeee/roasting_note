@@ -1,9 +1,18 @@
-# [RESOLVED] API Testing Framework
+---
+id: RN-0002
+title: API Testing Framework
+type: todo
+status: resolved
+priority: high
+created: 2026-01-11
+resolved: 2026-01-11
+area: testing
+tags:
+  - api
+  - pytest
+---
 
-**Status:** RESOLVED
-**Created:** 2026-01-11
-**Resolved:** 2026-01-11
-**Priority:** HIGH
+# API Testing Framework
 
 ## Description
 

@@ -1244,6 +1244,30 @@ select.modern-select:hover,
     font-size: 0.8125rem;
 }
 
+.roast-status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}
+
+.roast-status-draft {
+    background-color: #F0EDE8;
+    color: var(--primary-color);
+}
+
+.roast-status-active {
+    background-color: #FFF4E8;
+    color: #9B6A2F;
+}
+
+.roast-status-completed {
+    background-color: #EDF2EC;
+    color: var(--success-color);
+}
+
 .stock-badge {
     background-color: #F0EDE8;
     color: var(--primary-color);

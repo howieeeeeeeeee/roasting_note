@@ -1,8 +1,18 @@
-# [IMPROVEMENT] Label creator redesign
+---
+id: RN-0007
+title: Label Creator Redesign
+type: improvement
+status: resolved
+priority: medium
+created: 2026-04-20
+resolved: 2026-04-24
+area: label-creator
+tags:
+  - design
+  - labels
+---
 
-**Status:** RESOLVED
-**Created:** 2026-04-20
-**Resolved:** 2026-04-24
+# Label Creator Redesign
 
 ## Description
 

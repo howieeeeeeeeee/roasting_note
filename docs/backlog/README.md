@@ -1,96 +1,50 @@
 # Backlog
 
-Tracking for bugs, features, improvements, and todos.
+Tracking for bugs, features, improvements, refactors, and todos.
 
-## Labels
+> This file is generated from ticket frontmatter. To update it, edit ticket metadata and run `uv run python scripts/generate_backlog_index.py`.
 
-| Label | Description | Example |
-|-------|-------------|---------|
-| `[FEATURE]` | New functionality to add | Temperature sensor integration |
-| `[BUG]` | Something broken that needs fixing | Dropdown menu not responding |
-| `[IMPROVEMENT]` | Enhancement to existing feature | Better chart colors |
-| `[REFACTOR]` | Code restructuring | Extract shared chart module |
-| `[TODO]` | General task or chore | Update documentation |
+## Ticket Metadata
 
-## Status
+Tickets live in `docs/backlog/` as Markdown files with YAML frontmatter.
+Filenames are stable and do not need to change when status changes; use the `status` field instead.
 
-| Status | Description |
-|--------|-------------|
-| `PENDING` | Not started |
-| `IN_PROGRESS` | Currently being worked on |
-| `RESOLVED` | Completed |
-| `WONT_FIX` | Decided not to implement |
+| Field | Values / Format | Notes |
+| --- | --- | --- |
+| `id` | `RN-0001` | Stable ticket identifier. Increment for new tickets. |
+| `title` | Text | Human-readable ticket title. |
+| `type` | `bug`, `feature`, `improvement`, `refactor`, `todo` | Work category. |
+| `status` | `pending`, `in_progress`, `resolved`, `wont_fix` | Drives this index. |
+| `priority` | `high`, `medium`, `low` | Used for sorting within status. |
+| `created` | `YYYY-MM-DD` | Creation date. |
+| `resolved` | `YYYY-MM-DD` or blank | Fill when resolved. |
+| `area` | Short slug | Example: `live-roasting`, `testing`, `docs`. |
+| `tags` | YAML list | Optional discovery labels. |
 
-## File Naming Convention
+Use `docs/backlog/TEMPLATE.md` when creating a new ticket.
 
-```
-YYYY-MM-DD-{status}-{short-description}.md
-```
-
-Examples:
-- `2025-01-18-resolved-chart-visualization.md`
-- `2025-01-18-pending-test-framework.md`
-
-Note: older tickets may still use `YYYY-MM-...` until they are renamed.
-
----
-
-## Current Items
+## Current Tickets
 
 ### Pending
 
-| ID | Type | Description | File |
-|----|------|-------------|------|
-| 1 | [TODO] | Original test framework (legacy) | [2026-01-pending-test-framework.md](./2026-01-pending-test-framework.md) |
-| 2 | [TODO] | UI testing | [2026-01-pending-ui-testing.md](./2026-01-pending-ui-testing.md) |
+| ID | Type | Priority | Area | Title | Created | Resolved |
+| --- | --- | --- | --- | --- | --- | --- |
+| RN-0010 | [BUG] | High | live-roasting | [Temperature Updates Stall During Live Roast](./RN-0010-temperature-update-stalls.md) | 2026-04-24 | - |
+| RN-0003 | [TODO] | Medium | testing | [UI/Interface Testing Framework](./RN-0003-ui-interface-testing-framework.md) | 2026-01-11 | - |
 
-### Resolved (Recent)
+### In Progress
 
-| ID | Type | Description | File |
-|----|------|-------------|------|
-| 0 | [IMPROVEMENT] | Label creator redesign (4 templates, font presets, aspect ratio) | [2026-04-20-resolved-label-creator-update.md](./2026-04-20-resolved-label-creator-update.md) |
-| 1 | [BUG] | Live chart and data recording issues (RoR filter, Drop event, layout) | [2026-01-resolved-live-chart-improvements.md](./2026-01-resolved-live-chart-improvements.md) |
-| 2 | [FEATURE] | Fullscreen mode for live roast page | [2026-01-resolved-fullscreen-mode.md](./2026-01-resolved-fullscreen-mode.md) |
-| 3 | [IMPROVEMENT] | Data collection (RoR + DB logging) | [2026-01-resolved-data-collection-improvements.md](./2026-01-resolved-data-collection-improvements.md) |
-| 4 | [TODO] | API testing framework (58 tests) | [2026-01-resolved-api-testing.md](./2026-01-resolved-api-testing.md) |
-| 5 | [BUG] | Chart visualization fixes | [2025-01-resolved-chart-fixes.md](./2025-01-resolved-chart-fixes.md) |
-| 6 | [FEATURE] | Real-time graph with temp/RoR | [2025-01-resolved-realtime-graph.md](./2025-01-resolved-realtime-graph.md) |
-| 7 | [FEATURE] | Database sync/switch | [2025-01-resolved-db-sync.md](./2025-01-resolved-db-sync.md) |
-| 8 | [FEATURE] | Ambient temp/humidity fields | [2025-01-resolved-ambient-data.md](./2025-01-resolved-ambient-data.md) |
+No tickets.
 
----
+## Resolved Tickets
 
-## Adding New Items
-
-1. Create a new file in this folder with the naming convention
-2. Use the template below
-3. Update the "Current Items" table in this README
-
-### Template
-
-```markdown
-# [TYPE] Short Description
-
-**Status:** PENDING | IN_PROGRESS | RESOLVED
-**Created:** YYYY-MM-DD
-**Resolved:** YYYY-MM-DD (if applicable)
-
-## Description
-
-Brief description of the issue/feature/task.
-
-## Details
-
-- Detailed requirements
-- Acceptance criteria
-- Technical notes
-
-## Resolution (if resolved)
-
-What was done to resolve this item.
-
-## Related Files
-
-- `path/to/file.py`
-- `path/to/template.html`
-```
+| ID | Type | Priority | Area | Title | Created | Resolved |
+| --- | --- | --- | --- | --- | --- | --- |
+| RN-0009 | [BUG] | High | live-roasting | [Draft Roast Opens As Read-Only Detail Page](./RN-0009-draft-roast-readonly-detail.md) | 2026-04-24 | 2026-04-24 |
+| RN-0008 | [TODO] | Medium | docs | [Design Documentation Restructure](./RN-0008-design-documentation-restructure.md) | 2026-04-20 | 2026-04-24 |
+| RN-0007 | [IMPROVEMENT] | Medium | label-creator | [Label Creator Redesign](./RN-0007-label-creator-redesign.md) | 2026-04-20 | 2026-04-24 |
+| RN-0006 | [BUG] | High | live-roasting | [Live Chart and Data Recording Issues](./RN-0006-live-chart-data-recording-issues.md) | 2026-01-18 | 2026-01-18 |
+| RN-0005 | [FEATURE] | Medium | live-roasting | [Live Roast Page - Fullscreen Mode](./RN-0005-live-roast-fullscreen-mode.md) | 2026-01-16 | 2026-01-16 |
+| RN-0004 | [IMPROVEMENT] | High | live-roasting | [Live Roast Data Collection Accuracy](./RN-0004-live-roast-data-collection-accuracy.md) | 2026-01-11 | 2026-01-11 |
+| RN-0002 | [TODO] | High | testing | [API Testing Framework](./RN-0002-api-testing-framework.md) | 2026-01-11 | 2026-01-11 |
+| RN-0001 | [BUG] | High | charting | [Chart Visualization Fixes](./RN-0001-chart-visualization-fixes.md) | 2025-01-09 | 2025-01-10 |

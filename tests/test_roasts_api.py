@@ -58,6 +58,68 @@ class TestRoastCreate:
         roasts_collection.delete_one({'_id': ObjectId(roast_id)})
 
 
+class TestRoastNavigation:
+    """Tests for lifecycle-aware roast navigation."""
+
+    def test_dashboard_links_roasts_by_lifecycle_state(self, client, roasts_collection):
+        """Draft and active roasts return to live page; completed roasts open detail page."""
+        now = datetime.now()
+        roast_docs = [
+            {
+                'title': 'Lifecycle Draft Roast',
+                'roast_date': now,
+                'key_timings': [],
+                'temp_curve': [],
+                'reviews': [],
+                'archived': False,
+                'created_at': now,
+                'updated_at': now,
+                **TEST_DATA_MARKER
+            },
+            {
+                'title': 'Lifecycle Active Roast',
+                'roast_date': now,
+                'roast_start_time': now,
+                'key_timings': [],
+                'temp_curve': [],
+                'reviews': [],
+                'archived': False,
+                'created_at': now,
+                'updated_at': now,
+                **TEST_DATA_MARKER
+            },
+            {
+                'title': 'Lifecycle Completed Roast',
+                'roast_date': now,
+                'roast_start_time': now,
+                'roast_end_time': now,
+                'key_timings': [],
+                'temp_curve': [],
+                'reviews': [],
+                'archived': False,
+                'created_at': now,
+                'updated_at': now,
+                **TEST_DATA_MARKER
+            },
+        ]
+        inserted_ids = roasts_collection.insert_many(roast_docs).inserted_ids
+
+        try:
+            response = client.get('/')
+            html = response.get_data(as_text=True)
+
+            assert response.status_code == 200
+            assert f'/roast/live/{inserted_ids[0]}' in html
+            assert f'/api/roast/delete/{inserted_ids[0]}' in html
+            assert 'Draft' in html
+            assert f'/roast/live/{inserted_ids[1]}' in html
+            assert 'In Progress' in html
+            assert f'/roast/detail/{inserted_ids[2]}' in html
+            assert 'Completed' in html
+        finally:
+            roasts_collection.delete_many({'_id': {'$in': inserted_ids}})
+
+
 class TestRoastStart:
     """Tests for starting a roast."""
 
@@ -319,6 +381,52 @@ class TestRoastUpdate:
         roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
         assert roast['title'] == 'My Best Roast'
 
+    def test_update_roast_setup_persists_without_starting(
+        self, client, roasts_collection, beans_collection, created_test_roast
+    ):
+        """Test pre-start setup autosave does not start roast or change bean stock."""
+        roast_id = created_test_roast['roast_id']
+        bean_id = created_test_roast['bean_id']
+        original_stock = created_test_roast['original_stock']
+
+        response = client.post(
+            f'/api/roast/update_setup/{roast_id}',
+            json={
+                'title': 'Prepared Draft Roast',
+                'bean_id': bean_id,
+                'original_weight_grams': 180,
+                'ambient_temp_celsius': 23.5,
+                'ambient_humidity': 58
+            },
+            content_type='application/json'
+        )
+
+        assert response.status_code == 200
+        assert response.get_json()['success'] == True
+
+        roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+        assert roast['title'] == 'Prepared Draft Roast'
+        assert roast['bean_id'] == ObjectId(bean_id)
+        assert roast['original_weight_grams'] == 180
+        assert roast['ambient_temp_celsius'] == 23.5
+        assert roast['ambient_humidity'] == 58.0
+        assert roast.get('roast_start_time') is None
+
+        bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
+        assert bean['stock_grams'] == original_stock
+
+    def test_update_roast_setup_rejects_started_roast(self, client, started_test_roast):
+        """Test setup autosave cannot mutate a roast after it starts."""
+        roast_id = started_test_roast['roast_id']
+
+        response = client.post(
+            f'/api/roast/update_setup/{roast_id}',
+            json={'original_weight_grams': 180},
+            content_type='application/json'
+        )
+
+        assert response.status_code == 409
+
     def test_update_roast_form(self, client, roasts_collection, beans_collection, created_test_roast):
         """Test updating roast via form submission."""
         roast_id = created_test_roast['roast_id']
@@ -384,6 +492,19 @@ class TestRoastDelete:
         roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
         assert roast is not None
         assert roast['archived'] == True
+
+    def test_delete_draft_roast_does_not_restore_stock(
+        self, client, beans_collection, created_test_roast
+    ):
+        """Test deleting a saved draft does not add stock that was never deducted."""
+        roast_id = created_test_roast['roast_id']
+        bean_id = created_test_roast['bean_id']
+        original_stock = created_test_roast['original_stock']
+
+        client.post(f'/api/roast/delete/{roast_id}', follow_redirects=False)
+
+        bean_after_delete = beans_collection.find_one({'_id': ObjectId(bean_id)})
+        assert bean_after_delete['stock_grams'] == original_stock
 
     def test_delete_roast_restores_bean_stock(
         self, client, beans_collection, roasts_collection, created_test_roast

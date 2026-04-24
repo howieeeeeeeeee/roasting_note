@@ -67,6 +67,7 @@
                 <thead>
                     <tr>
                         <th>Roast Name</th>
+                        <th>Status</th>
                         <th>Date</th>
                         <th>Weight</th>
                         <th>Duration</th>
@@ -79,7 +80,12 @@
                     {% for roast in roasts %}
                     <tr class="roast-row">
                         <td class="roast-name-cell">
-                            <a href="{{ url_for('roast_detail', roast_id=roast._id) }}" class="roast-link">{{ roast.title }}</a>
+                            <a href="{{ roast.lifecycle_url }}" class="roast-link">{{ roast.title }}</a>
+                        </td>
+                        <td>
+                            <span class="roast-status-badge roast-status-{{ roast.lifecycle_state }}">
+                                {{ roast.lifecycle_label }}
+                            </span>
                         </td>
                         <td class="date-cell">{{ roast.roast_date | format_date if roast.roast_date else 'N/A' }}</td>
                         <td>
@@ -100,8 +106,8 @@
                         </td>
                         <td class="actions-cell">
                             <div class="action-buttons">
-                                <a href="{{ url_for('roast_detail', roast_id=roast._id) }}" class="btn-icon" title="View">
-                                    <span class="material-icons">visibility</span>
+                                <a href="{{ roast.lifecycle_url }}" class="btn-icon" title="{{ roast.lifecycle_action_label }}">
+                                    <span class="material-icons">{{ roast.lifecycle_icon }}</span>
                                 </a>
                                 <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="btn-icon" title="Edit">
                                     <span class="material-icons">edit</span>

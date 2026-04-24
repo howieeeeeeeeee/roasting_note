@@ -308,6 +308,7 @@
     const roastId = '{{ roast._id }}';
     const roastStarted = {% if roast.roast_start_time %}true{% else %} false{% endif %};
     const roastEnded = {% if roast.roast_end_time %}true{% else %} false{% endif %};
+    let setupLocked = roastStarted || roastEnded;
 
     // Remember last values
     let lastTemp = null;
@@ -846,6 +847,39 @@
         }
     }
 
+    function collectSetupData() {
+        return {
+            title: roastTitleInput.value || 'Untitled Roast',
+            bean_id: document.getElementById('bean_id').value || null,
+            original_weight_grams: document.getElementById('original_weight').value || null,
+            ambient_temp_celsius: document.getElementById('ambient_temp').value || null,
+            ambient_humidity: document.getElementById('ambient_humidity').value || null
+        };
+    }
+
+    let setupSaveTimer = null;
+    async function saveSetupFields() {
+        if (setupLocked) return;
+
+        try {
+            await fetch(`/api/roast/update_setup/${roastId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(collectSetupData())
+            });
+        } catch (error) {
+            console.error('Error saving roast setup:', error);
+        }
+    }
+
+    function scheduleSetupSave() {
+        if (setupLocked) return;
+        if (setupSaveTimer) clearTimeout(setupSaveTimer);
+        setupSaveTimer = setTimeout(saveSetupFields, 500);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         console.log('Page loaded. roastStarted:', roastStarted, 'roastEnded:', roastEnded);
 
@@ -853,10 +887,43 @@
         lastFan = 9;
         lastPower = 3;
 
+        if (!setupLocked) {
+            ['roast_title', 'bean_id', 'original_weight', 'ambient_temp', 'ambient_humidity'].forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', scheduleSetupSave);
+                    field.addEventListener('change', saveSetupFields);
+                    field.addEventListener('blur', saveSetupFields);
+                }
+            });
+
+            window.addEventListener('pagehide', () => {
+                if (setupLocked) return;
+                const payload = JSON.stringify(collectSetupData());
+                const blob = new Blob([payload], { type: 'application/json' });
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon(`/api/roast/update_setup/${roastId}`, blob);
+                } else {
+                    fetch(`/api/roast/update_setup/${roastId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: payload,
+                        keepalive: true
+                    });
+                }
+            });
+        }
+
         // Start sync loop if roast hasn't ended
         if (!roastEnded) {
             if (roastStarted) {
                 isRunning = true;
+                if (startBtn) startBtn.style.display = 'none';
+                if (endBtn) endBtn.style.display = 'inline-flex';
+                eventButtons.forEach(btn => btn.disabled = false);
+                if (addEventBtn) addEventBtn.disabled = false;
+                document.getElementById('bean_id').disabled = true;
+                document.getElementById('original_weight').disabled = true;
                 collapseSetupOnStart();
                 {% if roast.roast_start_time %}
                 const startTime = new Date('{{ roast.roast_start_time }}').getTime();
@@ -882,24 +949,8 @@
         }
     });
 
-    // Save roast title
-    roastTitleInput.addEventListener('blur', async () => {
-        const title = roastTitleInput.value || 'Untitled Roast';
-        try {
-            await fetch(`/api/roast/update_title/${roastId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ title: title })
-            });
-        } catch (error) {
-            console.error('Error updating title:', error);
-        }
-    });
-
     // Start roast
-    startBtn.addEventListener('click', async () => {
+    if (startBtn) startBtn.addEventListener('click', async () => {
         const beanId = document.getElementById('bean_id').value;
         const originalWeight = document.getElementById('original_weight').value;
         const ambientTemp = document.getElementById('ambient_temp').value;
@@ -926,6 +977,7 @@
 
             if (response.ok) {
                 isRunning = true;
+                setupLocked = true;
                 seconds = 0; // Reset timer
 
                 // Start timer
@@ -951,7 +1003,7 @@
     });
 
     // End roast
-    endBtn.addEventListener('click', async () => {
+    if (endBtn) endBtn.addEventListener('click', async () => {
         if (!confirm('Are you sure you want to end this roast?')) {
             return;
         }

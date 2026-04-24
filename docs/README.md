@@ -7,6 +7,7 @@ A personal, mobile-responsive web application for tracking coffee beans, logging
 | Section | Description |
 |---------|-------------|
 | [Architecture](./architecture/) | Data models, API endpoints, tech stack |
+| [Design](./design/) | Design principles, tokens, components, screens |
 | [Features](./features/) | Detailed feature specifications |
 | [Hardware](./hardware/) | Temperature sensor setup (ESP32/K-Type) |
 | [Backlog](./backlog/) | Bugs, features, improvements, todos |
@@ -50,6 +51,12 @@ docs/
 │   ├── data-models.md     # MongoDB schemas
 │   ├── api-endpoints.md   # All API routes
 │   └── tech-stack.md      # Technology stack
+├── design/                # Design docs (tokens, components, screens)
+│   ├── principles.md
+│   ├── foundations/       # Color, typography, spacing, dark mode
+│   ├── components/        # Buttons, cards, forms, instrument displays
+│   ├── screens/           # Per-screen design specs
+│   └── patterns/          # Recurring design systems (label templates)
 ├── features/              # Feature specifications
 │   ├── live-roasting.md   # Live roasting interface
 │   ├── temperature-sensor.md

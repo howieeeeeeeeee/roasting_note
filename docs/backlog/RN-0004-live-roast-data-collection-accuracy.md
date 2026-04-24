@@ -1,9 +1,19 @@
-# [IMPROVEMENT] Live Roast Data Collection Accuracy
+---
+id: RN-0004
+title: Live Roast Data Collection Accuracy
+type: improvement
+status: resolved
+priority: high
+created: 2026-01-11
+resolved: 2026-01-11
+area: live-roasting
+branch: feat/data-collection-improvements
+tags:
+  - ror
+  - database-logging
+---
 
-**Status:** RESOLVED
-**Created:** 2026-01-11
-**Resolved:** 2026-01-11
-**Branch:** `feat/data-collection-improvements`
+# Live Roast Data Collection Accuracy
 
 ## Resolution Summary
 

@@ -2,7 +2,7 @@
 
 ## Documentation Structure
 
-```
+```text
 docs/
 ├── README.md              # Start here - navigation & overview
 ├── architecture/          # Data models, API routes, tech stack
@@ -41,11 +41,11 @@ git checkout -b improve/<improvement-name>
 Update these docs as needed:
 
 | Change Type | Update |
-|-------------|--------|
+| --- | --- |
 | New API route | `docs/architecture/api-endpoints.md` |
 | Schema change | `docs/architecture/data-models.md` |
 | New feature | Create/update file in `docs/features/` |
-| Bug fix | Add resolved item to `docs/backlog/` |
+| Bug fix | Add/update ticket metadata in `docs/backlog/`, then regenerate the backlog index |
 | New dependency | `docs/architecture/tech-stack.md` |
 
 ### Must Stay in Sync
@@ -53,23 +53,48 @@ Update these docs as needed:
 These files MUST be updated when structure changes:
 
 - `docs/README.md` - Main navigation
-- `docs/backlog/README.md` - Current items table
+- `docs/backlog/README.md` - Generated backlog index; do not edit manually
 
-## Backlog Labels
+## Backlog Workflow
 
-Use in filenames and content:
+Backlog tickets live in `docs/backlog/` as Markdown files with YAML frontmatter.
+Filenames are stable and do not need to change when a ticket changes status.
 
-- `[FEATURE]` - New functionality
-- `[BUG]` - Bug fix
-- `[IMPROVEMENT]` - Enhancement
-- `[TODO]` - Task/chore
+Use `docs/backlog/TEMPLATE.md` for new tickets. Assign the next `RN-XXXX` ID by checking `docs/backlog/README.md` or existing ticket frontmatter.
 
-File naming: `YYYY-MM-{status}-{description}.md`
+Required frontmatter fields:
+
+```yaml
+id: RN-XXXX
+title: Short Ticket Title
+type: bug
+status: pending
+priority: medium
+created: YYYY-MM-DD
+resolved:
+area: live-roasting
+tags:
+  - example-tag
+```
+
+Allowed values:
+
+- `type`: `bug`, `feature`, `improvement`, `refactor`, `todo`
+- `status`: `pending`, `in_progress`, `resolved`, `wont_fix`
+- `priority`: `high`, `medium`, `low`
+
+After adding or changing any backlog ticket metadata, regenerate the index:
+
+```bash
+uv run python scripts/generate_backlog_index.py
+```
+
+Do not hand-edit the generated ticket tables in `docs/backlog/README.md`.
 
 ## Quick Reference
 
 | Need to... | Go to |
-|------------|-------|
+| --- | --- |
 | Understand the project | `docs/README.md` |
 | See API routes | `docs/architecture/api-endpoints.md` |
 | See DB schema | `docs/architecture/data-models.md` |
@@ -115,6 +140,7 @@ When implementing a new API feature:
 4. Cover both success and error cases
 
 Example test structure:
+
 ```python
 def test_new_feature(client, beans_collection):
     # Arrange - set up test data
@@ -132,7 +158,7 @@ def test_new_feature(client, beans_collection):
 ### Test Coverage Areas
 
 | Area | Test File |
-|------|-----------|
+| --- | --- |
 | Bean CRUD, stock | `test_beans_api.py` |
 | Roast lifecycle | `test_roasts_api.py` |
 | Reviews | `test_reviews_api.py` |

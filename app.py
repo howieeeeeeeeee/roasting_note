@@ -74,6 +74,30 @@ def get_roasts_collection():
     return db_local.roasts
 
 
+def annotate_roast_lifecycle(roast):
+    """Add display metadata for routing roasts by lifecycle state."""
+    if roast.get('roast_end_time'):
+        roast['lifecycle_state'] = 'completed'
+        roast['lifecycle_label'] = 'Completed'
+        roast['lifecycle_action_label'] = 'View'
+        roast['lifecycle_icon'] = 'visibility'
+        roast['lifecycle_url'] = url_for('roast_detail', roast_id=roast['_id'])
+    elif roast.get('roast_start_time'):
+        roast['lifecycle_state'] = 'active'
+        roast['lifecycle_label'] = 'In Progress'
+        roast['lifecycle_action_label'] = 'Resume Roast'
+        roast['lifecycle_icon'] = 'play_circle'
+        roast['lifecycle_url'] = url_for('roast_live', roast_id=roast['_id'])
+    else:
+        roast['lifecycle_state'] = 'draft'
+        roast['lifecycle_label'] = 'Draft'
+        roast['lifecycle_action_label'] = 'Resume Setup'
+        roast['lifecycle_icon'] = 'edit_note'
+        roast['lifecycle_url'] = url_for('roast_live', roast_id=roast['_id'])
+
+    return roast
+
+
 # Timezone Configuration
 TIMEZONE = os.environ.get('TIMEZONE', 'America/New_York')
 local_tz = pytz.timezone(TIMEZONE)
@@ -186,6 +210,8 @@ def index():
 
     # Get bean names and calculate metrics for each roast
     for roast in roasts:
+        annotate_roast_lifecycle(roast)
+
         if roast.get('bean_id'):
             bean = get_beans_collection().find_one({'_id': ObjectId(roast['bean_id'])})
             if bean:
@@ -268,6 +294,7 @@ def beans_detail(bean_id):
 
     # Calculate metrics for each roast
     for roast in roasts:
+        annotate_roast_lifecycle(roast)
         roast['bean_name'] = bean['name']
         roast['bean_color'] = bean.get('color', '#6B8E6F')
 
@@ -443,7 +470,7 @@ def api_roast_create():
 @app.route('/api/roast/start/<roast_id>', methods=['POST'])
 def api_roast_start(roast_id):
     """Start roast timer"""
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
 
     update_data = {
         'roast_start_time': get_current_time_with_tz(),
@@ -485,7 +512,7 @@ def api_roast_end(roast_id):
     if not roast:
         return jsonify({'success': False, 'error': 'Roast not found'}), 404
 
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
     end_time = get_current_time_with_tz()
     elapsed_seconds = 0
 
@@ -574,6 +601,66 @@ def api_roast_update_title(roast_id):
             'title': data.get('title', 'Untitled Roast'),
             'updated_at': get_current_time_with_tz()
         }}
+    )
+    return jsonify({'success': True})
+
+
+@app.route('/api/roast/update_setup/<roast_id>', methods=['POST'])
+def api_roast_update_setup(roast_id):
+    """Persist pre-start setup fields without starting the roast."""
+    roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
+    if not roast:
+        return jsonify({'success': False, 'error': 'Roast not found'}), 404
+
+    if roast.get('roast_start_time') or roast.get('roast_end_time'):
+        return jsonify({
+            'success': False,
+            'error': 'Setup can only be changed before the roast starts'
+        }), 409
+
+    data = request.get_json(silent=True) or {}
+    update_data = {'updated_at': get_current_time_with_tz()}
+    unset_data = {}
+
+    if 'title' in data:
+        title = (data.get('title') or '').strip()
+        update_data['title'] = title or 'Untitled Roast'
+
+    if 'bean_id' in data:
+        bean_id = data.get('bean_id')
+        if bean_id:
+            update_data['bean_id'] = ObjectId(bean_id)
+        else:
+            unset_data['bean_id'] = ''
+
+    if 'original_weight_grams' in data:
+        original_weight = data.get('original_weight_grams')
+        if original_weight:
+            update_data['original_weight_grams'] = int(original_weight)
+        else:
+            unset_data['original_weight_grams'] = ''
+
+    if 'ambient_temp_celsius' in data:
+        ambient_temp = data.get('ambient_temp_celsius')
+        if ambient_temp not in (None, ''):
+            update_data['ambient_temp_celsius'] = float(ambient_temp)
+        else:
+            update_data['ambient_temp_celsius'] = None
+
+    if 'ambient_humidity' in data:
+        ambient_humidity = data.get('ambient_humidity')
+        if ambient_humidity not in (None, ''):
+            update_data['ambient_humidity'] = float(ambient_humidity)
+        else:
+            update_data['ambient_humidity'] = None
+
+    update_operation = {'$set': update_data}
+    if unset_data:
+        update_operation['$unset'] = unset_data
+
+    get_roasts_collection().update_one(
+        {'_id': ObjectId(roast_id)},
+        update_operation
     )
     return jsonify({'success': True})
 
@@ -741,8 +828,8 @@ def api_roast_delete(roast_id):
     """Archive roast (soft delete) and restore bean stock"""
     roast = get_roasts_collection().find_one({'_id': ObjectId(roast_id)})
 
-    # Restore bean stock if applicable
-    if roast and roast.get('bean_id') and roast.get('original_weight_grams'):
+    # Restore bean stock only after start, when stock has actually been deducted.
+    if roast and roast.get('roast_start_time') and roast.get('bean_id') and roast.get('original_weight_grams'):
         get_beans_collection().update_one(
             {'_id': ObjectId(roast['bean_id'])},
             {'$inc': {'stock_grams': roast['original_weight_grams']}}
