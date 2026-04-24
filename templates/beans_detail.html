@@ -112,9 +112,11 @@
                                 <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="btn-icon" title="Edit">
                                     <span class="material-icons">edit</span>
                                 </a>
+                                {% if roast.lifecycle_state != 'draft' %}
                                 <button type="button" class="btn-icon" title="Reviews" onclick="showRoastReviews('{{ roast._id }}')">
                                     <span class="material-icons">rate_review</span>
                                 </button>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

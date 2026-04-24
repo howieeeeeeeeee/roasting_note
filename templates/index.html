@@ -87,9 +87,11 @@
                             </button>
                         </form>
                         {% endif %}
+                        {% if roast.lifecycle_state != 'draft' %}
                         <button type="button" class="btn-icon" title="Reviews" onclick="showRoastReviews('{{ roast._id }}')">
                             <span class="material-icons">rate_review</span>
                         </button>
+                        {% endif %}
                     </div>
                 </td>
             </tr>
