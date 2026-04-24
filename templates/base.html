@@ -7,7 +7,8 @@
     <title>{% block title %}Howie's Roast Log{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Raleway:wght@400;500;600;700;800;900&family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700;800&family=Roboto+Slab:wght@100..900&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Raleway:wght@400;500;600;700;800;900&family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700;800&family=Roboto+Slab:wght@100..900&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -29,7 +30,8 @@
                 <li><a href="{{ url_for('index') }}">Roasts</a></li>
                 <li><a href="{{ url_for('beans_list') }}">Beans</a></li>
             </ul>
-            <button class="btn-icon dark-mode-toggle" id="darkModeToggle" onclick="toggleDarkMode()" title="Toggle dark mode">
+            <button class="btn-icon dark-mode-toggle" id="darkModeToggle" onclick="toggleDarkMode()"
+                title="Toggle dark mode">
                 <span class="material-icons" id="darkModeIcon">dark_mode</span>
             </button>
             <button class="btn-icon settings-btn" onclick="openSettingsModal()" title="Settings">
@@ -129,7 +131,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2025 Howie's Roast Log</p>
+        <p>&copy; 2026 Howie's Roast Log</p>
     </footer>
 
     <script>
