@@ -63,6 +63,38 @@ var LabelCreator = (function () {
         },
     };
 
+    // ── Font readiness ───────────────────────────────────────────────
+    // Force the browser to fetch each custom face at the weights we need
+    // before rendering, otherwise canvas silently falls back to sans-serif.
+    var fontsReadyPromise = null;
+
+    function ensureFontsReady() {
+        if (fontsReadyPromise) return fontsReadyPromise;
+        if (!document.fonts || typeof document.fonts.load !== 'function') {
+            fontsReadyPromise = Promise.resolve();
+            return fontsReadyPromise;
+        }
+        var requests = [];
+        Object.keys(FONT_PRESETS).forEach(function (k) {
+            var f = FONT_PRESETS[k];
+            requests.push(document.fonts.load(f.nameW + " 48px '" + f.name + "'"));
+            requests.push(document.fonts.load("400 14px '" + f.body + "'"));
+            requests.push(document.fonts.load("600 14px '" + f.body + "'"));
+        });
+        // Inter is used directly in a couple of places (pills, rotated origin)
+        requests.push(document.fonts.load("600 12px 'Inter'"));
+        requests.push(document.fonts.load("700 14px 'Inter'"));
+        fontsReadyPromise = Promise.all(requests).then(function () {
+            return document.fonts.ready;
+        }).catch(function () { /* ignore */ });
+        return fontsReadyPromise;
+    }
+
+    // Kick off font loading immediately so it's ready by the time the modal opens
+    if (typeof document !== 'undefined' && document.fonts) {
+        ensureFontsReady();
+    }
+
     // ── Image cache ──────────────────────────────────────────────────
     var imageCache = {};
 
@@ -148,27 +180,30 @@ var LabelCreator = (function () {
         var w = BASE_W;
         var h = Math.round(w * ratio[1] / ratio[0]);
 
+        // Set canvas dimensions up front so layout doesn't flicker while fonts load
         canvas.width  = w * RENDER_SCALE;
         canvas.height = h * RENDER_SCALE;
         canvas.style.width  = w + 'px';
         canvas.style.height = h + 'px';
 
-        var ctx = canvas.getContext('2d');
-        ctx.scale(RENDER_SCALE, RENDER_SCALE);
-        ctx.clearRect(0, 0, w, h);
-
-        var img = imageSrc ? imageCache[imageSrc] : null;
-
-        switch (templateId) {
-            case 'ink':   renderInk(ctx, w, h, fields, accent, img, preset);   break;
-            case 'strip': renderStrip(ctx, w, h, fields, accent, img, preset); break;
-            case 'washi': renderWashi(ctx, w, h, fields, accent, img, preset); break;
-            default:      renderNova(ctx, w, h, fields, accent, img, preset);  break;
-        }
-
-        // Update export px display if element present
         var infoEl = document.getElementById('labelExportInfo');
         if (infoEl) infoEl.textContent = canvas.width + ' × ' + canvas.height;
+
+        ensureFontsReady().then(function () {
+            var ctx = canvas.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(RENDER_SCALE, RENDER_SCALE);
+            ctx.clearRect(0, 0, w, h);
+
+            var img = imageSrc ? imageCache[imageSrc] : null;
+
+            switch (templateId) {
+                case 'ink':   renderInk(ctx, w, h, fields, accent, img, preset);   break;
+                case 'strip': renderStrip(ctx, w, h, fields, accent, img, preset); break;
+                case 'washi': renderWashi(ctx, w, h, fields, accent, img, preset); break;
+                default:      renderNova(ctx, w, h, fields, accent, img, preset);  break;
+            }
+        });
     }
 
     // ════════════════════════════════════════════════════
@@ -198,20 +233,12 @@ var LabelCreator = (function () {
             drawImageContain(ctx, img, imgX + imgW * 0.05, imgY + imgH * 0.05, imgW * 0.9, imgH * 0.9);
             ctx.restore();
         } else {
-            // Warm gradient fallback with silhouette
+            // Clean warm gradient fallback — blends into the label background
             var grd = ctx.createLinearGradient(imgX, imgY, imgX + imgW, imgY + imgH);
-            grd.addColorStop(0, '#F0EDE8'); grd.addColorStop(1, '#E4DDD4');
-            ctx.fillStyle = grd; ctx.fillRect(imgX, imgY, imgW, imgH);
-            // Silhouette
-            ctx.save(); ctx.globalAlpha = 0.18; ctx.fillStyle = '#6A5548';
-            ctx.beginPath(); ctx.ellipse(imgX + imgW * 0.5, imgY + imgH * 0.64, imgW * 0.24, imgH * 0.30, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(imgX + imgW * 0.5, imgY + imgH * 0.26, imgW * 0.16, imgH * 0.15, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#6A5548'; ctx.lineWidth = imgW * 0.025; ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(imgX + imgW * 0.68, imgY + imgH * 0.82);
-            ctx.quadraticCurveTo(imgX + imgW * 0.82, imgY + imgH * 0.70, imgX + imgW * 0.76, imgY + imgH * 0.55);
-            ctx.stroke();
-            ctx.globalAlpha = 1; ctx.restore();
+            grd.addColorStop(0, '#F5F2ED');
+            grd.addColorStop(1, '#E8E1D6');
+            ctx.fillStyle = grd;
+            ctx.fillRect(imgX, imgY, imgW, imgH);
         }
 
         // Dashed centre divider
@@ -221,17 +248,17 @@ var LabelCreator = (function () {
         else            { ctx.moveTo(w * 0.5, h * 0.03); ctx.lineTo(w * 0.5, h * 0.97); }
         ctx.stroke(); ctx.setLineDash([]); ctx.restore();
 
-        // Accent bar
-        var barW = Math.max(4, w * 0.010);
+        // Accent bar — wider strip for more visual weight
+        var barW = Math.max(8, w * 0.018);
         var barX = 12, barY = h * 0.08, barH = h * 0.62;
         roundRect(ctx, barX, barY, barW, barH, barW / 2, accent);
 
-        // Text area
+        // Text area — keep name restrained; bump sub & body ~15-20%
         var textW = isPortrait ? w : w * 0.5;
-        var tx     = 26;
+        var tx     = 26 + (barW - 5);
         var nameSz = Math.max(20, Math.min(40, textW * 0.17));
-        var subSz  = Math.max(10, Math.min(15, textW * 0.048));
-        var bodySz = Math.max(8,  Math.min(12, textW * 0.034));
+        var subSz  = Math.max(12, Math.min(18, textW * 0.056));
+        var bodySz = Math.max(10, Math.min(14, textW * 0.040));
 
         // Name — auto-wrap to 2 lines if needed
         ctx.font = nameFontStr(preset, nameSz);
@@ -262,13 +289,15 @@ var LabelCreator = (function () {
         var origY = nameEndY + subSz * 1.8;
         txt(ctx, (f.origin || '').toUpperCase(), tx, origY, bodyFontStr(preset, subSz, 600), '#999590');
 
-        var sepY = origY + subSz * 2.6;
+        // Process — sits between origin and the rule
+        var procY = origY + subSz * 1.8;
+        txt(ctx, f.process, tx, procY, bodyFontStr(preset, bodySz, 500), '#777370');
+
+        var sepY = procY + bodySz * 1.6;
         ctx.strokeStyle = '#E8E4E0'; ctx.lineWidth = 0.75;
         ctx.beginPath(); ctx.moveTo(tx, sepY); ctx.lineTo(textW - 18, sepY); ctx.stroke();
-
-        txt(ctx, f.process,     tx, sepY + bodySz * 2.6, bodyFontStr(preset, bodySz, 500), '#777370');
-        txt(ctx, f.roastLevel,  tx, h * 0.72,             bodyFontStr(preset, bodySz, 600), '#4A4540');
-        txt(ctx, f.flavorNotes, tx, h * 0.72 + bodySz * 2, bodyFontStr(preset, bodySz),    '#888480');
+        txt(ctx, f.roastLevel,  tx, h * 0.62,             bodyFontStr(preset, bodySz, 600), '#4A4540');
+        txt(ctx, f.flavorNotes, tx, h * 0.62 + bodySz * 2, bodyFontStr(preset, bodySz),    '#888480');
         txt(ctx, f.roastDate ? ('Roasted on: ' + f.roastDate) : '', tx, h - 18,
             bodyFontStr(preset, bodySz * 0.88, 500), '#BBB7B3');
     }
