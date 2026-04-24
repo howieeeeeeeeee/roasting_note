@@ -24,23 +24,15 @@
     <section class="detail-section">
         <h2>Bean Information</h2>
         <div class="detail-grid">
-            <div class="detail-item">
-                <strong>Origin:</strong> {{ bean.origin or 'Not specified' }}
-            </div>
-            <div class="detail-item">
-                <strong>Process:</strong> {{ bean.process or 'Not specified' }}
-            </div>
-            <div class="detail-item">
-                <strong>Supplier:</strong> {{ bean.supplier or 'Not specified' }}
-            </div>
-            <div class="detail-item">
-                <strong>Purchase Date:</strong> {{ bean.purchase_date.strftime('%Y-%m-%d') if bean.purchase_date else 'Not specified' }}
-            </div>
+            <div class="detail-item"><strong>Origin:</strong> {{ bean.origin or 'Not specified' }}</div>
+            <div class="detail-item"><strong>Process:</strong> {{ bean.process or 'Not specified' }}</div>
+            <div class="detail-item"><strong>Supplier:</strong> {{ bean.supplier or 'Not specified' }}</div>
+            <div class="detail-item"><strong>Purchase Date:</strong> {{ bean.purchase_date.strftime('%Y-%m-%d') if bean.purchase_date else 'Not specified' }}</div>
         </div>
     </section>
 
     <section class="detail-section">
-        <h2>Stock & Pricing</h2>
+        <h2>Stock &amp; Pricing</h2>
         <div class="detail-grid">
             <div class="detail-item">
                 <strong>Current Stock:</strong>
@@ -48,24 +40,14 @@
                     {{ bean.stock_grams or 0 }}g
                 </span>
             </div>
-            <div class="detail-item">
-                <strong>Purchase Weight:</strong> {{ bean.purchase_weight_grams or 'Not specified' }}{% if bean.purchase_weight_grams %}g{% endif %}
-            </div>
+            <div class="detail-item"><strong>Purchase Weight:</strong> {{ bean.purchase_weight_grams or 'Not specified' }}{% if bean.purchase_weight_grams %}g{% endif %}</div>
             <div class="detail-item">
                 <strong>Total Purchase Price:</strong>
-                {% if bean.purchase_price_total %}
-                    ${{ bean.purchase_price_total.to_decimal() | round(2) }}
-                {% else %}
-                    Not specified
-                {% endif %}
+                {% if bean.purchase_price_total %}${{ bean.purchase_price_total.to_decimal() | round(2) }}{% else %}Not specified{% endif %}
             </div>
             <div class="detail-item">
                 <strong>Price per kg:</strong>
-                {% if bean.unit_price_per_kg %}
-                    ${{ bean.unit_price_per_kg.to_decimal() | round(2) }}
-                {% else %}
-                    Not calculated
-                {% endif %}
+                {% if bean.unit_price_per_kg %}${{ bean.unit_price_per_kg.to_decimal() | round(2) }}{% else %}Not calculated{% endif %}
             </div>
         </div>
     </section>
@@ -97,38 +79,24 @@
                     {% for roast in roasts %}
                     <tr class="roast-row">
                         <td class="roast-name-cell">
-                            <a href="{{ url_for('roast_detail', roast_id=roast._id) }}" class="roast-link">
-                                {{ roast.title }}
-                            </a>
+                            <a href="{{ url_for('roast_detail', roast_id=roast._id) }}" class="roast-link">{{ roast.title }}</a>
                         </td>
                         <td class="date-cell">{{ roast.roast_date | format_date if roast.roast_date else 'N/A' }}</td>
                         <td>
-                            {% if roast.original_weight_grams %}
-                                {{ roast.original_weight_grams }}g
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
+                            {% if roast.original_weight_grams %}{{ roast.original_weight_grams }}g
+                            {% else %}<span class="text-muted">N/A</span>{% endif %}
                         </td>
                         <td>
-                            {% if roast.total_duration_seconds %}
-                                {{ roast.total_duration_seconds | format_seconds }}
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
+                            {% if roast.total_duration_seconds %}{{ roast.total_duration_seconds | format_seconds }}
+                            {% else %}<span class="text-muted">N/A</span>{% endif %}
                         </td>
                         <td>
-                            {% if roast.time_after_fc %}
-                                {{ roast.time_after_fc | format_seconds }}
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
+                            {% if roast.time_after_fc %}{{ roast.time_after_fc | format_seconds }}
+                            {% else %}<span class="text-muted">-</span>{% endif %}
                         </td>
                         <td>
-                            {% if roast.weight_loss_percentage %}
-                                <span class="loss-badge">{{ roast.weight_loss_percentage }}%</span>
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
+                            {% if roast.weight_loss_percentage %}<span class="loss-badge">{{ roast.weight_loss_percentage }}%</span>
+                            {% else %}<span class="text-muted">N/A</span>{% endif %}
                         </td>
                         <td class="actions-cell">
                             <div class="action-buttons">
@@ -154,7 +122,7 @@
     </section>
 </div>
 
-<!-- Label Creator Modal -->
+<!-- ── Label Creator Modal ──────────────────────────────────────── -->
 <div id="labelModal" class="modal">
     <div class="modal-content label-modal-content">
         <div class="modal-header">
@@ -193,18 +161,40 @@
                     <div class="form-group">
                         <label for="labelRoastDate">Roast Date</label>
                         <input type="text" id="labelRoastDate" class="form-control label-date-input" readonly
-                            data-flatpickr data-flatpickr-mode="date" data-flatpickr-default-today="true" data-flatpickr-onchange="updatePreview">
+                            data-flatpickr data-flatpickr-mode="date" data-flatpickr-default-today="true"
+                            data-flatpickr-onchange="updatePreview">
                     </div>
                     <div class="form-group">
                         <label for="labelTemplate">Template</label>
                         <select id="labelTemplate" class="form-control" onchange="onTemplateChange()">
-                            <option value="classic">Classic</option>
-                            <option value="minimal">Minimal</option>
-                            <option value="compact">Compact</option>
+                            <option value="nova">Nova — Split layout</option>
+                            <option value="ink">Ink — Dark</option>
+                            <option value="strip">Strip — Minimal</option>
+                            <option value="washi">Washi — Craft paper</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="labelImage">Image</label>
+                        <label for="labelFontPreset">Font</label>
+                        <select id="labelFontPreset" class="form-control" onchange="updatePreview()">
+                            <option value="modern">Modern (Raleway)</option>
+                            <option value="editorial">Editorial (Playfair)</option>
+                            <option value="technical">Technical (Mono)</option>
+                            <option value="bold">Bold (Barlow Condensed)</option>
+                            <option value="craft">Craft (Roboto Slab)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="labelAspectRatio">Aspect Ratio</label>
+                        <select id="labelAspectRatio" class="form-control" onchange="updatePreview()">
+                            <option value="2:1">2:1 — Wide panoramic</option>
+                            <option value="5:3">5:3 — Landscape wide</option>
+                            <option value="5:4" selected>5:4 — Standard label</option>
+                            <option value="4:3">4:3 — Classic</option>
+                            <option value="3:4">3:4 — Portrait</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="labelImage">Image (optional)</label>
                         <select id="labelImage" class="form-control" onchange="onImageChange()">
                             <option value="">None</option>
                         </select>
@@ -212,15 +202,15 @@
                     <div class="label-form-row-full label-form-export-row">
                         <div class="form-group">
                             <label for="labelExportW">Export W (cm)</label>
-                            <input type="number" id="labelExportW" class="form-control" value="5" min="1" max="30" step="0.5" oninput="updatePreview()">
+                            <input type="number" id="labelExportW" class="form-control" value="10" min="1" max="30" step="0.5" oninput="updatePreview()">
                         </div>
                         <div class="form-group">
                             <label for="labelExportH">Export H (cm)</label>
-                            <input type="number" id="labelExportH" class="form-control" value="4" min="1" max="30" step="0.5" oninput="updatePreview()">
+                            <input type="number" id="labelExportH" class="form-control" value="8" min="1" max="30" step="0.5" oninput="updatePreview()">
                         </div>
                         <div class="form-group">
                             <label>Export px</label>
-                            <span id="labelExportInfo" class="form-control" style="background: var(--bg-color); display: block; font-size: 0.8rem;">2500 × 2000</span>
+                            <span id="labelExportInfo" class="form-control" style="background: var(--bg-color); display: block; font-size: 0.8rem;">2000 × 1600</span>
                         </div>
                     </div>
                 </div>
@@ -237,7 +227,7 @@
     </div>
 </div>
 
-<!-- Reviews Modal -->
+<!-- ── Reviews Modal ───────────────────────────────────────────── -->
 <div id="reviewsModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -253,7 +243,6 @@
 <script>
     let currentRoastId = null;
 
-    // Store reviews data for each roast
     const roastsReviews = {
         {% for roast in roasts %}
         '{{ roast._id }}': [
@@ -276,68 +265,36 @@
         const reviews = roastsReviews[roastId] || [];
 
         if (reviews && reviews.length > 0) {
-            // Sort reviews by date (most recent first)
-            const sortedReviews = reviews.sort((a, b) => {
-                const dateA = new Date(a.review_date);
-                const dateB = new Date(b.review_date);
-                return dateB - dateA;
-            });
-
-            let html = '<div class="reviews-modal-header"><a href="/roast/detail/' + roastId + '?openReview=true" class="btn btn-primary btn-sm">Add Review</a></div>';
-            html += '<div class="reviews-modal-list">';
-
-            sortedReviews.forEach(review => {
-                const date = review.review_date ? new Date(review.review_date).toLocaleDateString() : 'N/A';
+            const sorted = reviews.sort((a, b) => new Date(b.review_date) - new Date(a.review_date));
+            let html = '<div class="reviews-modal-header"><a href="/roast/detail/' + roastId + '?openReview=true" class="btn btn-primary btn-sm">Add Review</a></div><div class="reviews-modal-list">';
+            sorted.forEach(function(review) {
+                const date  = review.review_date ? new Date(review.review_date).toLocaleDateString() : 'N/A';
                 const score = review.overall_score || review.rating || 3;
                 const stars = '★'.repeat(score) + '☆'.repeat(5 - score);
                 const notes = review.notes || 'No notes';
-
-                // Get extraction method color
-                let methodColor = '#8B7D6B'; // default
-                let extractionMethod = '';
+                let mc = '#8B7D6B', em = '';
                 if (review.extraction_method) {
-                    extractionMethod = review.extraction_method.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    const methodLower = review.extraction_method.toLowerCase();
-                    if (methodLower.includes('espresso')) methodColor = '#8B4513';
-                    else if (methodLower.includes('pour') || methodLower.includes('v60') || methodLower.includes('chemex')) methodColor = '#6B8E6F';
-                    else if (methodLower.includes('french') || methodLower.includes('press')) methodColor = '#9B7E5C';
-                    else if (methodLower.includes('aeropress')) methodColor = '#7A9B8E';
-                    else if (methodLower.includes('drip')) methodColor = '#8E6B6F';
-                    else if (methodLower.includes('cold')) methodColor = '#5C7E9B';
+                    em = review.extraction_method.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+                    const ml = review.extraction_method.toLowerCase();
+                    if (ml.indexOf('espresso') > -1)                                              mc = '#8B4513';
+                    else if (ml.indexOf('pour') > -1 || ml.indexOf('v60') > -1 || ml.indexOf('chemex') > -1) mc = '#6B8E6F';
+                    else if (ml.indexOf('french') > -1 || ml.indexOf('press') > -1)              mc = '#9B7E5C';
+                    else if (ml.indexOf('aeropress') > -1)                                        mc = '#7A9B8E';
+                    else if (ml.indexOf('drip') > -1)                                             mc = '#8E6B6F';
+                    else if (ml.indexOf('cold') > -1)                                             mc = '#5C7E9B';
                 }
-
-                html += `
-                    <div class="review-modal-card">
-                        <div class="review-modal-header">
-                            <div class="review-rating">${stars}</div>
-                            <span class="review-date">${date}</span>
-                        </div>
-                        <div class="review-modal-body">
-                            ${extractionMethod ? `<div class="review-detail-item">
-                                <span class="extraction-method-label" style="background-color: ${methodColor}4D; color: ${methodColor};">
-                                    ${extractionMethod}
-                                </span>
-                            </div>` : ''}
-                            <div class="review-detail-item">
-                                <strong>Notes:</strong>
-                                <div class="review-notes">${notes}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                html += '<div class="review-modal-card">'
+                    + '<div class="review-modal-header"><div class="review-rating">' + stars + '</div><span class="review-date">' + date + '</span></div>'
+                    + '<div class="review-modal-body">'
+                    + (em ? '<div class="review-detail-item"><span class="extraction-method-label" style="background-color:' + mc + '4D;color:' + mc + ';">' + em + '</span></div>' : '')
+                    + '<div class="review-detail-item"><strong>Notes:</strong><div class="review-notes">' + notes + '</div></div>'
+                    + '</div></div>';
             });
-
             html += '</div>';
             reviewsList.innerHTML = html;
         } else {
-            reviewsList.innerHTML = `
-                <div class="empty-reviews">
-                    <p>No reviews yet for this roast.</p>
-                    <a href="/roast/detail/${roastId}?openReview=true" class="btn btn-primary">Add Review</a>
-                </div>
-            `;
+            reviewsList.innerHTML = '<div class="empty-reviews"><p>No reviews yet.</p><a href="/roast/detail/' + roastId + '?openReview=true" class="btn btn-primary">Add Review</a></div>';
         }
-
         modal.style.display = 'block';
     }
 
@@ -346,17 +303,10 @@
         currentRoastId = null;
     }
 
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const reviewsModal = document.getElementById('reviewsModal');
-        const labelModal = document.getElementById('labelModal');
-        if (event.target === reviewsModal) {
-            closeReviewsModal();
-        }
-        if (event.target === labelModal) {
-            closeLabelModal();
-        }
-    }
+    window.onclick = function (event) {
+        if (event.target === document.getElementById('reviewsModal')) closeReviewsModal();
+        if (event.target === document.getElementById('labelModal'))   closeLabelModal();
+    };
 </script>
 
 <script src="/static/js/label-creator.js"></script>
@@ -381,40 +331,35 @@
         var saved = beanData.label;
 
         if (saved && (saved.name || saved.imageSrc || saved.templateId)) {
-            document.getElementById('labelName').value = saved.name || '';
-            document.getElementById('labelOrigin').value = saved.origin || '';
-            document.getElementById('labelProcess').value = saved.process || '';
-            document.getElementById('labelRoastLevel').value = saved.roastLevel || '';
+            document.getElementById('labelName').value        = saved.name        || '';
+            document.getElementById('labelOrigin').value      = saved.origin      || '';
+            document.getElementById('labelProcess').value     = saved.process     || '';
+            document.getElementById('labelRoastLevel').value  = saved.roastLevel  || '';
             document.getElementById('labelFlavorNotes').value = saved.flavorNotes || '';
-            document.getElementById('labelRoastDate').value = saved.roastDate || getTodayStr();
-            if (saved.templateId) {
-                document.getElementById('labelTemplate').value = saved.templateId;
-            }
+            document.getElementById('labelRoastDate').value   = saved.roastDate   || getTodayStr();
+            if (saved.templateId)  document.getElementById('labelTemplate').value    = saved.templateId;
+            if (saved.fontPreset)  document.getElementById('labelFontPreset').value  = saved.fontPreset;
+            if (saved.aspectRatio) document.getElementById('labelAspectRatio').value = saved.aspectRatio;
         } else {
-            document.getElementById('labelName').value = '';
-            document.getElementById('labelOrigin').value = '';
-            document.getElementById('labelProcess').value = '';
-            document.getElementById('labelRoastLevel').value = '';
+            document.getElementById('labelName').value        = '';
+            document.getElementById('labelOrigin').value      = '';
+            document.getElementById('labelProcess').value     = '';
+            document.getElementById('labelRoastLevel').value  = '';
             document.getElementById('labelFlavorNotes').value = '';
-            document.getElementById('labelRoastDate').value = getTodayStr();
-            document.getElementById('labelTemplate').value = 'classic';
+            document.getElementById('labelRoastDate').value   = getTodayStr();
+            document.getElementById('labelTemplate').value    = 'nova';
+            document.getElementById('labelFontPreset').value  = 'modern';
+            document.getElementById('labelAspectRatio').value = '5:4';
         }
         document.getElementById('labelSaveStatus').textContent = '';
-
-        var tpl = LabelCreator.getTemplate(document.getElementById('labelTemplate').value);
-        var savedW = (saved && saved.exportWidthCm) || tpl.exportWidthCm || 5;
-        var savedH = (saved && saved.exportHeightCm) || tpl.exportHeightCm || 4;
-        document.getElementById('labelExportW').value = savedW;
-        document.getElementById('labelExportH').value = savedH;
-
         modal.style.display = 'block';
 
-        var dateEl = document.getElementById('labelRoastDate');
+        var dateEl  = document.getElementById('labelRoastDate');
         var dateVal = dateEl.value || getTodayStr();
         dateEl.value = dateVal;
         if (dateEl._flatpickr) dateEl._flatpickr.setDate(dateVal);
 
-        loadImageOptions().then(function() {
+        loadImageOptions().then(function () {
             if (saved && saved.imageSrc) {
                 document.getElementById('labelImage').value = saved.imageSrc;
                 selectedImageSrc = saved.imageSrc;
@@ -429,14 +374,14 @@
 
     function loadImageOptions() {
         return fetch('/api/label/images')
-            .then(function(resp) { return resp.json(); })
-            .then(function(data) {
-                var select = document.getElementById('labelImage');
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                var select  = document.getElementById('labelImage');
                 var current = select.value;
                 select.innerHTML = '<option value="">None</option>';
-                (data.images || []).forEach(function(filename) {
+                (data.images || []).forEach(function (filename) {
                     var opt = document.createElement('option');
-                    opt.value = '/static/img/' + filename;
+                    opt.value       = '/static/img/' + filename;
                     opt.textContent = filename;
                     select.appendChild(opt);
                 });
@@ -448,19 +393,17 @@
         var src = document.getElementById('labelImage').value;
         selectedImageSrc = src;
         if (src) {
-            LabelCreator.loadImage(src).then(function() {
-                updatePreview();
-            });
+            LabelCreator.loadImage(src).then(function () { updatePreview(); });
         } else {
             updatePreview();
         }
     }
 
     function autoFillLabel() {
-        document.getElementById('labelName').value = beanData.name;
-        document.getElementById('labelOrigin').value = beanData.origin;
-        document.getElementById('labelProcess').value = beanData.process;
-        document.getElementById('labelRoastLevel').value = '';
+        document.getElementById('labelName').value        = beanData.name;
+        document.getElementById('labelOrigin').value      = beanData.origin;
+        document.getElementById('labelProcess').value     = beanData.process;
+        document.getElementById('labelRoastLevel').value  = '';
         document.getElementById('labelFlavorNotes').value = '';
         var dateEl = document.getElementById('labelRoastDate');
         dateEl.value = getTodayStr();
@@ -469,82 +412,66 @@
     }
 
     function getFieldValues() {
-        var roastDate = document.getElementById('labelRoastDate').value;
         return {
-            name: document.getElementById('labelName').value,
-            origin: document.getElementById('labelOrigin').value,
-            process: document.getElementById('labelProcess').value,
-            roastLevel: document.getElementById('labelRoastLevel').value,
+            name:        document.getElementById('labelName').value,
+            origin:      document.getElementById('labelOrigin').value,
+            process:     document.getElementById('labelProcess').value,
+            roastLevel:  document.getElementById('labelRoastLevel').value,
             flavorNotes: document.getElementById('labelFlavorNotes').value,
-            roastDate: roastDate || getTodayStr()
+            roastDate:   document.getElementById('labelRoastDate').value || getTodayStr(),
         };
     }
 
-    function getSelectedTemplate() {
-        var id = document.getElementById('labelTemplate').value;
-        return LabelCreator.getTemplate(id);
-    }
-
-    function getExportSize() {
-        var wCm = parseFloat(document.getElementById('labelExportW').value) || 5;
-        var hCm = parseFloat(document.getElementById('labelExportH').value) || 4;
-        return { width: wCm, height: hCm };
-    }
-
     function updatePreview() {
-        var canvas = document.getElementById('labelCanvas');
-        var template = getSelectedTemplate();
-        var accentColor = beanData.color || '#6B8E6F';
-        var exportSize = getExportSize();
-        LabelCreator.renderLabel(canvas, template, getFieldValues(), accentColor, selectedImageSrc, exportSize);
-
-        var pxW = canvas.width;
-        var pxH = canvas.height;
-        document.getElementById('labelExportInfo').textContent = pxW + ' × ' + pxH;
+        var canvas      = document.getElementById('labelCanvas');
+        var templateId  = document.getElementById('labelTemplate').value;
+        var fontPreset  = document.getElementById('labelFontPreset').value;
+        var aspectRatio = document.getElementById('labelAspectRatio').value;
+        var accentColor = beanData.color || '#9B6A6A';
+        LabelCreator.renderLabel(canvas, templateId, getFieldValues(), accentColor, selectedImageSrc, fontPreset, aspectRatio);
     }
 
-    function onTemplateChange() {
-        var tpl = getSelectedTemplate();
-        document.getElementById('labelExportW').value = tpl.exportWidthCm || 5;
-        document.getElementById('labelExportH').value = tpl.exportHeightCm || 4;
-        updatePreview();
-    }
+    function onTemplateChange() { updatePreview(); }
 
-    ['labelName', 'labelOrigin', 'labelProcess', 'labelRoastLevel', 'labelFlavorNotes', 'labelRoastDate'].forEach(function(id) {
+    ['labelName', 'labelOrigin', 'labelProcess', 'labelRoastLevel', 'labelFlavorNotes', 'labelRoastDate'].forEach(function (id) {
         document.getElementById(id).addEventListener('input', updatePreview);
     });
 
     async function saveLabelInfo() {
-        var values = getFieldValues();
-        var templateId = document.getElementById('labelTemplate').value;
-        var exportSize = getExportSize();
+        var values      = getFieldValues();
+        var templateId  = document.getElementById('labelTemplate').value;
+        var fontPreset  = document.getElementById('labelFontPreset').value;
+        var aspectRatio = document.getElementById('labelAspectRatio').value;
+        var exportW     = parseFloat(document.getElementById('labelExportW').value) || 10;
+        var exportH     = parseFloat(document.getElementById('labelExportH').value) || 8;
+
         var payload = {
-            name: values.name,
-            origin: values.origin,
-            process: values.process,
-            roastLevel: values.roastLevel,
-            flavorNotes: values.flavorNotes,
-            roastDate: values.roastDate,
-            templateId: templateId,
-            imageSrc: selectedImageSrc,
-            accentColor: beanData.color || '',
-            exportWidthCm: exportSize.width,
-            exportHeightCm: exportSize.height
+            name:           values.name,
+            origin:         values.origin,
+            process:        values.process,
+            roastLevel:     values.roastLevel,
+            flavorNotes:    values.flavorNotes,
+            roastDate:      values.roastDate,
+            templateId:     templateId,
+            fontPreset:     fontPreset,
+            aspectRatio:    aspectRatio,
+            imageSrc:       selectedImageSrc,
+            accentColor:    beanData.color || '',
+            exportWidthCm:  exportW,
+            exportHeightCm: exportH,
         };
 
         try {
             var resp = await fetch('/api/beans/' + beanData.id + '/label', {
-                method: 'POST',
+                method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body:    JSON.stringify(payload),
             });
             var data = await resp.json();
             if (data.success) {
                 beanData.label = payload;
                 document.getElementById('labelSaveStatus').textContent = 'Saved!';
-                setTimeout(function() {
-                    document.getElementById('labelSaveStatus').textContent = '';
-                }, 2000);
+                setTimeout(function () { document.getElementById('labelSaveStatus').textContent = ''; }, 2000);
             }
         } catch (e) {
             document.getElementById('labelSaveStatus').textContent = 'Error saving';
@@ -554,9 +481,9 @@
 
     function downloadLabelPNG() {
         var canvas = document.getElementById('labelCanvas');
-        var link = document.createElement('a');
-        link.download = beanData.name.replace(/\s+/g, '_') + '_label.png';
-        link.href = canvas.toDataURL('image/png');
+        var link   = document.createElement('a');
+        link.download = (beanData.name || 'label').replace(/\s+/g, '_') + '_label.png';
+        link.href     = canvas.toDataURL('image/png');
         link.click();
     }
 </script>
