@@ -1,165 +1,91 @@
 # Claude Instructions for RoastLogger
 
-## Documentation Structure
+> **Core responsibility:** whenever a change affects the **scope, behaviour, or appearance** of the project, update the relevant docs in the same change. Out-of-date docs are worse than no docs.
+
+## Documentation Map
 
 ```text
 docs/
-├── README.md              # Start here - navigation & overview
-├── architecture/          # Data models, API routes, tech stack
-├── features/              # Feature specifications
-├── hardware/              # ESP32 temperature sensor docs
-├── backlog/               # Bugs, features, todos (combined)
-└── deployment/            # Render deployment guide
+├── README.md         # Start here — overview + navigation
+├── architecture/     # Data models, API routes, tech stack
+├── design/           # Principles, tokens, components, screens, patterns
+├── features/         # Feature specifications (behaviour, API, data model)
+├── hardware/         # ESP32 temperature sensor
+├── backlog/          # Bugs, features, improvements, todos (YAML-frontmatter tickets)
+└── deployment/       # Render deployment guide
+
+tests/README.md       # How to run tests, fixtures, when to run them
 ```
 
-## Workflow
+## Keep Docs in Sync — Required
 
-### Branch Strategy
+When your change touches the project, update the docs listed below **in the same branch**. If you're not sure whether a doc applies, err on updating it.
 
-Create feature branches for new work:
+| Change | Update |
+| --- | --- |
+| New or changed API route | `docs/architecture/api-endpoints.md` |
+| Schema change | `docs/architecture/data-models.md` |
+| New dependency | `docs/architecture/tech-stack.md` |
+| New or changed feature behaviour | `docs/features/<feature>.md` |
+| **UI / CSS / visual change** (colour, font, spacing, layout, component, screen redesign, new design pattern) | **Relevant file under `docs/design/`** — foundations for token changes, components for reusable UI, screens for page-level layout, patterns for design systems |
+| New screen or major layout change | `docs/design/screens/<screen>.md` + `docs/README.md` navigation |
+| Bug fix or any ticketed work | Update the ticket in `docs/backlog/` (see workflow below) |
+
+These index files must also stay current when structure changes:
+
+- `docs/README.md` — top-level navigation
+- `docs/design/README.md` — design folder navigation
+- `docs/backlog/README.md` — generated index, do not hand-edit
+
+If a feature change has visual implications, update **both** the feature doc (behaviour) and the design doc (look and feel). Do not duplicate content — link between them.
+
+## Branch Strategy
 
 ```bash
-# Feature branches
-git checkout -b feat/<feature-name>
-
-# Bug fixes
-git checkout -b fix/<bug-name>
-
-# Improvements
-git checkout -b improve/<improvement-name>
+git checkout -b feat/<feature-name>      # new features
+git checkout -b fix/<bug-name>           # bug fixes
+git checkout -b improve/<improvement>    # improvements
+git checkout -b docs/<topic>             # doc-only changes
 ```
 
-### Before Making Changes
+## Before Making Changes
 
-1. Create a new branch from `main` for the work
-2. Read `docs/README.md` for project overview
-3. Check `docs/backlog/README.md` for related issues/todos
-4. Read relevant feature docs in `docs/features/`
+1. Create a new branch from `main`.
+2. Read `docs/README.md` for project overview.
+3. Check `docs/backlog/README.md` for related tickets.
+4. Read the relevant docs — features, design, architecture — that overlap with your change.
 
-### After Making Changes
+## Testing
 
-Update these docs as needed:
+Run and write tests per `tests/README.md`. At minimum, run the API suite after any change to endpoints, database operations, or business logic, and before committing.
 
-| Change Type | Update |
-| --- | --- |
-| New API route | `docs/architecture/api-endpoints.md` |
-| Schema change | `docs/architecture/data-models.md` |
-| New feature | Create/update file in `docs/features/` |
-| Bug fix | Add/update ticket metadata in `docs/backlog/`, then regenerate the backlog index |
-| New dependency | `docs/architecture/tech-stack.md` |
-
-### Must Stay in Sync
-
-These files MUST be updated when structure changes:
-
-- `docs/README.md` - Main navigation
-- `docs/backlog/README.md` - Generated backlog index; do not edit manually
-
-## Backlog Workflow
-
-Backlog tickets live in `docs/backlog/` as Markdown files with YAML frontmatter.
-Filenames are stable and do not need to change when a ticket changes status.
-
-Use `docs/backlog/TEMPLATE.md` for new tickets. Assign the next `RN-XXXX` ID by checking `docs/backlog/README.md` or existing ticket frontmatter.
-
-Required frontmatter fields:
-
-```yaml
-id: RN-XXXX
-title: Short Ticket Title
-type: bug
-status: pending
-priority: medium
-created: YYYY-MM-DD
-resolved:
-area: live-roasting
-tags:
-  - example-tag
+```bash
+uv run pytest           # full suite
+uv run pytest -v        # verbose
 ```
 
-Allowed values:
+Full details, fixtures, when-to-run rules, and how to add tests live in [tests/README.md](./tests/README.md).
 
-- `type`: `bug`, `feature`, `improvement`, `refactor`, `todo`
-- `status`: `pending`, `in_progress`, `resolved`, `wont_fix`
-- `priority`: `high`, `medium`, `low`
+## Backlog
 
-After adding or changing any backlog ticket metadata, regenerate the index:
+Tickets live in `docs/backlog/` as Markdown files with YAML frontmatter. Each ticket has a stable `RN-XXXX` id — filenames never change when status changes; update the `status` field instead.
+
+Use `docs/backlog/TEMPLATE.md` for new tickets. After creating or changing any ticket metadata, regenerate the index:
 
 ```bash
 uv run python scripts/generate_backlog_index.py
 ```
 
-Do not hand-edit the generated ticket tables in `docs/backlog/README.md`.
+Do not hand-edit `docs/backlog/README.md` — it is generated from ticket frontmatter. Field definitions, allowed values, and the full workflow live in [docs/backlog/README.md](./docs/backlog/README.md).
 
 ## Quick Reference
 
-| Need to... | Go to |
+| Need to… | Go to |
 | --- | --- |
 | Understand the project | `docs/README.md` |
 | See API routes | `docs/architecture/api-endpoints.md` |
 | See DB schema | `docs/architecture/data-models.md` |
+| Understand a feature's behaviour | `docs/features/` |
+| Look up a design token / component / screen | `docs/design/` |
 | Check pending work | `docs/backlog/README.md` |
-| Understand a feature | `docs/features/` |
 | Run tests | `tests/README.md` |
-
-## Testing Requirements
-
-### When to Run Tests
-
-**ALWAYS run tests in these situations:**
-
-1. **After major feature changes** - Any change that affects API endpoints, database operations, or business logic
-2. **After adding new features** - Write tests for new functionality before or alongside implementation
-3. **When user requests testing** - Run full test suite or specific tests as requested
-4. **Before committing** - Verify tests pass before finalizing changes
-
-### Running Tests
-
-```bash
-# Install test dependencies (first time only)
-uv add --dev pytest pytest-flask
-
-# Run all tests
-uv run pytest
-
-# Run specific test file
-uv run pytest tests/test_beans_api.py
-uv run pytest tests/test_roasts_api.py
-
-# Run with verbose output
-uv run pytest -v
-```
-
-### Writing Tests for New Features
-
-When implementing a new API feature:
-
-1. Add tests to appropriate file in `tests/` directory
-2. Mark test data with `test_data: True` field
-3. Use fixtures from `tests/conftest.py` for setup/teardown
-4. Cover both success and error cases
-
-Example test structure:
-
-```python
-def test_new_feature(client, beans_collection):
-    # Arrange - set up test data
-    # Act - call the API
-    # Assert - verify results
-    # Cleanup handled by fixtures
-```
-
-### Test Data Management
-
-- All test data is marked with `test_data: True`
-- Tests run against local database only
-- Cleanup script: `python tests/cleanup_test_data.py`
-
-### Test Coverage Areas
-
-| Area | Test File |
-| --- | --- |
-| Bean CRUD, stock | `test_beans_api.py` |
-| Roast lifecycle | `test_roasts_api.py` |
-| Reviews | `test_reviews_api.py` |
-| Temperature/RoR | `test_temperature_api.py` |

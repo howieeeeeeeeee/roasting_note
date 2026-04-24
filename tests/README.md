@@ -2,6 +2,17 @@
 
 API-level tests for RoastLogger backend operations.
 
+## When to Run Tests
+
+Run the test suite in these situations:
+
+1. **After changes to API endpoints, database operations, or business logic** — any change that could regress backend behaviour.
+2. **After adding new features** — write tests alongside the implementation, not after.
+3. **Before committing** — verify the suite passes before finalising changes.
+4. **When explicitly requested** — running specific tests or the full suite on demand.
+
+For pure UI / CSS / documentation changes, running the API test suite is usually unnecessary — but it is always safe.
+
 ## Setup
 
 Install test dependencies using uv (recommended):

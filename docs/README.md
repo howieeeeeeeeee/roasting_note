@@ -69,6 +69,22 @@ docs/
 └── deployment/            # Deployment guides
 ```
 
+## Keeping Docs in Sync
+
+When you change the project, update the docs that describe what you changed — **in the same branch**. Out-of-date docs mislead the next reader (including future-you).
+
+| What you changed | Doc to update |
+| --- | --- |
+| API route added, changed, or removed | [architecture/api-endpoints.md](./architecture/api-endpoints.md) |
+| MongoDB schema / document shape | [architecture/data-models.md](./architecture/data-models.md) |
+| New dependency | [architecture/tech-stack.md](./architecture/tech-stack.md) |
+| Feature behaviour, lifecycle, or API surface | [features/](./features/) (the matching feature file) |
+| **UI / CSS / visual change** — colour, font, spacing, layout, component, screen, design pattern | **[design/](./design/)** — foundations, components, screens, or patterns depending on what changed |
+| New screen or major layout change | [design/screens/](./design/screens/) + this README's navigation block |
+| Bug fix or any ticketed work | The ticket under [backlog/](./backlog/), then regenerate the index |
+
+If a single change has both behaviour and visual implications, update the feature doc (behaviour) **and** the design doc (look & feel). Link between them rather than duplicating.
+
 ## For AI Assistants
 
 See [CLAUDE.md](../CLAUDE.md) for instructions on working with this repository.
