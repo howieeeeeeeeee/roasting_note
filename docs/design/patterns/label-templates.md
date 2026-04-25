@@ -22,10 +22,10 @@ Each template has a distinct mood and information hierarchy. They are not altern
 From [label-creator.js](../../../static/js/label-creator.js) `TEMPLATES`:
 
 ```js
-nova:  { defaultRatio: '5:4', exportWidthCm: 5, exportHeightCm: 4 }
-ink:   { defaultRatio: '5:4', exportWidthCm: 5, exportHeightCm: 4 }
-strip: { defaultRatio: '5:4', exportWidthCm: 5, exportHeightCm: 4 }
-washi: { defaultRatio: '5:4', exportWidthCm: 5, exportHeightCm: 4 }
+nova:  { defaultRatio: '5:4', exportWidthCm: 12.7, exportHeightCm: 10.16 }
+ink:   { defaultRatio: '5:4', exportWidthCm: 12.7, exportHeightCm: 10.16 }
+strip: { defaultRatio: '5:4', exportWidthCm: 12.7, exportHeightCm: 10.16 }
+washi: { defaultRatio: '5:4', exportWidthCm: 12.7, exportHeightCm: 10.16 }
 ```
 
 All four default to the same aspect ratio and export size so switching template doesn't change the physical print dimensions unless the user explicitly changes them.
@@ -56,7 +56,7 @@ From `ASPECT_RATIOS`:
 - `4:3` — squarer landscape
 - `3:4` — portrait
 
-Changing the ratio resizes the design canvas; `exportWidthCm` / `exportHeightCm` recalculate so the physical print stays near 5×4 cm or whatever the user has set.
+Changing the ratio resizes the design canvas; the UI reseeds `exportWidthCm` / `exportHeightCm` to ratio-matching defaults (anchored to 12.7 cm on the long side), unless a saved label already has explicit export dimensions.
 
 ## Fields
 
@@ -92,7 +92,8 @@ From the renderer:
 
 - **`RENDER_SCALE = 4`** — every design dimension is multiplied by 4 at render and export time.
 - Design canvas at the preview is 500 × 400 at `5:4` but draws at 2000 × 1600 internally. Pixel dimensions are independent of the chosen cm size.
-- Export PNG is the full-scale canvas → hi-DPI print, roughly 1000+ DPI at 5×4 cm.
+- Export PNG is the full-scale canvas → hi-DPI print, roughly 400 DPI at 12.7×10.16 cm.
+- The exported PNG also carries a `pHYs` chunk encoding the chosen cm size as pixels-per-meter, so Word / Pages / LibreOffice place the image at exactly the requested physical dimensions on insert — important when the label is used inside a pre-formatted sticker template.
 
 ## Persistence
 

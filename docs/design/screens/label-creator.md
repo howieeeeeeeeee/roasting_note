@@ -79,6 +79,8 @@ Users can override the accent inside the modal — it only writes back to the be
 - **Download PNG** → exports the current canvas at render scale as `{bean_name}_label.png`.
 - **Download PNG (Rotated 90°)** → exports the same canvas rotated 90° clockwise as `{bean_name}_label_rot90.png`. Render scale is preserved; the on-screen preview is unaffected.
 
+Both downloads embed a PNG `pHYs` chunk computed from the cm export size, so the image inserts at exactly the chosen physical size in Word and other apps that honour `pHYs`. The rotated variant declares swapped width / height (rotation transposes the printable dimensions).
+
 These are independent: users can download without saving, and vice versa.
 
 ### Remembered style preferences

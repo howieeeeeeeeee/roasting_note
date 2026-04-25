@@ -50,7 +50,9 @@ Two improvements to the bean label creator:
 
 ## Resolution
 
-**Rotated PNG export.** Added a second action button "Download PNG (Rotated 90°)" alongside the existing "Download PNG" in the label creator modal. `downloadLabelPNG(rotateDeg)` now optionally takes a rotation in degrees: when set, it draws the source canvas onto an offscreen canvas with swapped dimensions and a `translate` + `rotate` transform, then exports that via `toDataURL('image/png')`. Render scale is preserved (no resampling), so output quality matches the standard export. Filename suffix is `_rot90.png` for the rotated variant.
+**Rotated PNG export.** Added a second action button "Download PNG (Rotated 90°)" alongside the existing "Download PNG" in the label creator modal. `downloadLabelPNG(rotateDeg)` now optionally takes a rotation in degrees: when set, it draws the source canvas onto an offscreen canvas with swapped dimensions and a `translate` + `rotate` transform, then exports that. Render scale is preserved (no resampling), so output quality matches the standard export. Filename suffix is `_rot90.png` for the rotated variant.
+
+**Exact physical size.** Both downloads now run the PNG bytes through `injectPhysChunk()`, which inserts a PNG `pHYs` chunk encoding pixels-per-meter derived from the user's cm export size. This means the file inserts at exactly the requested cm dimensions in Word and other apps that honour `pHYs` — important for printing onto pre-formatted sticker sheets. The rotated variant correctly swaps the declared width / height so the rotated content prints at the same physical size, just landscape→portrait.
 
 **Multi-line flavor notes.** Replaced the single-line `<input>` with a `<textarea rows="3">`. Added `splitLines` and `txtMulti` helpers in `label-creator.js`; the Nova, Ink, and Washi templates now stack each non-blank line. Strip prefers newline-split and falls back to comma-split for legacy entries, so existing labels render unchanged.
 

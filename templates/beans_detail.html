@@ -202,7 +202,7 @@
                         </div>
                         <div class="form-group">
                             <label for="labelAspectRatio">Aspect Ratio</label>
-                            <select id="labelAspectRatio" class="form-control" onchange="onLabelStyleChange()">
+                            <select id="labelAspectRatio" class="form-control" onchange="onAspectRatioChange()">
                                 <option value="2:1">2:1 — Wide panoramic</option>
                                 <option value="5:3">5:3 — Landscape wide</option>
                                 <option value="5:4" selected>5:4 — Standard label</option>
@@ -214,11 +214,11 @@
                     <div class="label-form-row-full label-form-grid-row label-form-export-row">
                         <div class="form-group">
                             <label for="labelExportW">Export W (cm)</label>
-                            <input type="number" id="labelExportW" class="form-control" value="5" min="1" max="30" step="0.5" oninput="updatePreview()">
+                            <input type="number" id="labelExportW" class="form-control" value="12.7" min="1" max="30" step="0.01" oninput="updatePreview()">
                         </div>
                         <div class="form-group">
                             <label for="labelExportH">Export H (cm)</label>
-                            <input type="number" id="labelExportH" class="form-control" value="4" min="1" max="30" step="0.5" oninput="updatePreview()">
+                            <input type="number" id="labelExportH" class="form-control" value="10.16" min="1" max="30" step="0.01" oninput="updatePreview()">
                         </div>
                         <div class="form-group">
                             <label>Export px</label>
@@ -338,6 +338,37 @@
     };
 
     var selectedImageSrc = '';
+    var DEFAULT_EXPORT_SIZE_BY_RATIO_CM = {
+        '2:1': { w: 12.7,  h: 6.35 },
+        '5:3': { w: 12.7,  h: 7.62 },
+        '5:4': { w: 12.7,  h: 10.16 },
+        '4:3': { w: 12.7,  h: 9.53 },
+        '3:4': { w: 9.53,  h: 12.7 },
+    };
+
+    function getDefaultExportSizeForAspect(aspectRatio) {
+        return DEFAULT_EXPORT_SIZE_BY_RATIO_CM[aspectRatio] || DEFAULT_EXPORT_SIZE_BY_RATIO_CM['5:4'];
+    }
+
+    function setExportSize(widthCm, heightCm) {
+        document.getElementById('labelExportW').value = Number(widthCm).toFixed(2);
+        document.getElementById('labelExportH').value = Number(heightCm).toFixed(2);
+    }
+
+    function applyDefaultExportSizeForAspect(aspectRatio) {
+        var size = getDefaultExportSizeForAspect(aspectRatio);
+        setExportSize(size.w, size.h);
+    }
+
+    function shouldUpgradeLegacyExportSize(savedLabel) {
+        if (!savedLabel) return false;
+        var ratio = savedLabel.aspectRatio || '5:4';
+        var w = Number(savedLabel.exportWidthCm);
+        var h = Number(savedLabel.exportHeightCm);
+        // Older labels were often saved as 5x4 cm for 5:4 previews.
+        // Auto-upgrade that legacy pair to the new physical default.
+        return ratio === '5:4' && w === 5 && h === 4;
+    }
 
     function fetchLabelDefaults() {
         return fetch('/api/label/preferences')
@@ -363,6 +394,11 @@
             if (saved.templateId)  document.getElementById('labelTemplate').value    = saved.templateId;
             if (saved.fontPreset)  document.getElementById('labelFontPreset').value  = saved.fontPreset;
             if (saved.aspectRatio) document.getElementById('labelAspectRatio').value = saved.aspectRatio;
+            if (saved.exportWidthCm && saved.exportHeightCm && !shouldUpgradeLegacyExportSize(saved)) {
+                setExportSize(saved.exportWidthCm, saved.exportHeightCm);
+            } else {
+                applyDefaultExportSizeForAspect(document.getElementById('labelAspectRatio').value);
+            }
         } else {
             document.getElementById('labelName').value        = '';
             document.getElementById('labelOrigin').value      = '';
@@ -376,10 +412,12 @@
             document.getElementById('labelTemplate').value    = 'nova';
             document.getElementById('labelFontPreset').value  = 'modern';
             document.getElementById('labelAspectRatio').value = '5:4';
+            applyDefaultExportSizeForAspect('5:4');
             fetchLabelDefaults().then(function (prefs) {
                 if (prefs.templateId)  document.getElementById('labelTemplate').value    = prefs.templateId;
                 if (prefs.fontPreset)  document.getElementById('labelFontPreset').value  = prefs.fontPreset;
                 if (prefs.aspectRatio) document.getElementById('labelAspectRatio').value = prefs.aspectRatio;
+                applyDefaultExportSizeForAspect(document.getElementById('labelAspectRatio').value);
                 updatePreview();
             });
         }
@@ -465,6 +503,11 @@
 
     function onLabelStyleChange() { updatePreview(); }
 
+    function onAspectRatioChange() {
+        applyDefaultExportSizeForAspect(document.getElementById('labelAspectRatio').value);
+        updatePreview();
+    }
+
     ['labelName', 'labelOrigin', 'labelProcess', 'labelRoastLevel', 'labelFlavorNotes', 'labelRoastDate'].forEach(function (id) {
         document.getElementById(id).addEventListener('input', updatePreview);
     });
@@ -474,8 +517,9 @@
         var templateId  = document.getElementById('labelTemplate').value;
         var fontPreset  = document.getElementById('labelFontPreset').value;
         var aspectRatio = document.getElementById('labelAspectRatio').value;
-        var exportW     = parseFloat(document.getElementById('labelExportW').value) || 5;
-        var exportH     = parseFloat(document.getElementById('labelExportH').value) || 4;
+        var defaults    = getDefaultExportSizeForAspect(aspectRatio);
+        var exportW     = parseFloat(document.getElementById('labelExportW').value) || defaults.w;
+        var exportH     = parseFloat(document.getElementById('labelExportH').value) || defaults.h;
 
         var payload = {
             name:           values.name,
@@ -511,10 +555,82 @@
         }
     }
 
+    // ── PNG pHYs chunk injection ─────────────────────────────────────
+    // Word/Pages/etc. render PNGs at their declared physical size when the
+    // file carries a pHYs chunk. Without one they assume 96 DPI, which means
+    // a 2000×1600 export gets dropped in at ~21×17 inches. Embedding the
+    // user-chosen cm size makes the image insert at exactly that size.
+
+    var PNG_CRC_TABLE = (function () {
+        var t = new Uint32Array(256);
+        for (var i = 0; i < 256; i++) {
+            var c = i;
+            for (var j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+            t[i] = c >>> 0;
+        }
+        return t;
+    })();
+
+    function pngCrc32(bytes) {
+        var crc = 0xFFFFFFFF;
+        for (var i = 0; i < bytes.length; i++) crc = PNG_CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+        return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    function injectPhysChunk(pngBytes, ppmX, ppmY) {
+        // PNG signature (8) + IHDR chunk (4 length + 4 type + 13 data + 4 CRC) = 33
+        var IHDR_END = 33;
+        var data = new Uint8Array(13);
+        data[0] = 0x70; data[1] = 0x48; data[2] = 0x59; data[3] = 0x73; // "pHYs"
+        var dv = new DataView(data.buffer);
+        dv.setUint32(4, ppmX >>> 0, false);
+        dv.setUint32(8, ppmY >>> 0, false);
+        data[12] = 1; // unit specifier: meter
+        var crc = pngCrc32(data);
+
+        var chunk = new Uint8Array(4 + 4 + 9 + 4);
+        var cdv = new DataView(chunk.buffer);
+        cdv.setUint32(0, 9, false);   // data length
+        chunk.set(data, 4);            // type + data
+        cdv.setUint32(17, crc, false); // CRC
+
+        var out = new Uint8Array(pngBytes.length + chunk.length);
+        out.set(pngBytes.subarray(0, IHDR_END), 0);
+        out.set(chunk, IHDR_END);
+        out.set(pngBytes.subarray(IHDR_END), IHDR_END + chunk.length);
+        return out;
+    }
+
+    function exportCanvasToPng(srcCanvas, widthCm, heightCm, filename) {
+        srcCanvas.toBlob(function (blob) {
+            if (!blob) return;
+            var reader = new FileReader();
+            reader.onload = function () {
+                var bytes = new Uint8Array(reader.result);
+                var ppmX = Math.round(srcCanvas.width  * 100 / widthCm);
+                var ppmY = Math.round(srcCanvas.height * 100 / heightCm);
+                var withPhys = injectPhysChunk(bytes, ppmX, ppmY);
+                var outBlob = new Blob([withPhys], { type: 'image/png' });
+                var url = URL.createObjectURL(outBlob);
+                var link = document.createElement('a');
+                link.download = filename;
+                link.href = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+            };
+            reader.readAsArrayBuffer(blob);
+        }, 'image/png');
+    }
+
     function downloadLabelPNG(rotateDeg) {
         var canvas = document.getElementById('labelCanvas');
         var base   = (beanData.name || 'label').replace(/\s+/g, '_') + '_label';
-        var href, filename;
+        var aspectRatio = document.getElementById('labelAspectRatio').value;
+        var defaults = getDefaultExportSizeForAspect(aspectRatio);
+        var widthCm  = parseFloat(document.getElementById('labelExportW').value) || defaults.w;
+        var heightCm = parseFloat(document.getElementById('labelExportH').value) || defaults.h;
 
         if (rotateDeg) {
             var rad = rotateDeg * Math.PI / 180;
@@ -525,17 +641,11 @@
             octx.translate(off.width / 2, off.height / 2);
             octx.rotate(rad);
             octx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
-            href = off.toDataURL('image/png');
-            filename = base + '_rot' + rotateDeg + '.png';
+            // 90°: physical width and height swap
+            exportCanvasToPng(off, heightCm, widthCm, base + '_rot' + rotateDeg + '.png');
         } else {
-            href = canvas.toDataURL('image/png');
-            filename = base + '.png';
+            exportCanvasToPng(canvas, widthCm, heightCm, base + '.png');
         }
-
-        var link = document.createElement('a');
-        link.download = filename;
-        link.href     = href;
-        link.click();
     }
 </script>
 {% endblock %}

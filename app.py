@@ -499,8 +499,8 @@ def api_beans_label(bean_id):
         "fontPreset": data.get("fontPreset", "modern"),
         "aspectRatio": data.get("aspectRatio", "5:4"),
         "imageSrc": data.get("imageSrc", ""),
-        "exportWidthCm": data.get("exportWidthCm", 5),
-        "exportHeightCm": data.get("exportHeightCm", 4),
+        "exportWidthCm": data.get("exportWidthCm", 10),
+        "exportHeightCm": data.get("exportHeightCm", 8),
     }
 
     get_beans_collection().update_one(
