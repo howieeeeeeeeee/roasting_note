@@ -148,7 +148,8 @@
                 <div class="label-form-panel">
                     <div class="form-group">
                         <label for="labelName">Name</label>
-                        <input type="text" id="labelName" class="form-control">
+                        <textarea id="labelName" class="form-control" rows="2"
+                            placeholder="One line, or break manually&#10;e.g. Edwin&#10;     Noreña"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="labelOrigin">Origin</label>
@@ -164,7 +165,8 @@
                     </div>
                     <div class="form-group label-form-row-full">
                         <label for="labelFlavorNotes">Flavor Notes</label>
-                        <input type="text" id="labelFlavorNotes" class="form-control">
+                        <textarea id="labelFlavorNotes" class="form-control" rows="3"
+                            placeholder="One note per line, e.g.&#10;Lychee, juniper&#10;White tea&#10;Dark chocolate"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="labelRoastDate">Roast Date</label>
@@ -173,48 +175,50 @@
                             data-flatpickr-onchange="updatePreview">
                     </div>
                     <div class="form-group">
-                        <label for="labelTemplate">Template</label>
-                        <select id="labelTemplate" class="form-control" onchange="onTemplateChange()">
-                            <option value="nova">Nova — Split layout</option>
-                            <option value="ink">Ink — Dark</option>
-                            <option value="strip">Strip — Minimal</option>
-                            <option value="washi">Washi — Craft paper</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="labelFontPreset">Font</label>
-                        <select id="labelFontPreset" class="form-control" onchange="updatePreview()">
-                            <option value="modern">Modern (Raleway)</option>
-                            <option value="editorial">Editorial (Playfair)</option>
-                            <option value="technical">Technical (Mono)</option>
-                            <option value="bold">Bold (Barlow Condensed)</option>
-                            <option value="craft">Craft (Roboto Slab)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="labelAspectRatio">Aspect Ratio</label>
-                        <select id="labelAspectRatio" class="form-control" onchange="updatePreview()">
-                            <option value="2:1">2:1 — Wide panoramic</option>
-                            <option value="5:3">5:3 — Landscape wide</option>
-                            <option value="5:4" selected>5:4 — Standard label</option>
-                            <option value="4:3">4:3 — Classic</option>
-                            <option value="3:4">3:4 — Portrait</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label for="labelImage">Image (optional)</label>
                         <select id="labelImage" class="form-control" onchange="onImageChange()">
                             <option value="">None</option>
                         </select>
                     </div>
-                    <div class="label-form-row-full label-form-export-row">
+                    <div class="label-form-row-full label-form-grid-row">
+                        <div class="form-group">
+                            <label for="labelTemplate">Template</label>
+                            <select id="labelTemplate" class="form-control" onchange="onLabelStyleChange()">
+                                <option value="nova">Nova — Split layout</option>
+                                <option value="ink">Ink — Dark</option>
+                                <option value="strip">Strip — Minimal</option>
+                                <option value="washi">Washi — Craft paper</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="labelFontPreset">Font</label>
+                            <select id="labelFontPreset" class="form-control" onchange="onLabelStyleChange()">
+                                <option value="modern">Modern (Raleway)</option>
+                                <option value="editorial">Editorial (Playfair)</option>
+                                <option value="technical">Technical (Mono)</option>
+                                <option value="bold">Bold (Barlow Condensed)</option>
+                                <option value="craft">Craft (Roboto Slab)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="labelAspectRatio">Aspect Ratio</label>
+                            <select id="labelAspectRatio" class="form-control" onchange="onLabelStyleChange()">
+                                <option value="2:1">2:1 — Wide panoramic</option>
+                                <option value="5:3">5:3 — Landscape wide</option>
+                                <option value="5:4" selected>5:4 — Standard label</option>
+                                <option value="4:3">4:3 — Classic</option>
+                                <option value="3:4">3:4 — Portrait</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="label-form-row-full label-form-grid-row label-form-export-row">
                         <div class="form-group">
                             <label for="labelExportW">Export W (cm)</label>
-                            <input type="number" id="labelExportW" class="form-control" value="10" min="1" max="30" step="0.5" oninput="updatePreview()">
+                            <input type="number" id="labelExportW" class="form-control" value="5" min="1" max="30" step="0.5" oninput="updatePreview()">
                         </div>
                         <div class="form-group">
                             <label for="labelExportH">Export H (cm)</label>
-                            <input type="number" id="labelExportH" class="form-control" value="8" min="1" max="30" step="0.5" oninput="updatePreview()">
+                            <input type="number" id="labelExportH" class="form-control" value="4" min="1" max="30" step="0.5" oninput="updatePreview()">
                         </div>
                         <div class="form-group">
                             <label>Export px</label>
@@ -229,7 +233,12 @@
             </div>
 
             <div class="label-modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="downloadLabelPNG()">Download PNG</button>
+                <button type="button" class="btn btn-secondary" onclick="downloadLabelPNG()" title="Download PNG">
+                    <span class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 4px;">download</span>PNG
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="downloadLabelPNG(90)" title="Download PNG rotated 90°">
+                    <span class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 4px;">rotate_90_degrees_cw</span>PNG
+                </button>
             </div>
         </div>
     </div>
@@ -330,6 +339,12 @@
 
     var selectedImageSrc = '';
 
+    function fetchLabelDefaults() {
+        return fetch('/api/label/preferences')
+            .then(function (resp) { return resp.json(); })
+            .catch(function () { return {}; });
+    }
+
     function getTodayStr() {
         return new Date().toISOString().slice(0, 10);
     }
@@ -355,9 +370,18 @@
             document.getElementById('labelRoastLevel').value  = '';
             document.getElementById('labelFlavorNotes').value = '';
             document.getElementById('labelRoastDate').value   = getTodayStr();
+            // Defaults are seeded from the most recently saved label across all
+            // beans (server-derived). Apply hardcoded fallbacks first so the
+            // modal renders immediately, then overwrite when the API responds.
             document.getElementById('labelTemplate').value    = 'nova';
             document.getElementById('labelFontPreset').value  = 'modern';
             document.getElementById('labelAspectRatio').value = '5:4';
+            fetchLabelDefaults().then(function (prefs) {
+                if (prefs.templateId)  document.getElementById('labelTemplate').value    = prefs.templateId;
+                if (prefs.fontPreset)  document.getElementById('labelFontPreset').value  = prefs.fontPreset;
+                if (prefs.aspectRatio) document.getElementById('labelAspectRatio').value = prefs.aspectRatio;
+                updatePreview();
+            });
         }
         document.getElementById('labelSaveStatus').textContent = '';
         modal.style.display = 'block';
@@ -439,7 +463,7 @@
         LabelCreator.renderLabel(canvas, templateId, getFieldValues(), accentColor, selectedImageSrc, fontPreset, aspectRatio);
     }
 
-    function onTemplateChange() { updatePreview(); }
+    function onLabelStyleChange() { updatePreview(); }
 
     ['labelName', 'labelOrigin', 'labelProcess', 'labelRoastLevel', 'labelFlavorNotes', 'labelRoastDate'].forEach(function (id) {
         document.getElementById(id).addEventListener('input', updatePreview);
@@ -450,8 +474,8 @@
         var templateId  = document.getElementById('labelTemplate').value;
         var fontPreset  = document.getElementById('labelFontPreset').value;
         var aspectRatio = document.getElementById('labelAspectRatio').value;
-        var exportW     = parseFloat(document.getElementById('labelExportW').value) || 10;
-        var exportH     = parseFloat(document.getElementById('labelExportH').value) || 8;
+        var exportW     = parseFloat(document.getElementById('labelExportW').value) || 5;
+        var exportH     = parseFloat(document.getElementById('labelExportH').value) || 4;
 
         var payload = {
             name:           values.name,
@@ -487,11 +511,30 @@
         }
     }
 
-    function downloadLabelPNG() {
+    function downloadLabelPNG(rotateDeg) {
         var canvas = document.getElementById('labelCanvas');
-        var link   = document.createElement('a');
-        link.download = (beanData.name || 'label').replace(/\s+/g, '_') + '_label.png';
-        link.href     = canvas.toDataURL('image/png');
+        var base   = (beanData.name || 'label').replace(/\s+/g, '_') + '_label';
+        var href, filename;
+
+        if (rotateDeg) {
+            var rad = rotateDeg * Math.PI / 180;
+            var off = document.createElement('canvas');
+            off.width  = canvas.height;
+            off.height = canvas.width;
+            var octx = off.getContext('2d');
+            octx.translate(off.width / 2, off.height / 2);
+            octx.rotate(rad);
+            octx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+            href = off.toDataURL('image/png');
+            filename = base + '_rot' + rotateDeg + '.png';
+        } else {
+            href = canvas.toDataURL('image/png');
+            filename = base + '.png';
+        }
+
+        var link = document.createElement('a');
+        link.download = filename;
+        link.href     = href;
         link.click();
     }
 </script>

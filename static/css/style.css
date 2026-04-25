@@ -1867,13 +1867,13 @@ select.modern-select:hover,
     grid-column: 1 / -1;
 }
 
-.label-form-panel .label-form-row-full.label-form-export-row {
+.label-form-panel .label-form-row-full.label-form-grid-row {
     display: flex;
     gap: 0.5rem;
     margin-top: 0.25rem;
 }
 
-.label-form-panel .label-form-export-row .form-group {
+.label-form-panel .label-form-grid-row .form-group {
     flex: 1;
     min-width: 0;
 }
@@ -1996,6 +1996,7 @@ select.modern-select:hover,
 .label-modal-actions {
     display: flex;
     justify-content: flex-end;
+    gap: 0.5rem;
     margin-top: 1rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border-color);

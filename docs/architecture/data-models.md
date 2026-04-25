@@ -62,6 +62,8 @@ Optional label configuration for the bean label creator.
   "flavorNotes": "String",
   "roastDate": "String",
   "templateId": "String",
+  "fontPreset": "String",
+  "aspectRatio": "String",
   "imageSrc": "String",
   "accentColor": "String",
   "exportWidthCm": "Number",
@@ -76,9 +78,11 @@ Optional label configuration for the bean label creator.
 | `origin` | String | Origin text for label |
 | `process` | String | Process method text for label |
 | `roastLevel` | String | Roast level text (e.g., "Medium", "Light") |
-| `flavorNotes` | String | Flavor notes text for label |
+| `flavorNotes` | String | Flavor notes text for label. May contain `\n`-separated lines; each non-blank line renders on its own line. |
 | `roastDate` | String | Roast date (YYYY-MM-DD) |
-| `templateId` | String | Selected template ID ("minimal", "classic", "compact") |
+| `templateId` | String | Selected template ID — one of `nova` / `ink` / `strip` / `washi` |
+| `fontPreset` | String | Selected font preset — one of `modern` / `editorial` / `technical` / `bold` / `craft` |
+| `aspectRatio` | String | Selected aspect ratio — one of `2:1` / `5:3` / `5:4` / `4:3` / `3:4` |
 | `imageSrc` | String | Path to selected image (e.g. `/static/img/nova.png`) or empty for none |
 | `accentColor` | String | Hex color for accent bar (typically bean color) |
 | `exportWidthCm` | Number | Export width in cm |

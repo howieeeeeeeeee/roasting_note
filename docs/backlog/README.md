@@ -40,6 +40,8 @@ No tickets.
 
 | ID | Type | Priority | Area | Title | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- |
+| RN-0012 | [IMPROVEMENT] | Medium | label-creator | [Remember Last-Used Label Template, Font, and Aspect Ratio](./RN-0012-label-template-font-preferences.md) | 2026-04-25 | 2026-04-25 |
+| RN-0011 | [FEATURE] | Medium | label-creator | [Rotated (90°) PNG Download and Multi-Line Flavor Notes for Bean Labels](./RN-0011-label-png-rotated-download.md) | 2026-04-25 | 2026-04-25 |
 | RN-0009 | [BUG] | High | live-roasting | [Draft Roast Opens As Read-Only Detail Page](./RN-0009-draft-roast-readonly-detail.md) | 2026-04-24 | 2026-04-24 |
 | RN-0008 | [TODO] | Medium | docs | [Design Documentation Restructure](./RN-0008-design-documentation-restructure.md) | 2026-04-20 | 2026-04-24 |
 | RN-0007 | [IMPROVEMENT] | Medium | label-creator | [Label Creator Redesign](./RN-0007-label-creator-redesign.md) | 2026-04-20 | 2026-04-24 |

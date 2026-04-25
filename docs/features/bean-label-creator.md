@@ -31,8 +31,10 @@ Bean detail page → **Create Label** button in header actions.
 
 - **Template / font preset / aspect ratio pickers** — live re-render on selection.
 - **Image picker** — populated from `GET /api/label/images` (lists `/static/img/`).
-- **Export size** — set in cm (default 10 × 8). Effective pixel size shown live beside the inputs (reflects `RENDER_SCALE` from the renderer).
+- **Export size** — set in cm (default 5 × 4). Effective pixel size shown live beside the inputs (reflects `RENDER_SCALE` from the renderer).
 - **Save** and **Download** are independent — users can download without saving.
+- **Style preferences are remembered.** When opening the label modal for a bean with no saved label, the template / font / aspect ratio dropdowns are seeded from the most recently updated bean that does have a saved label (via `GET /api/label/preferences`). Saved per-bean values still take precedence when re-opening an existing label. Falls back to `nova` / `modern` / `5:4` if no bean has a saved label yet.
+- **Download PNG** comes in two variants: standard and **rotated 90°** (clockwise). The rotated export shares the same render scale and template; only the output orientation differs. Filename suffix is `_label.png` for standard and `_label_rot90.png` for rotated.
 
 ## API
 

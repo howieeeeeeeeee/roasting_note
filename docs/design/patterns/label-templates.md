@@ -12,7 +12,7 @@ Each template has a distinct mood and information hierarchy. They are not altern
 
 | Template | Mood | Layout |
 |---|---|---|
-| **Nova** | Clean, modern, product-catalogue | Split layout: text left, image or warm gradient right, thin vertical accent strip between |
+| **Nova** | Clean, modern, product-catalogue | Split layout: text left, image or warm gradient right, thin vertical accent strip between. The left text stack is intentionally shifted slightly upward to keep stronger top balance and avoid a bottom-heavy feel. |
 | **Ink** | Confident, moody, premium | Dark full-bleed background, warm glow, subtle grain, top accent line; optional image darkened and used as background |
 | **Strip** | Swiss-minimal, editorial | Off-white, coloured left accent band with rotated origin label and a process pill, restrained typography |
 | **Washi** | Craft, handmade, artisan | Craft-paper gradient background, double ornamental border, centred typography with a diamond divider |
@@ -22,10 +22,10 @@ Each template has a distinct mood and information hierarchy. They are not altern
 From [label-creator.js](../../../static/js/label-creator.js) `TEMPLATES`:
 
 ```js
-nova:  { defaultRatio: '5:4', exportWidthCm: 10, exportHeightCm: 8 }
-ink:   { defaultRatio: '5:4', exportWidthCm: 10, exportHeightCm: 8 }
-strip: { defaultRatio: '5:4', exportWidthCm: 10, exportHeightCm: 8 }
-washi: { defaultRatio: '5:4', exportWidthCm: 10, exportHeightCm: 8 }
+nova:  { defaultRatio: '5:4', exportWidthCm: 5, exportHeightCm: 4 }
+ink:   { defaultRatio: '5:4', exportWidthCm: 5, exportHeightCm: 4 }
+strip: { defaultRatio: '5:4', exportWidthCm: 5, exportHeightCm: 4 }
+washi: { defaultRatio: '5:4', exportWidthCm: 5, exportHeightCm: 4 }
 ```
 
 All four default to the same aspect ratio and export size so switching template doesn't change the physical print dimensions unless the user explicitly changes them.
@@ -56,7 +56,7 @@ From `ASPECT_RATIOS`:
 - `4:3` — squarer landscape
 - `3:4` — portrait
 
-Changing the ratio resizes the design canvas; `exportWidthCm` / `exportHeightCm` recalculate so the physical print stays near 10×8 cm or whatever the user has set.
+Changing the ratio resizes the design canvas; `exportWidthCm` / `exportHeightCm` recalculate so the physical print stays near 5×4 cm or whatever the user has set.
 
 ## Fields
 
@@ -91,8 +91,8 @@ The renderer **does not assume accessible contrast** between accent and backgrou
 From the renderer:
 
 - **`RENDER_SCALE = 4`** — every design dimension is multiplied by 4 at render and export time.
-- Design canvas at the preview is 500 × 400 (for 10 × 8 cm at `5:4`) but draws at 2000 × 1600 internally.
-- Export PNG is the full-scale canvas → hi-DPI print, roughly 1000+ DPI at 10×8 cm.
+- Design canvas at the preview is 500 × 400 at `5:4` but draws at 2000 × 1600 internally. Pixel dimensions are independent of the chosen cm size.
+- Export PNG is the full-scale canvas → hi-DPI print, roughly 1000+ DPI at 5×4 cm.
 
 ## Persistence
 

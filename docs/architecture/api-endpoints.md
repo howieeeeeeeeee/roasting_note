@@ -26,6 +26,8 @@ All REST API routes for RoastLogger.
 | `/api/beans/edit/<bean_id>` | POST | Update bean |
 | `/api/beans/delete/<bean_id>` | POST | Archive bean (soft delete) |
 | `/api/beans/<bean_id>/label` | POST | Save label creator data for a bean |
+| `/api/label/preferences` | GET | Default `templateId` / `fontPreset` / `aspectRatio` for new beans, derived from the most recent saved label |
+| `/api/label/images` | GET | List image assets under `/static/img/` for the label image picker |
 
 ---
 
@@ -172,9 +174,11 @@ All REST API routes for RoastLogger.
   "origin": "Ethiopia",
   "process": "Washed",
   "roastLevel": "Medium",
-  "flavorNotes": "Berry, Citrus",
+  "flavorNotes": "Berry\nCitrus",
   "roastDate": "2025-02-23",
-  "templateId": "minimal",
+  "templateId": "nova",
+  "fontPreset": "modern",
+  "aspectRatio": "5:4",
   "imageSrc": "/static/img/nova.png",
   "accentColor": "#6B8E6F",
   "exportWidthCm": 5,
@@ -182,7 +186,27 @@ All REST API routes for RoastLogger.
 }
 ```
 
+`flavorNotes` may contain `\n`-separated lines; each non-blank line is rendered on its own line on the label.
+
 **Response:** `{ "success": true }` or `404` if bean not found.
+
+### Get Label Defaults
+
+**GET** `/api/label/preferences`
+
+Returns the template / font / aspect-ratio triplet to use when seeding the label modal for a bean that has no saved label of its own. The values come from the most recently updated non-archived bean that has a saved `label.templateId`. If no bean has a saved label yet, returns the hardcoded fallback.
+
+**Response:**
+
+```json
+{
+  "templateId": "ink",
+  "fontPreset": "editorial",
+  "aspectRatio": "5:4"
+}
+```
+
+`templateId` is one of `nova` / `ink` / `strip` / `washi`. `fontPreset` is one of `modern` / `editorial` / `technical` / `bold` / `craft`. `aspectRatio` is one of `2:1` / `5:3` / `5:4` / `4:3` / `3:4`.
 
 ### Add Review
 

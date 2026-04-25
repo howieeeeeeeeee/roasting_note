@@ -14,24 +14,23 @@ Bean detail page → **Create Label** button in header actions → opens modal.
 
 The modal is divided into three vertical columns on desktop:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  Create Label                                          [×]  │  ← modal header
-├─────────────┬──────────────────────────┬────────────────────┤
-│             │                          │                    │
-│  Template   │                          │  Label Info        │
-│  picker     │    Preview canvas        │  (name, origin,    │
-│  (4 cards)  │    (live render)         │   process, …)      │
-│             │                          │                    │
-│  Font preset│                          │  Fonts / Ratio     │
-│  (5 chips)  │                          │  Export size (cm)  │
-│             │                          │                    │
-│  Aspect     │                          │  Accent colour     │
-│  ratio      │                          │  Image dropdown    │
-│  (5 chips)  │                          │                    │
-│             │                          │                    │
-│             │                          │  [Save] [Download] │
-└─────────────┴──────────────────────────┴────────────────────┘
+├──────────────────────────────────────────────────────────────
+│  [Auto-fill from Bean]  [Save Label Info]                  │  ← action bar
+├─────────────────────────────────┬───────────────────────────┤
+│                                 │                           │
+│  Name           | Origin        │                           │
+│  Process        | Roast Level   │                           │
+│  Flavor Notes (textarea, full)  │     Preview canvas        │
+│  Roast Date     | Image         │     (live render)         │
+│  Template | Font | Aspect Ratio │                           │
+│  Export W | Export H | Export px│                           │
+│                                 │                           │
+├─────────────────────────────────┴───────────────────────────┤
+│                                              [⬇PNG] [⟳PNG]  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 On narrow screens the modal stacks top-to-bottom: controls above, preview below, fields at the bottom.
@@ -44,7 +43,7 @@ On narrow screens the modal stacks top-to-bottom: controls above, preview below,
 4. **Edit label fields** — each keystroke redraws the canvas.
 5. **(Optional) Click "Auto-fill from Bean"** — pulls `name`, `origin`, `process` from the bean. Leaves roast level / flavor notes empty. Roast date defaults to today.
 6. **(Optional) Tweak export size in cm** — live pixel-dimension readout sits beside the cm inputs.
-7. **Save** or **Download PNG**.
+7. **Save**, **Download PNG**, or **Download PNG (Rotated 90°)** — the rotated variant emits the same render rotated 90° clockwise for sideways-feeding label printers.
 
 Every visual change is immediate. There is no "Apply" step — the preview is the source of truth, and saving serialises whatever state is on screen.
 
@@ -70,7 +69,7 @@ Users can override the accent inside the modal — it only writes back to the be
 
 - Picker is populated from `GET /api/label/images` (lists `/static/img/` contents).
 - Per-template image behaviour:
-  - **Nova**: fills the right half. Without an image, a warm gradient stands in.
+  - **Nova**: fills the right half. Without an image, a warm gradient stands in. The left text content is biased slightly upward for better visual balance.
   - **Ink / Washi**: full-bleed background with a dark / warm overlay on top.
   - **Strip**: image is not used.
 
@@ -78,8 +77,13 @@ Users can override the accent inside the modal — it only writes back to the be
 
 - **Save Label Info** → `POST /api/beans/<bean_id>/label`. Persists `templateId`, `fontPreset`, `aspectRatio`, `imageSrc`, `accentColor`, `exportWidthCm`, `exportHeightCm`, and all label fields to `beans.label`. Reopening the modal restores the last saved state.
 - **Download PNG** → exports the current canvas at render scale as `{bean_name}_label.png`.
+- **Download PNG (Rotated 90°)** → exports the same canvas rotated 90° clockwise as `{bean_name}_label_rot90.png`. Render scale is preserved; the on-screen preview is unaffected.
 
 These are independent: users can download without saving, and vice versa.
+
+### Remembered style preferences
+
+When opening the modal for a bean **with no saved label**, the template / font / aspect dropdowns are seeded from the most recently updated bean that does have a saved label, via `GET /api/label/preferences`. So a user who consistently picks Ink + Editorial for their roasts gets that as their starting point on every new bean — without any per-browser state. Beans with an existing saved label still load their own saved values. If no bean has a saved label yet, the hardcoded fallback (`nova` / `modern` / `5:4`) is used.
 
 ## Dark Mode
 

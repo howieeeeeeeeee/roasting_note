@@ -34,32 +34,32 @@ var LabelCreator = (function () {
             name: 'Nova',
             description: 'Split layout — text left, image right',
             defaultRatio: '5:4',
-            exportWidthCm: 10,
-            exportHeightCm: 8,
+            exportWidthCm: 5,
+            exportHeightCm: 4,
         },
         ink: {
             id: 'ink',
             name: 'Ink',
             description: 'Dark background, full-bleed',
             defaultRatio: '5:4',
-            exportWidthCm: 10,
-            exportHeightCm: 8,
+            exportWidthCm: 5,
+            exportHeightCm: 4,
         },
         strip: {
             id: 'strip',
             name: 'Strip',
             description: 'Minimal Swiss grid, accent band',
             defaultRatio: '5:4',
-            exportWidthCm: 10,
-            exportHeightCm: 8,
+            exportWidthCm: 5,
+            exportHeightCm: 4,
         },
         washi: {
             id: 'washi',
             name: 'Washi',
             description: 'Craft paper, centred layout',
             defaultRatio: '5:4',
-            exportWidthCm: 10,
-            exportHeightCm: 8,
+            exportWidthCm: 5,
+            exportHeightCm: 4,
         },
     };
 
@@ -137,6 +137,22 @@ var LabelCreator = (function () {
         ctx.textAlign = align    || 'left';
         ctx.textBaseline = baseline || 'alphabetic';
         ctx.fillText(str, x, y);
+    }
+
+    // Split user input on newlines, drop blank lines
+    function splitLines(str) {
+        if (!str) return [];
+        return String(str).split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+
+    // Draw each line stacked vertically; line spacing = fontSz * lineHeight
+    function txtMulti(ctx, str, x, y, font, color, align, baseline, fontSz, lineHeight) {
+        var lines = splitLines(str);
+        if (!lines.length) return;
+        var lh = fontSz * (lineHeight || 1.35);
+        for (var i = 0; i < lines.length; i++) {
+            txt(ctx, lines[i], x, y + i * lh, font, color, align, baseline);
+        }
     }
 
     function nameFontStr(preset, sz) {
@@ -259,32 +275,34 @@ var LabelCreator = (function () {
         var nameSz = Math.max(20, Math.min(40, textW * 0.17));
         var subSz  = Math.max(12, Math.min(18, textW * 0.056));
         var bodySz = Math.max(10, Math.min(14, textW * 0.040));
+        // Lift the full text block noticeably to avoid crowding the lower divider zone.
+        var contentShiftY = -Math.max(16, h * 0.06);
 
-        // Name — auto-wrap to 2 lines if needed
+        // Name — explicit user line breaks win; otherwise auto-wrap a single
+        // long line to 2 lines so it doesn't run off the panel.
         ctx.font = nameFontStr(preset, nameSz);
-        var maxNameW   = textW - tx - 14;
-        var nameWords  = (f.name || '').split(' ');
-        var line1 = '', line2 = '', testLine = '';
-        for (var wi = 0; wi < nameWords.length; wi++) {
-            var tryLine = testLine ? testLine + ' ' + nameWords[wi] : nameWords[wi];
-            if (ctx.measureText(tryLine).width > maxNameW && testLine) {
-                line1 = testLine;
-                line2 = nameWords.slice(wi).join(' ');
-                break;
+        var maxNameW  = textW - tx - 14;
+        var nameLines = splitLines(f.name);
+        if (nameLines.length === 0) {
+            nameLines = [''];
+        } else if (nameLines.length === 1) {
+            var nameWords = nameLines[0].split(' ');
+            var testLine = '';
+            for (var wi = 0; wi < nameWords.length; wi++) {
+                var tryLine = testLine ? testLine + ' ' + nameWords[wi] : nameWords[wi];
+                if (ctx.measureText(tryLine).width > maxNameW && testLine) {
+                    nameLines = [testLine, nameWords.slice(wi).join(' ')];
+                    break;
+                }
+                testLine = tryLine;
             }
-            testLine = tryLine;
         }
-        if (!line1) line1 = f.name || '';
 
-        var nameStartY = h * 0.14 + nameSz;
-        txt(ctx, line1, tx, nameStartY, nameFontStr(preset, nameSz), '#1C1814');
-        var nameEndY;
-        if (line2) {
-            txt(ctx, line2, tx, nameStartY + nameSz * 1.15, nameFontStr(preset, nameSz), '#1C1814');
-            nameEndY = nameStartY + nameSz * 2.2;
-        } else {
-            nameEndY = nameStartY + nameSz * 0.6;
+        var nameStartY = h * 0.14 + nameSz + contentShiftY;
+        for (var ni = 0; ni < nameLines.length; ni++) {
+            txt(ctx, nameLines[ni], tx, nameStartY + ni * nameSz * 1.15, nameFontStr(preset, nameSz), '#1C1814');
         }
+        var nameEndY = nameStartY + (nameLines.length - 1) * nameSz * 1.15 + nameSz * 0.6;
 
         var origY = nameEndY + subSz * 1.8;
         txt(ctx, (f.origin || '').toUpperCase(), tx, origY, bodyFontStr(preset, subSz, 600), '#999590');
@@ -296,9 +314,13 @@ var LabelCreator = (function () {
         var sepY = procY + bodySz * 1.6;
         ctx.strokeStyle = '#E8E4E0'; ctx.lineWidth = 0.75;
         ctx.beginPath(); ctx.moveTo(tx, sepY); ctx.lineTo(textW - 18, sepY); ctx.stroke();
-        txt(ctx, f.roastLevel,  tx, h * 0.62,             bodyFontStr(preset, bodySz, 600), '#4A4540');
-        txt(ctx, f.flavorNotes, tx, h * 0.62 + bodySz * 2, bodyFontStr(preset, bodySz),    '#888480');
-        txt(ctx, f.roastDate ? ('Roasted on: ' + f.roastDate) : '', tx, h - 18,
+        // Anchor roast level + notes just below the separator so they flow with the
+        // text block instead of a fixed h*0.62, leaving more room for multi-line notes.
+        var roastY = sepY + bodySz * 1.8;
+        txt(ctx, f.roastLevel, tx, roastY, bodyFontStr(preset, bodySz, 600), '#4A4540');
+        txtMulti(ctx, f.flavorNotes, tx, roastY + bodySz * 1.8, bodyFontStr(preset, bodySz), '#888480',
+            'left', 'alphabetic', bodySz, 1.35);
+        txt(ctx, f.roastDate ? ('Roasted on: ' + f.roastDate) : '', tx, h - 18 + contentShiftY * 0.35,
             bodyFontStr(preset, bodySz * 0.88, 500), '#BBB7B3');
     }
 
@@ -348,9 +370,15 @@ var LabelCreator = (function () {
         var subSz  = Math.max(9,  Math.min(14, w * 0.030));
         var bodySz = Math.max(8,  Math.min(12, w * 0.025));
 
-        txt(ctx, f.name, mx, h * 0.18 + nameSz * 0.5, nameFontStr(preset, nameSz), '#F0ECE5');
+        var inkNameLines = splitLines(f.name);
+        if (!inkNameLines.length) inkNameLines = [''];
+        var inkNameTop = h * 0.18 + nameSz * 0.5;
+        for (var iki = 0; iki < inkNameLines.length; iki++) {
+            txt(ctx, inkNameLines[iki], mx, inkNameTop + iki * nameSz * 1.05, nameFontStr(preset, nameSz), '#F0ECE5');
+        }
+        var inkNameExtra = (inkNameLines.length - 1) * nameSz * 1.05;
 
-        var origY = h * 0.18 + nameSz + subSz * 1.5;
+        var origY = h * 0.18 + nameSz + subSz * 1.5 + inkNameExtra;
         txt(ctx, (f.origin||'').toUpperCase(), mx, origY, bodyFontStr(preset, subSz, 600), accent);
 
         var ruleY = origY + subSz * 2.4;
@@ -359,7 +387,8 @@ var LabelCreator = (function () {
 
         txt(ctx, f.process,    mx, ruleY + bodySz * 2.6,  bodyFontStr(preset, bodySz),      '#7A7470');
         txt(ctx, f.roastLevel, mx, ruleY + bodySz * 6.2,  bodyFontStr(preset, bodySz, 600), '#C8C4BE');
-        txt(ctx, f.flavorNotes,mx, ruleY + bodySz * 8.4,  bodyFontStr(preset, bodySz),      '#6A6560');
+        txtMulti(ctx, f.flavorNotes, mx, ruleY + bodySz * 8.4, bodyFontStr(preset, bodySz), '#6A6560',
+            'left', 'alphabetic', bodySz, 1.4);
 
         // Origin ghost stamp bottom-right
         ctx.save(); ctx.globalAlpha = 0.10;
@@ -397,9 +426,15 @@ var LabelCreator = (function () {
             '600 ' + pillSz + "px 'Inter', sans-serif", '#999590', 'left', 'middle');
 
         var nameSz = Math.max(20, Math.min(52, w * 0.112));
-        txt(ctx, f.name, cx2, h * 0.07 + pillH + nameSz * 1.12, nameFontStr(preset, nameSz), '#1A1714');
+        var stripNameLines = splitLines(f.name);
+        if (!stripNameLines.length) stripNameLines = [''];
+        var stripNameTop = h * 0.07 + pillH + nameSz * 1.12;
+        for (var sni = 0; sni < stripNameLines.length; sni++) {
+            txt(ctx, stripNameLines[sni], cx2, stripNameTop + sni * nameSz * 1.05, nameFontStr(preset, nameSz), '#1A1714');
+        }
+        var stripNameExtra = (stripNameLines.length - 1) * nameSz * 1.05;
 
-        var ruleY2 = h * 0.07 + pillH + nameSz * 1.56 + 6;
+        var ruleY2 = h * 0.07 + pillH + nameSz * 1.56 + 6 + stripNameExtra;
         ctx.strokeStyle = '#E0DDD8'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx2, ruleY2); ctx.lineTo(w - w * 0.04, ruleY2); ctx.stroke();
 
@@ -411,7 +446,9 @@ var LabelCreator = (function () {
         txt(ctx, 'NOTES', col2, infoY, bodyFontStr(preset, bodySz * 0.78, 600), '#B0ACA8');
         txt(ctx, f.roastLevel, cx2, infoY + bodySz * 2.1, bodyFontStr(preset, bodySz, 600), '#3A3530');
 
-        var notes = (f.flavorNotes || '').split(', ');
+        // Prefer explicit newlines; fall back to comma-split for legacy single-line input
+        var notes = splitLines(f.flavorNotes);
+        if (notes.length <= 1) notes = (f.flavorNotes || '').split(', ').map(function (s) { return s.trim(); }).filter(Boolean);
         txt(ctx, notes.slice(0, 2).join(', '), col2, infoY + bodySz * 2.1, bodyFontStr(preset, bodySz), '#706C68');
         if (notes[2]) txt(ctx, notes[2], col2, infoY + bodySz * 3.7, bodyFontStr(preset, bodySz), '#706C68');
 
@@ -469,12 +506,21 @@ var LabelCreator = (function () {
         txt(ctx, (f.origin||'').toUpperCase(), w / 2, topY2,
             bodyFontStr(preset, Math.max(9, w * 0.022), 600), '#9A8060', 'center', 'middle');
 
-        // Name
+        // Name — multi-line breaks honor user newlines, centered around h*0.38
         var nameSz = Math.max(20, Math.min(52, w * 0.112));
-        txt(ctx, f.name, w / 2, h * 0.38, nameFontStr(preset, nameSz), '#2A2018', 'center', 'middle');
+        var washiNameLines = splitLines(f.name);
+        if (!washiNameLines.length) washiNameLines = [''];
+        var washiNameStep   = nameSz * 1.05;
+        var washiNameCenter = h * 0.38;
+        var washiFirstY     = washiNameCenter - (washiNameLines.length - 1) * washiNameStep / 2;
+        for (var wni = 0; wni < washiNameLines.length; wni++) {
+            txt(ctx, washiNameLines[wni], w / 2, washiFirstY + wni * washiNameStep,
+                nameFontStr(preset, nameSz), '#2A2018', 'center', 'middle');
+        }
+        var washiNameExtra = (washiNameLines.length - 1) * washiNameStep / 2;
 
         // Diamond ornament
-        var midY2 = h * 0.38 + nameSz * 0.7;
+        var midY2 = h * 0.38 + nameSz * 0.7 + washiNameExtra;
         ctx.strokeStyle = accent; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(bm + 18, midY2); ctx.lineTo(w / 2 - 9, midY2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(w / 2 + 9, midY2); ctx.lineTo(w - bm - 18, midY2); ctx.stroke();
@@ -488,7 +534,8 @@ var LabelCreator = (function () {
         txt(ctx, (f.process||'').toUpperCase(), w / 2, midY2 + bodySz * 2.6,
             bodyFontStr(preset, bodySz, 500), '#8A7860', 'center', 'middle');
         txt(ctx, f.roastLevel, w / 2, h * 0.67, bodyFontStr(preset, bodySz, 600), '#5A4830', 'center', 'middle');
-        txt(ctx, f.flavorNotes, w / 2, h * 0.67 + bodySz * 2.2, bodyFontStr(preset, bodySz), '#8A7860', 'center', 'middle');
+        txtMulti(ctx, f.flavorNotes, w / 2, h * 0.67 + bodySz * 2.2, bodyFontStr(preset, bodySz), '#8A7860',
+            'center', 'middle', bodySz, 1.4);
 
         // Bottom
         var by2 = h - h * 0.14;
