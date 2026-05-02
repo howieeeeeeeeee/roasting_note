@@ -18,8 +18,13 @@ The live roasting page is the tablet-first interface used during an active roast
 ### Temperature Display
 
 - Real-time temperature from K-Type sensor.
-- Updates every 1 second.
-- Shows "Offline" when sensor unavailable.
+- Syncs approximately every 1 second without overlapping requests.
+- Uses bounded retries so normal ESP32 responses in the 200-450ms range do not
+  appear as failures.
+- Shows `Live`, `Retrying`, `Stale`, `Offline`, or `Sensor fault` under the
+  temperature readout.
+- Treats the last reading as stale after 5 seconds without a successful sensor
+  read, and does not reuse stale temperature for event logging.
 
 ### Rate of Rise (RoR)
 
@@ -56,10 +61,15 @@ The live roasting page is the tablet-first interface used during an active roast
 
 ### Automatic Logging
 
-- Temperature fetched every 1 second.
+- Temperature fetched every 1 second with up to 3 attempts per sync.
 - Logged to local CSV every second (`temp_logs/{roast_id}.csv`).
+- Sensor read diagnostics logged locally every sync
+  (`temp_logs/{roast_id}_sensor_diagnostics.csv`).
 - Logged to database every second (configurable via `DB_LOG_INTERVAL_SECONDS`).
 - RoR calculated and stored with each database entry.
+- Successful `temp_curve` entries include sensor attempt counts and read
+  duration. Non-`ok` sensor attempts are also stored in the bounded
+  `sensor_diagnostics` array on the roast document.
 
 ### Manual Events
 

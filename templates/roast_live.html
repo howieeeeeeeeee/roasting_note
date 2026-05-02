@@ -82,6 +82,7 @@
             <div class="fs-reading-item fs-temp">
                 <span class="fs-label">Temp</span>
                 <span class="fs-value"><span id="fsTempValue">--</span><span class="fs-unit">°C</span></span>
+                <span class="fs-sensor-status sensor-status-idle" id="fsTempSensorStatus">Idle</span>
             </div>
             <div class="fs-reading-item fs-ror">
                 <span class="fs-label">RoR</span>
@@ -155,11 +156,12 @@
                     <span id="fcTimeDisplay" class="fc-time-badge" style="display: none;"></span>
                 </div>
             </div>
-            <div class="tb-tile">
+            <div class="tb-tile" id="tempTile">
                 <div class="tb-label">Temperature</div>
                 <div class="tb-value">
                     <span id="tempValue">--</span><span class="tb-unit">°C</span>
                 </div>
+                <div class="tb-sub sensor-status sensor-status-idle" id="tempSensorStatus">Idle</div>
             </div>
             <div class="tb-tile">
                 <div class="tb-label">Rate of Rise</div>
@@ -303,6 +305,8 @@
 <script>
     let timerInterval = null;
     let syncInterval = null;
+    let syncLoopActive = false;
+    let syncInFlight = false;
     let seconds = 0;
     let isRunning = false;
     const roastId = '{{ roast._id }}';
@@ -312,6 +316,7 @@
 
     // Remember last values
     let lastTemp = null;
+    let lastTempIsStale = true;
     let lastFan = null;
     let lastPower = null;
 
@@ -326,7 +331,10 @@
     const timelineList = document.getElementById('timelineList');
     const roastTitleInput = document.getElementById('roast_title');
     const tempValueDisplay = document.getElementById('tempValue');
+    const tempSensorStatus = document.getElementById('tempSensorStatus');
+    const tempInput = document.getElementById('temperature');
     const rorDisplay = document.getElementById('rorValue');
+    const SYNC_INTERVAL_MS = 1000;
 
     // ============================================
     // Roast Curve Chart Setup
@@ -699,9 +707,75 @@
         }
     }
 
+    function getUsableTemperature() {
+        if (tempInput && tempInput.value) {
+            return parseInt(tempInput.value);
+        }
+
+        return lastTempIsStale ? null : lastTemp;
+    }
+
+    function setSensorStatus(status, ageSeconds) {
+        if (!tempSensorStatus) return;
+
+        tempSensorStatus.className = `tb-sub sensor-status sensor-status-${status || 'idle'}`;
+
+        if (status === 'ok') {
+            tempSensorStatus.textContent = 'Live';
+        } else if (status === 'retrying') {
+            tempSensorStatus.textContent = 'Retrying';
+        } else if (status === 'stale') {
+            tempSensorStatus.textContent = ageSeconds !== null && ageSeconds !== undefined
+                ? `Stale ${ageSeconds}s`
+                : 'Stale';
+        } else if (status === 'fault') {
+            tempSensorStatus.textContent = 'Sensor fault';
+        } else if (status === 'offline') {
+            tempSensorStatus.textContent = 'Offline';
+        } else {
+            tempSensorStatus.textContent = 'Idle';
+        }
+    }
+
+    function updateTemperatureDisplay(data) {
+        const status = data.sensor_status || (data.temperature !== null ? 'ok' : 'offline');
+        const staleAge = data.last_success_age_seconds;
+
+        if (data.temperature !== null && data.temperature !== undefined) {
+            tempValueDisplay.textContent = data.temperature;
+            tempValueDisplay.style.color = '';
+            lastTemp = data.temperature;
+            lastTempIsStale = false;
+            if (tempInput) tempInput.value = data.temperature;
+        } else if (lastTemp !== null && status === 'retrying') {
+            tempValueDisplay.style.color = '#f0ad4e';
+            lastTempIsStale = false;
+        } else if (lastTemp !== null) {
+            tempValueDisplay.style.color = '#d9534f';
+            lastTempIsStale = true;
+            if (tempInput) tempInput.value = '';
+        } else {
+            tempValueDisplay.textContent = '--';
+            tempValueDisplay.style.color = '#999';
+            lastTempIsStale = true;
+            if (tempInput) tempInput.value = '';
+        }
+
+        setSensorStatus(status, staleAge);
+    }
+
+    function scheduleNextSync(startedAt) {
+        if (!syncLoopActive) return;
+        const elapsedMs = Date.now() - startedAt;
+        const delayMs = Math.max(250, SYNC_INTERVAL_MS - elapsedMs);
+        syncInterval = setTimeout(syncState, delayMs);
+    }
+
     // Main Sync Loop (Every 1 second)
     async function syncState() {
-        if (!tempValueDisplay) return;
+        if (!tempValueDisplay || syncInFlight) return;
+        const syncStartedAt = Date.now();
+        syncInFlight = true;
 
         const fanInput = document.getElementById('fan_setting');
         const powerInput = document.getElementById('power_setting');
@@ -725,10 +799,7 @@
             const data = await response.json();
 
             if (data.success && data.temperature !== null) {
-                // Update Display
-                tempValueDisplay.textContent = data.temperature;
-                tempValueDisplay.style.color = '';
-                lastTemp = data.temperature;
+                updateTemperatureDisplay(data);
 
                 if (data.ror !== null) {
                     rorDisplay.textContent = data.ror.toFixed(1);
@@ -745,15 +816,19 @@
                 }
 
             } else {
-                // Sensor error or null
-                if (lastTemp === null) {
-                    tempValueDisplay.textContent = '--';
-                    tempValueDisplay.style.color = '#999';
-                }
+                updateTemperatureDisplay(data);
             }
 
         } catch (error) {
             console.error('Error in sync loop:', error);
+            updateTemperatureDisplay({
+                temperature: null,
+                sensor_status: lastTemp === null ? 'offline' : 'stale',
+                last_success_age_seconds: null
+            });
+        } finally {
+            syncInFlight = false;
+            scheduleNextSync(syncStartedAt);
         }
     }
 
@@ -776,18 +851,15 @@
     }
 
     function startSyncLoop() {
-        if (syncInterval) clearInterval(syncInterval);
-
-        // Run immediately
+        stopSyncLoop();
+        syncLoopActive = true;
         syncState();
-
-        // Then every 1 second
-        syncInterval = setInterval(syncState, 1000);
     }
 
     function stopSyncLoop() {
+        syncLoopActive = false;
         if (syncInterval) {
-            clearInterval(syncInterval);
+            clearTimeout(syncInterval);
             syncInterval = null;
         }
     }
@@ -1053,11 +1125,10 @@
                 if (fcElapsedValue) fcElapsedValue.textContent = '00:00';
             }
 
-            const tempInput = document.getElementById('temperature');
             const fanInput = document.getElementById('fan_setting');
             const powerInput = document.getElementById('power_setting');
 
-            const temperature = tempInput.value ? parseInt(tempInput.value) : lastTemp;
+            const temperature = getUsableTemperature();
             const fanSetting = fanInput.value ? parseInt(fanInput.value) : (lastFan || null);
             const powerSetting = powerInput.value ? parseInt(powerInput.value) : (lastPower || null);
 
@@ -1108,7 +1179,7 @@
 
                     btn.classList.add('fired');
 
-                    tempInput.value = '';
+                    if (tempInput) tempInput.value = '';
                 } else {
                     showToast('Error logging event. Please try again.', 'error');
                 }
@@ -1121,12 +1192,11 @@
 
     // Add temperature/settings event
     addEventBtn.addEventListener('click', async () => {
-        const tempInput = document.getElementById('temperature');
         const fanInput = document.getElementById('fan_setting');
         const powerInput = document.getElementById('power_setting');
         const noteInput = document.getElementById('event_note');
 
-        const temperature = tempInput.value ? tempInput.value : lastTemp;
+        const temperature = getUsableTemperature();
         const fanSetting = fanInput.value || lastFan || 0;
         const powerSetting = powerInput.value || lastPower || 0;
         const note = noteInput.value || '';
@@ -1147,7 +1217,10 @@
             });
 
             if (response.ok) {
-                if (temperature) lastTemp = parseInt(temperature);
+                if (temperature) {
+                    lastTemp = parseInt(temperature);
+                    lastTempIsStale = false;
+                }
                 lastFan = parseInt(fanSetting);
                 lastPower = parseInt(powerSetting);
 
@@ -1295,6 +1368,13 @@
         const fsTemp = document.getElementById('fsTempValue');
         if (fsTemp && tempValueDisplay) {
             fsTemp.textContent = tempValueDisplay.textContent;
+            fsTemp.style.color = tempValueDisplay.style.color;
+        }
+
+        const fsTempStatus = document.getElementById('fsTempSensorStatus');
+        if (fsTempStatus && tempSensorStatus) {
+            fsTempStatus.textContent = tempSensorStatus.textContent;
+            fsTempStatus.className = `fs-sensor-status ${tempSensorStatus.className.replace('tb-sub ', '')}`;
         }
 
         // Sync RoR

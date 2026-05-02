@@ -31,10 +31,10 @@ Note: Code handles both `temperature_celsius` and `temperatur_celsius` for compa
 
 ### GET /api/temp/current_fast
 
-Fast single-request fetch for live UI polling.
+Single-attempt fetch for lightweight checks.
 
 **Process:**
-1. Makes 1 request to sensor URL with 200ms timeout
+1. Makes 1 request to sensor URL with the standard live timeout
 2. Returns temperature immediately on success, or `null` on failure
 
 **Response format is the same as `/api/temp/current`.**
@@ -43,11 +43,11 @@ Fast single-request fetch for live UI polling.
 
 ### GET /api/temp/current
 
-Accurate temperature fetch with retry logic for database logging.
+Accurate temperature fetch with retry logic.
 
 **Process:**
 1. Makes 3 consecutive requests to sensor URL
-2. Each request has 100ms timeout
+2. Each request uses the standard live timeout
 3. Collects successful readings
 4. If < 2 readings: returns null
 5. If >= 2 readings: returns average of two highest (rounded to integer)
@@ -56,7 +56,11 @@ Accurate temperature fetch with retry logic for database logging.
 ```json
 {
   "temperature": 185,
-  "status": "success"
+  "status": "success",
+  "sensor_status": "ok",
+  "attempts": 3,
+  "successes": 3,
+  "duration_ms": 640
 }
 ```
 
@@ -65,18 +69,32 @@ Accurate temperature fetch with retry logic for database logging.
 {
   "temperature": null,
   "status": "error",
-  "message": "Insufficient readings"
+  "sensor_status": "offline",
+  "attempts": 3,
+  "successes": 0,
+  "duration_ms": 2250,
+  "message": "timeout"
 }
 ```
+
+### GET /api/temp/test_connection
+
+Settings-modal connection test. It retries internally and checks the ESP32
+`/diagnostics` endpoint when temperature reads fail. The response includes the
+same fields as `/api/temp/current`, plus `diagnostics` when available.
 
 ## Frontend Integration
 
 ### Display Polling
 
-- Polls `/api/temp/current_fast` every 1 second
-- Updates temperature display immediately
-- Shows "Offline" when sensor unavailable
-- Continues polling on errors
+- Polls `/api/roast/sync_state/<roast_id>` approximately every 1 second
+  without overlapping requests.
+- Backend sync uses up to 3 attempts and accepts 1 successful reading for live
+  logging.
+- Updates temperature display immediately when a fresh reading arrives.
+- Shows retrying, stale, offline, or fault state when reads fail.
+- Marks a reading stale after 5 seconds without sensor success.
+- Continues polling on errors.
 
 ### Automatic Database Logging
 
@@ -85,6 +103,7 @@ When temperature is successfully retrieved:
 2. Send to backend to log in database
 3. Create entry in `temp_curve` array
 4. Include elapsed time, fan, power, RoR
+5. Include sensor status, attempts, successes, and read duration
 
 **Only logs when:**
 - Roast has started
@@ -112,9 +131,10 @@ For detailed analysis, temperatures are also logged locally:
 
 | Scenario | Behavior |
 |----------|----------|
-| Sensor offline | Display "Offline", skip logging |
-| Timeout | Treat as failed request |
-| < 2 successful reads | Return null |
+| Sensor offline | Display `Offline`, skip temperature logging, store anomaly diagnostics |
+| Timeout after a previous reading | Display `Retrying` until the last success is 5 seconds old, then `Stale` |
+| ESP32 diagnostics fault | Display `Sensor fault`, include diagnostic error bits |
+| < 2 successful reads on `/api/temp/current` | Return null with retry metadata |
 | DB save fails | Continue display, log error |
 
 ## Default Measurement Method

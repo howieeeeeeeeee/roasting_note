@@ -3902,6 +3902,35 @@ body.dark-mode .live-ev-btn.fired {
     transition: color 0.3s;
 }
 
+.sensor-status {
+    min-height: 0.75rem;
+}
+
+.sensor-status-idle {
+    color: var(--text-light);
+}
+
+.sensor-status-ok {
+    color: var(--success-color);
+}
+
+.sensor-status-retrying {
+    color: #f0ad4e;
+}
+
+.sensor-status-stale,
+.sensor-status-offline,
+.sensor-status-fault {
+    color: var(--danger-color);
+}
+
+.fs-sensor-status {
+    display: block;
+    margin-top: 0.25rem;
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 0.75rem;
+}
+
 .tb-end {
     display: flex;
     align-items: center;

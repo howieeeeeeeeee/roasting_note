@@ -47,6 +47,10 @@ The four key readings are fixed in a horizontal bar at the top. The chart takes 
 - Height: **88px**, `flex-shrink: 0`.
 - Four metric tiles: **Elapsed · Temperature · Rate of Rise · Since FC** — see [../components/instrument-displays.md](../components/instrument-displays.md#top-bar-tiles-tb-tile).
 - The "Since FC" tile (`#fcElapsedTile`) is hidden until First Crack Start is logged, then shown automatically.
+- The Temperature tile includes a compact sensor-state line under the numeric
+  value. Normal state reads `Live`; transient failures read `Retrying`; failures
+  older than 5 seconds read `Stale`; unavailable hardware reads `Offline` or
+  `Sensor fault`.
 - **End Roast** button lives in `.tb-end` (right-aligned via `margin-left: auto`). Uses `.btn-lg` + `.btn-danger`.
 
 ### Chart Area (`.live-chart-area`)
@@ -85,6 +89,8 @@ Separate layout, triggered from the navbar. Two flavours driven by device orient
 
 - **Landscape** (`.fullscreen-landscape`): left panel with instrument tiles, right panel with the chart. At ≥ 768px the left panel is `400px` wide; at ≥ 1024px it widens to `420px`.
 - **Portrait** (`.fullscreen-portrait`): instrument row on top, chart below.
+- The fullscreen temperature readout mirrors the same sensor-state line as the
+  top bar so stale/offline state remains visible while roasting fullscreen.
 - Safe-area insets (`env(safe-area-inset-*)`) applied for notched devices.
 - Fullscreen redesign to match the new top-bar layout is a pending item (see [Open Items](#open-items)).
 

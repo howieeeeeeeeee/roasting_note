@@ -47,6 +47,10 @@ All REST API routes for RoastLogger.
 | `/api/roast/log_temp_local/<roast_id>` | POST | Log to local CSV file |
 | `/api/roast/sync_state/<roast_id>` | POST | Sync live roast state (temp, RoR, settings) to DB |
 
+`/api/roast/sync_state/<roast_id>` returns the temperature fields documented
+below plus `ror`, `logged_to_db`, and `last_success_age_seconds` so the live UI
+can distinguish fresh, retrying, stale, offline, and faulted sensor states.
+
 ---
 
 ## Review API Routes
@@ -63,8 +67,9 @@ All REST API routes for RoastLogger.
 
 | Route | Method | Description |
 | --- | --- | --- |
-| `/api/temp/current_fast` | GET | Fast single-request temperature fetch for UI polling (200ms timeout) |
-| `/api/temp/current` | GET | Accurate temperature fetch — 3 requests, averages top 2 (100ms timeout each) |
+| `/api/temp/current_fast` | GET | Single-attempt temperature fetch for lightweight checks |
+| `/api/temp/current` | GET | Accurate temperature fetch — 3 attempts, averages top 2 when available |
+| `/api/temp/test_connection` | GET | Retrying sensor connection test with diagnostics for the settings modal |
 
 ### Response Format
 
@@ -73,7 +78,11 @@ All REST API routes for RoastLogger.
 ```json
 {
   "temperature": 190,
-  "status": "success"
+  "status": "success",
+  "sensor_status": "ok",
+  "attempts": 3,
+  "successes": 3,
+  "duration_ms": 640
 }
 ```
 
@@ -83,9 +92,17 @@ All REST API routes for RoastLogger.
 {
   "temperature": null,
   "status": "error",
-  "message": "Service unavailable or timeout"
+  "sensor_status": "offline",
+  "attempts": 3,
+  "successes": 0,
+  "duration_ms": 2250,
+  "message": "timeout"
 }
 ```
+
+`sensor_status` may be `ok`, `retrying`, `stale`, `offline`, or `fault`.
+`/api/temp/test_connection` includes `diagnostics` when the ESP32
+`/diagnostics` endpoint can explain a hardware fault.
 
 ---
 

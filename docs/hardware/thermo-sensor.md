@@ -59,6 +59,10 @@ The project uses these GPIO pins for the MAX31855 thermocouple:
 | `/temp` | GET | JSON temperature data (Celsius & Fahrenheit) |
 | `/diagnostics` | GET | Detailed sensor diagnostics and error codes |
 
+RoastLogger calls `/diagnostics` when app-side temperature reads fail. A
+healthy sensor reports `status: "OK"` and `error_code: 0`; faulted readings can
+identify open thermocouple circuits, shorts to ground, or shorts to VCC.
+
 ---
 
 ## Library Dependencies

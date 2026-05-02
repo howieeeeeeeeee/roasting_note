@@ -187,14 +187,17 @@
             statusText.className = '';
 
             try {
-                const response = await fetch('/api/temp/current_fast');
+                const response = await fetch('/api/temp/test_connection');
                 const data = await response.json();
 
                 if (data.status === 'success' && data.temperature !== null) {
-                    statusText.textContent = `Connected! Current temp: ${data.temperature}°C`;
+                    statusText.textContent = data.message || `Connected! Current temp: ${data.temperature}°C`;
                     statusText.className = 'status-success';
+                } else if (data.sensor_status === 'fault') {
+                    statusText.textContent = data.message || 'Sensor hardware fault';
+                    statusText.className = 'status-error';
                 } else {
-                    statusText.textContent = 'Not connected or sensor unavailable';
+                    statusText.textContent = data.message || 'Not connected or sensor unavailable';
                     statusText.className = 'status-error';
                 }
             } catch (error) {

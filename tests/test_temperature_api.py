@@ -11,9 +11,82 @@ Tests are designed to pass whether sensor is available or not.
 """
 import pytest
 
+import app as app_module
+
 
 class TestTemperatureEndpoints:
     """Tests for temperature API endpoints."""
+
+    def test_temp_current_fast_allows_slow_esp32_response(self, client, monkeypatch):
+        """Normal ESP32 responses around 200-450ms should not be timed out."""
+        timeouts = []
+
+        class FakeResponse:
+            status_code = 200
+
+            def json(self):
+                return {'temperature_celsius': 202.4}
+
+        def fake_get(url, timeout):
+            timeouts.append(timeout)
+            return FakeResponse()
+
+        monkeypatch.setattr(app_module.requests, 'get', fake_get)
+
+        response = client.get('/api/temp/current_fast')
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['status'] == 'success'
+        assert data['temperature'] == 202
+        assert data['sensor_status'] == 'ok'
+        assert timeouts == [app_module.TEMP_SENSOR_LIVE_TIMEOUT_SECONDS]
+
+    def test_temp_test_connection_reports_fault_diagnostics(self, client, monkeypatch):
+        """Test Connection should retry and include diagnostics when reads fail."""
+        calls = []
+
+        class TempFailureResponse:
+            status_code = 500
+
+            def json(self):
+                return {'error': 'Sensor read failed'}
+
+        class DiagnosticsResponse:
+            status_code = 200
+
+            def json(self):
+                return {
+                    'thermocouple_celsius': None,
+                    'internal_celsius': 23.0,
+                    'error_code': 1,
+                    'errors': {
+                        'open_circuit': True,
+                        'short_to_gnd': False,
+                        'short_to_vcc': False,
+                    },
+                    'status': 'FAULT',
+                }
+
+        def fake_get(url, timeout):
+            calls.append(url)
+            if url.endswith('/diagnostics'):
+                return DiagnosticsResponse()
+            return TempFailureResponse()
+
+        monkeypatch.setattr(app_module.requests, 'get', fake_get)
+
+        response = client.get('/api/temp/test_connection')
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['status'] == 'error'
+        assert data['sensor_status'] == 'fault'
+        assert data['attempts'] == app_module.TEMP_SENSOR_TEST_ATTEMPTS
+        assert data['successes'] == 0
+        assert data['diagnostics']['status'] == 'FAULT'
+        assert data['diagnostics']['errors']['open_circuit'] is True
+        assert len([call for call in calls if call.endswith('/temp')]) == 3
 
     def test_temp_current_fast_response_format(self, client):
         """Test /api/temp/current_fast returns correct format."""

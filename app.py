@@ -1,6 +1,8 @@
 import os
 import collections
+import time
 from datetime import datetime
+from urllib.parse import urlsplit, urlunsplit
 from flask import (
     Flask,
     render_template,
@@ -135,6 +137,11 @@ DEFAULT_TEMP_SENSOR_URL = "http://192.168.0.47/temp"
 
 # Data logging configuration
 MAX_ROAST_TIME_SECONDS = 7200  # Maximum valid roast time (2 hours)
+TEMP_SENSOR_LIVE_ATTEMPTS = 3
+TEMP_SENSOR_LIVE_TIMEOUT_SECONDS = 0.75
+TEMP_SENSOR_TEST_ATTEMPTS = 3
+TEMP_SENSOR_STALE_SECONDS = 5
+MAX_SENSOR_DIAGNOSTICS = 300
 
 
 def get_temp_sensor_url():
@@ -142,76 +149,209 @@ def get_temp_sensor_url():
     return session.get("temp_sensor_url", DEFAULT_TEMP_SENSOR_URL)
 
 
+def get_temp_diagnostics_url(sensor_url=None):
+    """Build the ESP32 diagnostics URL from the configured /temp URL."""
+    sensor_url = sensor_url or get_temp_sensor_url()
+    parsed = urlsplit(sensor_url)
+    path = parsed.path or "/"
+
+    if path.rstrip("/").endswith("/temp"):
+        diagnostics_path = path.rstrip("/")[: -len("/temp")] + "/diagnostics"
+    elif path.endswith("/"):
+        diagnostics_path = f"{path}diagnostics"
+    else:
+        diagnostics_path = f"{path.rstrip('/')}/diagnostics"
+
+    return urlunsplit(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            diagnostics_path,
+            "",
+            "",
+        )
+    )
+
+
+def compact_sensor_diagnostics(diagnostics):
+    if not diagnostics:
+        return None
+
+    return {
+        "status": diagnostics.get("status"),
+        "error_code": diagnostics.get("error_code"),
+        "errors": diagnostics.get("errors"),
+        "thermocouple_celsius": diagnostics.get("thermocouple_celsius"),
+        "internal_celsius": diagnostics.get("internal_celsius"),
+    }
+
+
+def fetch_sensor_diagnostics(sensor_url=None, timeout=TEMP_SENSOR_LIVE_TIMEOUT_SECONDS):
+    diagnostics_url = get_temp_diagnostics_url(sensor_url)
+    started_at = time.monotonic()
+
+    try:
+        response = requests.get(diagnostics_url, timeout=timeout)
+        duration_ms = round((time.monotonic() - started_at) * 1000)
+
+        if response.status_code != 200:
+            return {
+                "available": False,
+                "status_code": response.status_code,
+                "duration_ms": duration_ms,
+                "error": f"http_{response.status_code}",
+            }
+
+        data = response.json()
+        compact = compact_sensor_diagnostics(data) or {}
+        compact.update({"available": True, "duration_ms": duration_ms})
+        return compact
+    except requests.exceptions.Timeout:
+        return {"available": False, "error": "timeout"}
+    except requests.exceptions.RequestException as exc:
+        return {"available": False, "error": exc.__class__.__name__}
+    except (ValueError, KeyError):
+        return {"available": False, "error": "invalid_json"}
+
+
+def fetch_temperature_reading(
+    attempts=TEMP_SENSOR_LIVE_ATTEMPTS,
+    timeout=TEMP_SENSOR_LIVE_TIMEOUT_SECONDS,
+    min_successes=1,
+    include_diagnostics=False,
+):
+    """
+    Fetch a temperature with bounded retries and structured diagnostics.
+
+    Returns a dict that preserves the old temperature/null behavior while
+    exposing enough metadata to explain misses and slow reads.
+    """
+    sensor_url = get_temp_sensor_url()
+    started_at = time.monotonic()
+    readings = []
+    attempt_results = []
+    first_success_attempt = None
+
+    for attempt_number in range(1, attempts + 1):
+        attempt_started_at = time.monotonic()
+        result = {
+            "attempt": attempt_number,
+            "success": False,
+            "duration_ms": None,
+            "error": None,
+        }
+
+        try:
+            response = requests.get(sensor_url, timeout=timeout)
+            result["duration_ms"] = round((time.monotonic() - attempt_started_at) * 1000)
+
+            if response.status_code != 200:
+                result["error"] = f"http_{response.status_code}"
+            else:
+                data = response.json()
+                temp_celsius = data.get("temperature_celsius") or data.get(
+                    "temperatur_celsius"
+                )
+                if temp_celsius is None:
+                    result["error"] = "missing_temperature"
+                else:
+                    readings.append(float(temp_celsius))
+                    result["success"] = True
+                    if first_success_attempt is None:
+                        first_success_attempt = attempt_number
+        except requests.exceptions.Timeout:
+            result["duration_ms"] = round((time.monotonic() - attempt_started_at) * 1000)
+            result["error"] = "timeout"
+        except requests.exceptions.RequestException as exc:
+            result["duration_ms"] = round((time.monotonic() - attempt_started_at) * 1000)
+            result["error"] = exc.__class__.__name__
+        except (ValueError, KeyError):
+            result["duration_ms"] = round((time.monotonic() - attempt_started_at) * 1000)
+            result["error"] = "invalid_json"
+
+        attempt_results.append(result)
+
+    successes = len(readings)
+    temperature = None
+    sensor_status = "offline"
+
+    if successes >= min_successes:
+        top_readings = sorted(readings, reverse=True)[:2]
+        temperature = round(sum(top_readings) / len(top_readings))
+        sensor_status = "ok" if first_success_attempt == 1 else "retrying"
+    elif successes > 0:
+        sensor_status = "retrying"
+
+    duration_ms = round((time.monotonic() - started_at) * 1000)
+    errors = [
+        attempt["error"]
+        for attempt in attempt_results
+        if not attempt["success"] and attempt["error"]
+    ]
+    diagnostics = None
+
+    if temperature is None and include_diagnostics:
+        diagnostics = fetch_sensor_diagnostics(sensor_url=sensor_url, timeout=timeout)
+        if (
+            diagnostics.get("available")
+            and diagnostics.get("status")
+            and diagnostics.get("status") != "OK"
+        ):
+            sensor_status = "fault"
+
+    return {
+        "temperature": temperature,
+        "sensor_status": sensor_status,
+        "attempts": attempts,
+        "successes": successes,
+        "duration_ms": duration_ms,
+        "errors": errors,
+        "attempt_results": attempt_results,
+        "diagnostics": diagnostics,
+    }
+
+
+def build_temperature_response(reading, status_key="status"):
+    response = {
+        "temperature": reading["temperature"],
+        status_key: "success" if reading["temperature"] is not None else "error",
+        "sensor_status": reading["sensor_status"],
+        "attempts": reading["attempts"],
+        "successes": reading["successes"],
+        "duration_ms": reading["duration_ms"],
+    }
+
+    if reading.get("errors"):
+        response["errors"] = reading["errors"]
+        response["message"] = ", ".join(reading["errors"])
+    if reading.get("diagnostics"):
+        response["diagnostics"] = reading["diagnostics"]
+
+    return response
+
+
 def fetch_temperature_from_sensor_fast():
     """
     Fast single-request temperature fetch for display updates.
-    Uses 200ms timeout for reliable response while still being responsive.
 
     Returns:
         int: Rounded temperature reading, or None if request fails
     """
-    TEMP_SENSOR_URL = get_temp_sensor_url()
-    TIMEOUT = 0.2  # 200ms timeout for fast but reliable response
-
-    try:
-        response = requests.get(TEMP_SENSOR_URL, timeout=TIMEOUT)
-        if response.status_code == 200:
-            data = response.json()
-            # Try both field names for compatibility
-            temp_celsius = data.get("temperature_celsius") or data.get(
-                "temperatur_celsius"
-            )
-            if temp_celsius is not None:
-                return round(float(temp_celsius))
-    except (requests.exceptions.RequestException, ValueError, KeyError):
-        pass
-
-    return None
+    return fetch_temperature_reading(attempts=1)["temperature"]
 
 
 def fetch_temperature_from_sensor():
     """
     Fetch temperature from the K-Type sensor with 3-request averaging logic.
-    Used for accurate DB logging.
+    Used by legacy accurate-read call sites.
 
     Makes 3 consecutive requests to the temperature sensor URL.
-    Each request has a 0.1 second (100ms) timeout.
+    Each request uses TEMP_SENSOR_LIVE_TIMEOUT_SECONDS.
 
     Returns:
         int: Rounded average of the two highest successful readings, or None if fewer than 2 successful readings
     """
-    TEMP_SENSOR_URL = get_temp_sensor_url()
-    TIMEOUT = 0.1  # 100ms timeout
-
-    successful_readings = []
-
-    # Make 3 consecutive requests
-    for i in range(3):
-        try:
-            response = requests.get(TEMP_SENSOR_URL, timeout=TIMEOUT)
-            if response.status_code == 200:
-                data = response.json()
-                # Try both field names for compatibility
-                temp_celsius = data.get("temperature_celsius") or data.get(
-                    "temperatur_celsius"
-                )
-                if temp_celsius is not None:
-                    successful_readings.append(float(temp_celsius))
-        except (requests.exceptions.RequestException, ValueError, KeyError):
-            # Timeout, connection error, or invalid JSON - mark this request as failed
-            pass
-
-    # Need at least 2 successful readings
-    if len(successful_readings) < 2:
-        return None
-
-    # Sort in descending order and take top 2
-    successful_readings.sort(reverse=True)
-    top_two = successful_readings[:2]
-
-    # Calculate average and round to nearest integer
-    average = sum(top_two) / len(top_two)
-    return round(average)
+    return fetch_temperature_reading(min_successes=2)["temperature"]
 
 
 # ============================================
@@ -1017,12 +1157,36 @@ def api_temp_current_fast():
             "status": "success"  // or "error"
         }
     """
-    temperature = fetch_temperature_from_sensor_fast()
+    reading = fetch_temperature_reading(attempts=1)
+    return jsonify(build_temperature_response(reading))
 
-    if temperature is not None:
-        return jsonify({"temperature": temperature, "status": "success"})
+
+@app.route("/api/temp/test_connection", methods=["GET"])
+def api_temp_test_connection():
+    """
+    Retrying connection test for the settings modal.
+    Includes ESP32 diagnostics when temperature reads fail.
+    """
+    reading = fetch_temperature_reading(
+        attempts=TEMP_SENSOR_TEST_ATTEMPTS,
+        min_successes=1,
+        include_diagnostics=True,
+    )
+    response = build_temperature_response(reading)
+
+    if reading["temperature"] is not None:
+        if reading["sensor_status"] == "retrying":
+            response["message"] = (
+                f"Connected after retry. Current temp: {reading['temperature']}°C"
+            )
+        else:
+            response["message"] = f"Connected. Current temp: {reading['temperature']}°C"
+    elif reading["sensor_status"] == "fault":
+        response["message"] = "Sensor hardware reported a fault"
     else:
-        return jsonify({"temperature": None, "status": "error"})
+        response["message"] = "Sensor unavailable after retry"
+
+    return jsonify(response)
 
 
 @app.route("/api/temp/current", methods=["GET"])
@@ -1038,18 +1202,17 @@ def api_temp_current():
             "message": "..."     // optional error message
         }
     """
-    temperature = fetch_temperature_from_sensor()
+    reading = fetch_temperature_reading(
+        attempts=TEMP_SENSOR_LIVE_ATTEMPTS,
+        min_successes=2,
+        include_diagnostics=True,
+    )
+    response = build_temperature_response(reading)
 
-    if temperature is not None:
-        return jsonify({"temperature": temperature, "status": "success"})
-    else:
-        return jsonify(
-            {
-                "temperature": None,
-                "status": "error",
-                "message": "Insufficient readings or sensor unavailable",
-            }
-        )
+    if reading["temperature"] is None and "message" not in response:
+        response["message"] = "Insufficient readings or sensor unavailable"
+
+    return jsonify(response)
 
 
 # ============================================
@@ -1061,6 +1224,87 @@ def api_temp_current():
 from collections import deque
 
 roast_temp_history = {}
+
+
+def derive_live_sensor_status(reading, last_success_age_seconds):
+    if reading["temperature"] is not None:
+        return reading["sensor_status"]
+    if reading["sensor_status"] == "fault":
+        return "fault"
+    if last_success_age_seconds is None:
+        return "offline"
+    if last_success_age_seconds >= TEMP_SENSOR_STALE_SECONDS:
+        return "stale"
+    return "retrying"
+
+
+def build_sensor_diagnostic_event(client_time, reading, sensor_status, last_success_age):
+    event = {
+        "time_seconds": client_time,
+        "sensor_status": sensor_status,
+        "temperature": reading["temperature"],
+        "attempts": reading["attempts"],
+        "successes": reading["successes"],
+        "duration_ms": reading["duration_ms"],
+        "last_success_age_seconds": last_success_age,
+        "created_at": get_current_time_with_tz(),
+    }
+
+    if reading.get("errors"):
+        event["errors"] = reading["errors"]
+    if reading.get("diagnostics"):
+        event["diagnostics"] = reading["diagnostics"]
+
+    return event
+
+
+def log_sensor_diagnostics_csv(roast_id, diagnostic_event):
+    try:
+        logs_dir = os.path.join(os.getcwd(), "temp_logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        log_file = os.path.join(logs_dir, f"{roast_id}_sensor_diagnostics.csv")
+        file_exists = os.path.exists(log_file)
+
+        with open(log_file, "a") as f:
+            if not file_exists:
+                f.write(
+                    "time_seconds,sensor_status,temperature,attempts,successes,"
+                    "duration_ms,last_success_age_seconds,errors\n"
+                )
+
+            errors = "|".join(diagnostic_event.get("errors", []))
+            temperature = diagnostic_event.get("temperature")
+            last_success_age = diagnostic_event.get("last_success_age_seconds")
+            f.write(
+                f"{diagnostic_event['time_seconds']},"
+                f"{diagnostic_event['sensor_status']},"
+                f"{temperature if temperature is not None else ''},"
+                f"{diagnostic_event['attempts']},"
+                f"{diagnostic_event['successes']},"
+                f"{diagnostic_event['duration_ms']},"
+                f"{last_success_age if last_success_age is not None else ''},"
+                f"{errors}\n"
+            )
+    except Exception as e:
+        print(f"Error logging sensor diagnostics CSV: {e}")
+
+
+def append_roast_sensor_diagnostic(roast_id, diagnostic_event):
+    try:
+        get_roasts_collection().update_one(
+            {"_id": ObjectId(roast_id)},
+            {
+                "$push": {
+                    "sensor_diagnostics": {
+                        "$each": [diagnostic_event],
+                        "$slice": -MAX_SENSOR_DIAGNOSTICS,
+                    }
+                },
+                "$set": {"updated_at": get_current_time_with_tz()},
+            },
+        )
+    except Exception as e:
+        print(f"Error logging sensor diagnostic to MongoDB: {e}")
 
 
 def calculate_ror(roast_id, current_temp, current_time):
@@ -1114,10 +1358,10 @@ def api_roast_sync_state(roast_id):
     Consolidated endpoint for real-time roast synchronization.
     Called every 1 second by client.
     Handles:
-    1. Temperature fetching (Fast vs Accurate)
+    1. Temperature fetching with bounded retry diagnostics
     2. RoR Calculation
     3. Local CSV Logging (Every 1s)
-    4. MongoDB Logging (Every 5s)
+    4. MongoDB Logging (Every configured interval)
     """
     data = request.get_json()
     client_time = int(data.get("time_seconds", 0))
@@ -1134,6 +1378,7 @@ def api_roast_sync_state(roast_id):
                 "temperature": None,
                 "ror": None,
                 "logged_to_db": False,
+                "sensor_status": "offline",
             }
         )
 
@@ -1144,6 +1389,7 @@ def api_roast_sync_state(roast_id):
             "last_db_log_time": -1,
             "last_fan": -1,
             "last_power": -1,
+            "last_success_time_seconds": None,
         }
 
     state = roast_temp_history[roast_id]
@@ -1165,19 +1411,47 @@ def api_roast_sync_state(roast_id):
         state["last_fan"] = fan_setting
         state["last_power"] = power_setting
 
-    # Fetch temperature
-    # Use accurate fetch if it's a DB log interval, otherwise fast fetch
-    if is_db_log_interval:
-        temp = fetch_temperature_from_sensor()
+    reading = fetch_temperature_reading(
+        attempts=TEMP_SENSOR_LIVE_ATTEMPTS,
+        min_successes=1,
+        include_diagnostics=True,
+    )
+    temp = reading["temperature"]
+
+    if temp is not None:
+        state["last_success_time_seconds"] = client_time
+        last_success_age = 0
+    elif state.get("last_success_time_seconds") is not None:
+        last_success_age = max(0, client_time - state["last_success_time_seconds"])
     else:
-        temp = fetch_temperature_from_sensor_fast()
+        last_success_age = None
+
+    sensor_status = derive_live_sensor_status(reading, last_success_age)
+    diagnostic_event = build_sensor_diagnostic_event(
+        client_time, reading, sensor_status, last_success_age
+    )
+
+    if status == "running":
+        log_sensor_diagnostics_csv(roast_id, diagnostic_event)
+        if sensor_status != "ok":
+            append_roast_sensor_diagnostic(roast_id, diagnostic_event)
 
     response_data = {
         "success": True,
         "temperature": temp,
         "ror": None,
         "logged_to_db": False,
+        "sensor_status": sensor_status,
+        "attempts": reading["attempts"],
+        "successes": reading["successes"],
+        "duration_ms": reading["duration_ms"],
+        "last_success_age_seconds": last_success_age,
     }
+
+    if reading.get("errors"):
+        response_data["errors"] = reading["errors"]
+    if reading.get("diagnostics"):
+        response_data["diagnostics"] = reading["diagnostics"]
 
     if temp is not None:
         # Calculate RoR
@@ -1210,6 +1484,10 @@ def api_roast_sync_state(roast_id):
                         "fan_setting": fan_setting,
                         "power_setting": power_setting,
                         "ror": ror,
+                        "sensor_status": sensor_status,
+                        "sensor_attempts": reading["attempts"],
+                        "sensor_successes": reading["successes"],
+                        "sensor_read_ms": reading["duration_ms"],
                     }
                     get_roasts_collection().update_one(
                         {"_id": ObjectId(roast_id)},

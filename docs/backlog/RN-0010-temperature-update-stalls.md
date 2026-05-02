@@ -2,10 +2,10 @@
 id: RN-0010
 title: Temperature Sensor Updates Stall During Live Roast
 type: bug
-status: pending
+status: resolved
 priority: high
 created: 2026-04-24
-resolved:
+resolved: 2026-05-02
 area: live-roasting
 tags:
   - temperature-sensor
@@ -45,22 +45,48 @@ During a live roast, the temperature display is expected to refresh every second
 
 ## Acceptance Criteria
 
-- [ ] A failed or delayed temperature read during a live roast is visible as stale/offline state instead of silently leaving the last good temperature looking current.
-- [ ] **Test Connection** no longer fails on a single transient sensor miss without context; it either retries internally or reports enough detail for the user to know whether to retry, check network, or inspect hardware.
-- [ ] New diagnostic data can tell whether a >20s display stall came from sensor nulls, missed frontend polls, overlapping frontend requests, backend fetch duration, DB logging cadence, or hardware/firmware faults.
-- [ ] Diagnostic logging is frequent enough for local troubleshooting during active live roasts, but bounded so it does not create excessive DB payload size.
-- [ ] The implementation verifies the ESP32 `/diagnostics` path or equivalent hardware-side signal when app-side checks suggest hardware instability.
-- [ ] New roast data either avoids >20s gaps during normal sensor operation or records enough diagnostics to explain them.
-- [ ] Regression coverage or a manual QA checklist exists for sensor unavailable, delayed response, Test Connection retry, and hardware diagnostics cases.
-- [ ] Relevant docs updated when implemented: `docs/features/live-roasting.md`, `docs/features/temperature-sensor.md`, `docs/design/screens/live-roasting.md`, `docs/hardware/thermo-sensor.md`, `docs/architecture/api-endpoints.md`, and `docs/architecture/data-models.md` if diagnostic payloads or persisted schema change.
+- [x] A failed or delayed temperature read during a live roast is visible as stale/offline state instead of silently leaving the last good temperature looking current.
+- [x] **Test Connection** no longer fails on a single transient sensor miss without context; it either retries internally or reports enough detail for the user to know whether to retry, check network, or inspect hardware.
+- [x] New diagnostic data can tell whether a >20s display stall came from sensor nulls, missed frontend polls, overlapping frontend requests, backend fetch duration, DB logging cadence, or hardware/firmware faults.
+- [x] Diagnostic logging is frequent enough for local troubleshooting during active live roasts, but bounded so it does not create excessive DB payload size.
+- [x] The implementation verifies the ESP32 `/diagnostics` path or equivalent hardware-side signal when app-side checks suggest hardware instability.
+- [x] New roast data either avoids >20s gaps during normal sensor operation or records enough diagnostics to explain them.
+- [x] Regression coverage or a manual QA checklist exists for sensor unavailable, delayed response, Test Connection retry, and hardware diagnostics cases.
+- [x] Relevant docs updated when implemented: `docs/features/live-roasting.md`, `docs/features/temperature-sensor.md`, `docs/design/screens/live-roasting.md`, `docs/hardware/thermo-sensor.md`, `docs/architecture/api-endpoints.md`, and `docs/architecture/data-models.md` if diagnostic payloads or persisted schema change.
+
+## Resolution Notes
+
+Implemented on `fix/rn-0010-temperature-stalls`.
+
+- Sensor reads now use structured retry metadata with 750ms per attempt.
+- Live roast sync uses up to 3 attempts and accepts 1 successful read for live
+  logging, while `/api/temp/current` still requires 2 successes for the
+  accurate endpoint.
+- The live UI prevents overlapping sync requests and shows `Live`, `Retrying`,
+  `Stale`, `Offline`, or `Sensor fault` under the temperature readout.
+- `lastTemp` is not reused once the sensor state is stale.
+- Test Connection now calls `/api/temp/test_connection`, retries internally, and
+  includes ESP32 `/diagnostics` details when reads fail.
+- Successful `temp_curve` entries store sensor attempt metadata; non-`ok`
+  attempts are stored in bounded `sensor_diagnostics` entries and in local CSV
+  diagnostics.
+
+Verification:
+
+- `uv run pytest tests/test_temperature_api.py tests/test_roasts_api.py::TestRoastSyncState -q` → 15 passed.
+- `uv run pytest` → 71 passed.
+- Live ESP32 `/temp` returned `22.75°C`; `/diagnostics` returned `status: OK`,
+  `error_code: 0`.
+- Two-minute live sync QA with temporary test data recorded 119 points with max
+  `temp_curve` gap of 2 seconds; statuses were 98 `ok` and 22 `retrying`.
 
 ## Open Questions
 
-- What exact live-roast stale/offline UX should be used after repeated sensor misses? Answer: TBD.
-- Should **Test Connection** auto-retry a fixed number of times, expose a manual retry with better status, or show a full diagnostic breakdown? Answer: TBD.
-- What is the acceptable maximum diagnostic payload per active roast when using the local DB? Answer: Keep payload small where practical; exact limit TBD.
-- Should diagnostics be embedded in each roast document, stored in a separate collection, written to local CSV, or split between DB and CSV? Answer: TBD.
-- Which hardware-side failure modes should be tested first: WiFi reconnects, ESP32 response latency, MAX31855 error codes, thermocouple wiring, or power stability? Answer: TBD.
+- What exact live-roast stale/offline UX should be used after repeated sensor misses? Answer: compact status text under the temperature tile, mirrored in fullscreen.
+- Should **Test Connection** auto-retry a fixed number of times, expose a manual retry with better status, or show a full diagnostic breakdown? Answer: auto-retry 3 times and include diagnostics when reads fail.
+- What is the acceptable maximum diagnostic payload per active roast when using the local DB? Answer: latest 300 anomaly entries per roast, plus local CSV diagnostics.
+- Should diagnostics be embedded in each roast document, stored in a separate collection, written to local CSV, or split between DB and CSV? Answer: embed bounded anomaly diagnostics on the roast and write detailed per-sync local CSV diagnostics.
+- Which hardware-side failure modes should be tested first: WiFi reconnects, ESP32 response latency, MAX31855 error codes, thermocouple wiring, or power stability? Answer: app-side checks verify ESP32 response latency and MAX31855 diagnostics first.
 
 ## Related Files
 

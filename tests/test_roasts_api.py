@@ -16,6 +16,7 @@ import time
 from datetime import datetime
 from bson.objectid import ObjectId
 
+import app as app_module
 from tests.conftest import TEST_DATA_MARKER
 
 
@@ -574,6 +575,19 @@ class TestRoastDelete:
 class TestRoastSyncState:
     """Tests for the consolidated sync_state endpoint."""
 
+    @staticmethod
+    def _reading(temperature, sensor_status='ok', attempts=3, successes=3, errors=None):
+        return {
+            'temperature': temperature,
+            'sensor_status': sensor_status,
+            'attempts': attempts,
+            'successes': successes,
+            'duration_ms': 230,
+            'errors': errors or [],
+            'attempt_results': [],
+            'diagnostics': None,
+        }
+
     def test_sync_state_returns_response(self, client, started_test_roast):
         """Test that sync_state returns expected response format."""
         roast_id = started_test_roast['roast_id']
@@ -597,6 +611,121 @@ class TestRoastSyncState:
         assert 'temperature' in data
         assert 'ror' in data
         assert 'logged_to_db' in data
+        assert 'sensor_status' in data
+        assert 'attempts' in data
+        assert 'successes' in data
+        assert 'duration_ms' in data
+
+    def test_sync_state_logs_single_success_after_retry(self, client, roasts_collection, started_test_roast, monkeypatch):
+        """One successful retry should log a temperature point."""
+        roast_id = started_test_roast['roast_id']
+        app_module.roast_temp_history.pop(roast_id, None)
+        monkeypatch.setattr(
+            app_module,
+            'fetch_temperature_reading',
+            lambda **kwargs: self._reading(
+                185,
+                sensor_status='retrying',
+                attempts=3,
+                successes=1,
+                errors=['timeout'],
+            ),
+        )
+
+        response = client.post(
+            f'/api/roast/sync_state/{roast_id}',
+            json={
+                'time_seconds': 5,
+                'status': 'running',
+                'fan_setting': 9,
+                'power_setting': 5,
+            },
+            content_type='application/json',
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['temperature'] == 185
+        assert data['sensor_status'] == 'retrying'
+        assert data['logged_to_db'] is True
+
+        roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+        assert len(roast['temp_curve']) == 1
+        temp_event = roast['temp_curve'][0]
+        assert temp_event['temperature'] == 185.0
+        assert temp_event['sensor_status'] == 'retrying'
+        assert temp_event['sensor_attempts'] == 3
+        assert temp_event['sensor_successes'] == 1
+        assert temp_event['sensor_read_ms'] == 230
+
+    def test_sync_state_marks_sensor_stale_after_five_second_gap(self, client, roasts_collection, started_test_roast, monkeypatch):
+        """Repeated failures should become stale after the configured threshold."""
+        roast_id = started_test_roast['roast_id']
+        app_module.roast_temp_history.pop(roast_id, None)
+        readings = iter([
+            self._reading(180),
+            self._reading(None, sensor_status='offline', attempts=3, successes=0, errors=['timeout']),
+            self._reading(None, sensor_status='offline', attempts=3, successes=0, errors=['timeout']),
+        ])
+
+        monkeypatch.setattr(
+            app_module,
+            'fetch_temperature_reading',
+            lambda **kwargs: next(readings),
+        )
+
+        client.post(
+            f'/api/roast/sync_state/{roast_id}',
+            json={'time_seconds': 1, 'status': 'running', 'fan_setting': 9, 'power_setting': 5},
+            content_type='application/json',
+        )
+        client.post(
+            f'/api/roast/sync_state/{roast_id}',
+            json={'time_seconds': 2, 'status': 'running', 'fan_setting': 9, 'power_setting': 5},
+            content_type='application/json',
+        )
+        response = client.post(
+            f'/api/roast/sync_state/{roast_id}',
+            json={'time_seconds': 6, 'status': 'running', 'fan_setting': 9, 'power_setting': 5},
+            content_type='application/json',
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['temperature'] is None
+        assert data['sensor_status'] == 'stale'
+        assert data['last_success_age_seconds'] == app_module.TEMP_SENSOR_STALE_SECONDS
+
+        roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+        assert len(roast['temp_curve']) == 1
+        assert roast['sensor_diagnostics'][-1]['sensor_status'] == 'stale'
+
+    def test_sensor_diagnostic_array_is_bounded(self, roasts_collection, started_test_roast, monkeypatch):
+        """Roast-level anomaly diagnostics should retain only the newest entries."""
+        roast_id = started_test_roast['roast_id']
+        monkeypatch.setattr(
+            app_module,
+            'get_roasts_collection',
+            lambda: roasts_collection,
+        )
+
+        for time_seconds in range(app_module.MAX_SENSOR_DIAGNOSTICS + 5):
+            app_module.append_roast_sensor_diagnostic(
+                roast_id,
+                {
+                    'time_seconds': time_seconds,
+                    'sensor_status': 'offline',
+                    'temperature': None,
+                    'attempts': 3,
+                    'successes': 0,
+                    'duration_ms': 2250,
+                    'last_success_age_seconds': time_seconds,
+                },
+            )
+
+        roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+        assert len(roast['sensor_diagnostics']) == app_module.MAX_SENSOR_DIAGNOSTICS
+        assert roast['sensor_diagnostics'][0]['time_seconds'] == 5
 
     def test_sync_state_logs_to_csv(self, client, started_test_roast):
         """Test that sync_state creates local CSV file."""

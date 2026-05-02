@@ -147,7 +147,38 @@ Temperature readings logged during roast.
   "fan_setting": "Integer",
   "power_setting": "Integer",
   "ror": "Float",
+  "sensor_status": "String",
+  "sensor_attempts": "Integer",
+  "sensor_successes": "Integer",
+  "sensor_read_ms": "Integer",
   "note": "String"
+}
+```
+
+Automatic live-roast entries include sensor metadata. `sensor_status` is one of
+`ok`, `retrying`, `stale`, `offline`, or `fault`.
+
+### Embedded: `sensor_diagnostics` Array
+
+Bounded anomaly log for live temperature reads. Only non-`ok` sync attempts are
+persisted, and the array is sliced to the latest 300 entries.
+
+```json
+{
+  "time_seconds": "Integer",
+  "sensor_status": "String",
+  "temperature": "Float | null",
+  "attempts": "Integer",
+  "successes": "Integer",
+  "duration_ms": "Integer",
+  "last_success_age_seconds": "Integer | null",
+  "errors": ["String"],
+  "diagnostics": {
+    "status": "String",
+    "error_code": "Integer",
+    "errors": "Object"
+  },
+  "created_at": "Date"
 }
 ```
 
