@@ -23,6 +23,7 @@ Technologies and dependencies used in RoastLogger.
 | Chart.js | Temperature/RoR charts |
 | chartjs-plugin-annotation | Event markers on charts |
 | Flatpickr | Date/datetime picker (bean purchase date, roast date, label roast date) |
+| jsPDF | Client-side PDF generation for US-4 sticker sheets |
 | Material Icons | UI icons |
 | Inter Font | Typography |
 | Roboto Slab | Label creator (Classic template) |
@@ -78,7 +79,10 @@ roasting_note/
 │   ├── css/
 │   │   └── style.css      # All styles
 │   └── js/
-│       └── roast-chart.js # Shared chart component
+│       ├── roast-chart.js # Shared chart component
+│       ├── label-creator.js # Bean label canvas renderer
+│       ├── sticker-sheet.js # US-4 sticker sheet modal/export
+│       └── jspdf.umd.min.js # Vendored jsPDF browser build
 ├── templates/
 │   ├── base.html          # Base template
 │   ├── index.html         # Dashboard

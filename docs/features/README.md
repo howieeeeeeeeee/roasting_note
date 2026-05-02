@@ -11,6 +11,8 @@ Detailed feature specifications for RoastLogger.
 | [Live Roasting](./live-roasting.md) | Real-time roasting interface | Implemented |
 | [Temperature Sensor](./temperature-sensor.md) | K-Type sensor integration | Implemented |
 | [Chart Visualization](./chart-visualization.md) | Temperature/RoR charts | Implemented |
+| [Bean Label Creator](./bean-label-creator.md) | Printable PNG labels for beans | Implemented |
+| [Sticker Sheet Creator](./sticker-sheet.md) | US-4 PDF sticker sheets from local images | Implemented |
 | [Database Sync](./database-sync.md) | Local/online DB switching | Implemented |
 | [Reviews](./reviews.md) | Post-roast tasting reviews | Implemented |
 

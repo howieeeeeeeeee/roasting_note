@@ -7,10 +7,14 @@ Create and download printable PNG labels for roasted coffee beans.
 >
 > - [docs/design/screens/label-creator.md](../design/screens/label-creator.md) — modal screen anatomy
 > - [docs/design/patterns/label-templates.md](../design/patterns/label-templates.md) — 4 templates × 5 font presets × 5 ratios as a design system
+>
+> Sticker sheet PDF output is a separate flow documented in [sticker-sheet.md](./sticker-sheet.md).
 
 ## Access
 
 Bean detail page → **Create Label** button in header actions.
+
+The **Create Stickers** action lives on the beans list page and opens a separate sticker-sheet PDF flow. It does not share this modal's saved label state.
 
 ## Label Fields
 

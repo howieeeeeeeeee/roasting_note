@@ -10,6 +10,10 @@
             <span class="material-icons">filter_list</span>
             {% if filter_out_of_stock %}Hide{% else %}Show{% endif %} Out of Stock
         </button>
+        <button type="button" class="btn btn-primary btn-header-icon" onclick="openStickerSheetModal()">
+            <span class="material-icons">grid_view</span>
+            Create Stickers
+        </button>
         <a href="{{ url_for('beans_add_form') }}" class="btn btn-primary">Add New Bean</a>
     </div>
 </div>
@@ -111,10 +115,69 @@
 </div>
 {% endif %}
 
+<!-- Sticker Sheet Modal -->
+<div id="stickerSheetModal" class="modal">
+    <div class="modal-content sticker-sheet-modal-content">
+        <div class="modal-header">
+            <h2>Create Stickers</h2>
+            <span class="modal-close" onclick="closeStickerSheetModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="sticker-sheet-layout">
+                <aside class="sticker-sheet-controls">
+                    <div class="form-group">
+                        <label for="stickerTemplate">Template</label>
+                        <select id="stickerTemplate" class="form-control" disabled>
+                            <option value="us4" selected>US-4 - Letter, 4 stickers</option>
+                        </select>
+                    </div>
+
+                    <div class="sticker-file-actions">
+                        <input id="stickerImageInput" class="sticker-file-input" type="file" accept="image/*" multiple>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('stickerImageInput').click()">
+                            <span class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 4px;">add_photo_alternate</span>Select Images
+                        </button>
+                        <span id="stickerFileStatus" class="sticker-file-status">0 / 4 images</span>
+                    </div>
+
+                    <div id="stickerImageList" class="sticker-image-list" aria-live="polite"></div>
+                </aside>
+
+                <section class="sticker-sheet-preview-panel" aria-label="US-4 sheet preview">
+                    <div class="sticker-sheet-preview-wrap">
+                        <div id="stickerSheetPreview" class="sticker-sheet-preview"></div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="sticker-sheet-footer">
+                <span id="stickerValidation" class="sticker-validation" aria-live="polite"></span>
+                <button id="stickerDownloadButton" type="button" class="btn btn-primary" onclick="downloadStickerSheetPDF()" disabled>
+                    <span class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 4px;">picture_as_pdf</span>Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/jspdf.umd.min.js"></script>
+<script src="/static/js/sticker-sheet.js"></script>
 <script>
     const currentFilterOutOfStock = {{ 'true' if filter_out_of_stock else 'false' }};
     const currentSortBy = '{{ sort_by }}';
     const currentSortOrder = '{{ sort_order }}';
+
+    function openStickerSheetModal() {
+        StickerSheetCreator.open();
+    }
+
+    function closeStickerSheetModal() {
+        StickerSheetCreator.close();
+    }
+
+    function downloadStickerSheetPDF() {
+        StickerSheetCreator.downloadPDF();
+    }
 
     function toggleFilter() {
         const newFilter = !currentFilterOutOfStock;
@@ -139,5 +202,11 @@
         url.searchParams.set('filter_out_of_stock', currentFilterOutOfStock);
         window.location.href = url.toString();
     }
+
+    const previousWindowClick = window.onclick;
+    window.onclick = function (event) {
+        if (typeof previousWindowClick === 'function') previousWindowClick(event);
+        if (event.target === document.getElementById('stickerSheetModal')) closeStickerSheetModal();
+    };
 </script>
 {% endblock %}

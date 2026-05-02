@@ -12,7 +12,7 @@ Table-style inventory view (not a card grid — density matters when managing do
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│  Beans                    [🔍 Filter]  [+ Add New Bean]        │  ← .page-header
+│  Beans      [Filter] [Create Stickers] [+ Add New Bean]        │  ← .page-header
 ├───────────────────────────────────────────────────────────────┤
 │  .beans-table                                                 │
 │  ┌─────┬────────────────┬────────┬────────┬────────┬───────┐ │
@@ -28,7 +28,8 @@ Table-style inventory view (not a card grid — density matters when managing do
 | Region | Class / component |
 |---|---|
 | Page header | `.page-header` + `.header-actions` |
-| Filter panel | `.btn-filter` (toggles a slide-down filter drawer) |
+| Filter panel | `.btn-filter` (toggles out-of-stock visibility) |
+| Create Stickers | `.btn.btn-primary` with a Material icon — opens the [sticker sheet modal](./sticker-sheet.md) |
 | Table | `.beans-table` (sortable via `.sort-btn-inline` + `.sortable-header`) |
 | Row | `.bean-row.clickable-row` — whole row links to detail |
 | Color cell | `.bean-name-cell` containing `.bean-color-indicator` (dot filled with `bean.color`) |

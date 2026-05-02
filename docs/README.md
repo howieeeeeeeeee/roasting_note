@@ -55,10 +55,12 @@ docs/
 │   ├── principles.md
 │   ├── foundations/       # Color, typography, spacing, dark mode
 │   ├── components/        # Buttons, cards, forms, instrument displays
-│   ├── screens/           # Per-screen design specs
-│   └── patterns/          # Recurring design systems (label templates)
+│   ├── screens/           # Per-screen design specs (including sticker sheet modal)
+│   └── patterns/          # Recurring design systems (label + sticker templates)
 ├── features/              # Feature specifications
 │   ├── live-roasting.md   # Live roasting interface
+│   ├── bean-label-creator.md
+│   ├── sticker-sheet.md   # US-4 PDF sticker sheet creator
 │   ├── temperature-sensor.md
 │   └── chart-visualization.md
 ├── hardware/              # Hardware docs

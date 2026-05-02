@@ -22,10 +22,12 @@ design/
 ├── screens/                   Screen-specific design specs
 │   ├── live-roasting.md       Top-bar layout for the live roast view
 │   ├── label-creator.md       Modal canvas editor for bean labels
+│   ├── sticker-sheet.md       Modal editor for US-4 sticker sheets
 │   ├── roast-detail.md        Read-only roast view
 │   └── bean-inventory.md      Beans list + bean detail
 └── patterns/                  Recurring design systems
-    └── label-templates.md     Four label templates as a design system
+    ├── label-templates.md     Four label templates as a design system
+    └── sticker-templates.md   Physical sticker-sheet template specs
 ```
 
 ## Quick Index
@@ -36,6 +38,7 @@ design/
 **"How do I make this dark-mode aware?"** → [foundations/dark-mode.md](./foundations/dark-mode.md)
 **"How does the live roast screen work?"** → [screens/live-roasting.md](./screens/live-roasting.md)
 **"How do I add a new label template?"** → [../features/adding-label-templates.md](../features/adding-label-templates.md) (step-by-step) + [patterns/label-templates.md](./patterns/label-templates.md) (design system)
+**"How is US-4 sticker stock laid out?"** → [patterns/sticker-templates.md](./patterns/sticker-templates.md)
 
 ## Design Philosophy
 
