@@ -2,7 +2,7 @@
 id: RN-0016
 title: New Design System Rollout & Full UI Redesign
 type: feature
-status: pending
+status: resolved
 priority: high
 created: 2026-05-01
 resolved:
