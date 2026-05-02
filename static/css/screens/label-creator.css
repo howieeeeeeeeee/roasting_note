@@ -1,0 +1,126 @@
+/* ============================================================
+   Label Creator modal — 2-column form grid + side preview canvas.
+   Modal scrolls within itself so the body never overflows the viewport.
+   ============================================================ */
+
+.label-modal-content {
+  max-width: 1320px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.label-modal-content .modal-body {
+  padding: var(--space-4) var(--space-6);
+  overflow-y: auto;
+}
+
+.label-modal-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  background: var(--surf2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--radius-md);
+}
+
+.label-modal-layout {
+  display: flex;
+  gap: var(--space-5);
+}
+
+/* Form panel — 2-column grid for compact data entry */
+.label-form-panel {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--space-4);
+  row-gap: var(--space-2);
+}
+.label-form-panel .form-group { margin-bottom: 0; }
+.label-form-panel .form-group label {
+  margin-bottom: 0.2rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--txt2);
+}
+.label-form-panel .form-group input,
+.label-form-panel .form-group select,
+.label-form-panel .form-control {
+  padding: 0.4rem 0.6rem;
+  font-size: var(--text-base);
+  min-height: 34px;
+}
+.label-form-panel .form-group textarea {
+  min-height: 56px;
+  padding: 0.4rem 0.6rem;
+  font-size: var(--text-base);
+}
+
+/* Full-width rows span both columns */
+.label-form-row-full { grid-column: 1 / -1; }
+
+/* Inline rows (Template / Font / Aspect, Export W / H / px) live inside
+   a .label-form-row-full and lay their three form-groups across one row. */
+.label-form-row-full.label-form-grid-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+.label-form-grid-row .form-group {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.label-form-export-row .form-group:last-child { flex: 1.2; }
+.label-form-export-row span.form-control {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  background: var(--surf2);
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  color: var(--txt2);
+}
+
+/* Preview panel — flush against the form, neutral surface, canvas centered */
+.label-preview-panel {
+  flex: 1;
+  max-width: 50%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: var(--surf2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  min-width: 0;
+}
+.label-preview-panel canvas,
+#labelCanvas {
+  max-width: 100%;
+  height: auto;
+  background: var(--surf);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.label-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--bd2);
+}
+
+.label-date-input { cursor: pointer; background: var(--surf); }
+
+@media (max-width: 900px) {
+  .label-modal-layout { flex-direction: column; }
+  .label-form-panel { grid-template-columns: 1fr; }
+  .label-preview-panel { max-width: 100%; order: -1; }
+}

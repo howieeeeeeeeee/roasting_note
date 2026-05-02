@@ -1,51 +1,64 @@
 # Forms
 
-Form inputs, selects, textareas, and the form containers that hold them. Defined in [static/css/style.css](../../../static/css/style.css) under `Forms`.
+Form inputs, selects, textareas, and the form sections that hold them. Defined in [static/css/components/forms.css](../../../static/css/components/forms.css).
 
 ## Form Container (`.form`)
 
-The outer wrapper on full-page forms (add/edit bean, roast edit):
+The outer wrapper on full-page forms (add/edit bean, roast edit) is intentionally unframed. It only constrains width:
 
 ```css
-background: var(--card-bg);
-padding: 2rem;
-border-radius: 8px;
-box-shadow: var(--shadow);
+width: min(100%, 1280px);
+margin: 0;
 ```
 
-Internally subdivided into `.form-section` blocks (with an H2 heading in `--primary-color`) and `.form-group` rows.
+The visible surfaces are `.form-section` panels. Forms are left-aligned inside the page container so desktop edit screens do not leave a large unused column on the right.
+
+## Form Section (`.form-section`)
+
+Used for logical groups such as Bean Profile, Flavor Notes, Inventory, Basic Information, Weights, and Notes.
+
+```css
+background: var(--surf);
+border: 1px solid var(--bd);
+border-radius: var(--radius-xl);
+padding: var(--space-7);
+box-shadow: var(--shadow-sm);
+```
+
+Each section has a subtle primary accent rule on the left edge and an uppercase H2 divider. Section headings are labels for scanability, not marketing copy.
 
 ## Form Group (`.form-group`)
 
 Label-above-input pattern:
 
 ```
-Label                       ← 0.5rem below input, weight 500, text-color
-[ input                 ]   ← 100% width, 0.625rem 0.875rem padding
+Label                       ← 0.5rem above input, weight 600, muted text
+[ input                 ]   ← 100% width, 46px minimum height
 ```
 
-- `margin-bottom: 1.5rem` between groups.
-- Label: `display: block; font-weight: 500;`.
+- `margin-bottom: var(--space-4)` between groups.
+- Label: `display: block; font-weight: 600;`.
+- `.form-group-title` is reserved for bean names and roast titles. Its text input uses `--font-display`, `var(--text-lg)`, and 700 weight so record names feel intentional without affecting data-entry fields.
 
 ## Inputs, Selects, Textareas
 
-All three share the same visual treatment:
+All three share the same inset treatment:
 
 ```css
 width: 100%;
-padding: 0.625rem 0.875rem;
-border: 1px solid var(--border-color);
-border-radius: 6px;
-font-size: 0.9375rem;
-background-color: var(--card-bg);
+min-height: 46px;
+padding: 0.65rem 0.875rem;
+border: 1px solid var(--bd);
+border-radius: var(--radius-md);
+background: var(--surf2);
 ```
 
 **States**
 
 | State | Treatment |
 |---|---|
-| Hover | `border-color: var(--secondary-color)` |
-| Focus | `border-color: var(--primary-color)` + `box-shadow: 0 0 0 3px rgba(107, 91, 77, 0.1)` — a soft halo ring, not a hard outline |
+| Hover | Inherits the base border; avoid noisy hover chrome on dense forms |
+| Focus | `border-color: var(--pr)` + `box-shadow: 0 0 0 3px var(--pr-l)` and `background: var(--surf)` |
 | Disabled / readonly | No explicit rule; lean on browser defaults |
 
 ## Form Rows (`.form-row`)
@@ -55,12 +68,12 @@ Multi-column input layouts:
 ```css
 .form-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
 }
 ```
 
-Auto-fit keeps columns full-width on narrow screens and collapses to stacks below ~400px.
+Rows collapse to one column below 768px.
 
 ## Form Actions (`.form-actions`)
 
@@ -68,9 +81,9 @@ Button row at the bottom of a form:
 
 ```css
 display: flex;
-gap: 1rem;
-margin-top: 2rem;
+gap: var(--space-3);
 flex-wrap: wrap;
+justify-content: flex-end;
 ```
 
 Primary action goes first (`.btn-primary`). Destructive actions go last (or are moved to the page-header dropdown menu).
@@ -85,9 +98,11 @@ The live-roast screen reuses `.form-group` but packs rows tighter:
 
 ## Dark Mode
 
-Inputs/selects/textareas have an explicit dark-mode rule (`body.dark-mode .form-group input, ...`) that swaps `background-color` to `var(--bg-color)` — the input sits slightly *below* the card surface, matching the inset feel of instrument panels. Focus halo uses the same `rgba(107, 91, 77, 0.1)` — the warm-brown halo reads fine against both palettes.
+Inputs, sections, helpers, and focus rings inherit from semantic tokens. Dark mode is handled by token overrides on `body.dark-mode`; form CSS does not need component-specific dark overrides.
 
 ## Accessory Components
 
-- **`.calc-display`** — readonly computed value shown beside an input (e.g. loss % on roast edit). Light grey chip (`#f0f0f0`), `--primary-color` text, `0.75rem` padding, 4px radius.
-- **`.info-text`** — blue-tinted note box for instructional copy inside a form. `#e3f2fd` background, `#2196F3` left border. Used sparingly — most forms don't need an info box.
+- **`.calc-display`** — readonly computed value shown beside an input (e.g. loss % on roast edit). Uses `--font-mono`, `--surf2`, dashed `--bd`, and `--pr` text.
+- **`.short-flavor-editor`** — tokenized chip-input surface used by add/edit bean. It matches field height, uses `--surf2` when idle, and switches to `--surf` on focus.
+- **`.color-picker-wrapper`** — compact input group for bean label colour. The swatch and mono hex preview sit inside one tokenized field shell.
+- **`.info-text`** — small helper text block for form caveats. Use sparingly; most forms should rely on field labels.

@@ -93,6 +93,18 @@ def get_roasts_collection():
     return db_local.roasts
 
 
+@app.context_processor
+def inject_nav_counts():
+    """Tab badges in the unified nav header use these counts."""
+    try:
+        roast_count = get_roasts_collection().count_documents({})
+        bean_count = get_beans_collection().count_documents({"archived": {"$ne": True}})
+    except Exception:
+        roast_count = 0
+        bean_count = 0
+    return {"nav_roast_count": roast_count, "nav_bean_count": bean_count}
+
+
 def annotate_roast_lifecycle(roast):
     """Add display metadata for routing roasts by lifecycle state."""
     if roast.get("roast_end_time"):

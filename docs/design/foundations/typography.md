@@ -8,7 +8,7 @@ Six typefaces are loaded from Google Fonts in [templates/base.html](../../../tem
 |---|---|---|
 | **Inter** | 300, 400, 500, 600, 700 | Body text, default UI font, label-creator body text |
 | **DM Mono** | 400, 500 | All instrument-panel numerics (timer, temperature, RoR, steppers); Technical label preset |
-| **Raleway** | 400, 500, 600, 700, 800, 900 | Modern label preset (bean name) |
+| **Raleway** | 400, 500, 600, 700, 800, 900 | Record titles (bean/roast names) and Modern label preset |
 | **Playfair Display** | 400, 700, 900 | Editorial label preset (bean name) |
 | **Barlow Condensed** | 400, 600, 700, 800 | Bold label preset (bean name) |
 | **Roboto Slab** | 100–900 (variable) | Craft label preset (bean name + body) |
@@ -34,7 +34,17 @@ Legacy screens still use `'Courier New', monospace` as a fallback — new code s
 
 ### Headings — `Inter`, 600 weight
 
-Page headers, card headers, section titles. Coloured with `var(--primary-color)`. Letter-spacing is tightened slightly on the navbar brand (`letter-spacing: -0.02em`) but otherwise default.
+Page headers, card headers, section titles. Letter spacing stays at `0`; avoid negative tracking because it makes operational screens look brittle at smaller sizes.
+
+### Record titles — `Raleway`, 700-800 weight
+
+Bean names and roast names use the display stack through `--font-display`. This applies to:
+
+- List links: `.bean-record-title`, `.roast-record-title`
+- Detail page titles: `.record-title-heading`
+- Edit form title fields: `.form-group-title input`
+
+The goal is a small amount of roastery character in the records themselves, while labels, dates, prices, and controls remain in the neutral UI font.
 
 ### Body — `Inter`, 400 weight
 
@@ -46,7 +56,7 @@ Button text is one step smaller than body (`0.875rem`). Small buttons drop to `0
 
 ### Label display faces
 
-The bean label creator uses the four display faces (Raleway, Playfair, Barlow Condensed, Roboto Slab) plus DM Mono across five font presets. These are not used anywhere else in the UI — they are purely label-creator typography. See [../patterns/label-templates.md](../patterns/label-templates.md) for the preset → face mapping.
+The bean label creator uses the four display faces (Raleway, Playfair, Barlow Condensed, Roboto Slab) plus DM Mono across five font presets. Playfair, Barlow Condensed, and Roboto Slab remain label-only. Raleway is also the UI record-title face. See [../patterns/label-templates.md](../patterns/label-templates.md) for the preset → face mapping.
 
 ## Type Scale
 

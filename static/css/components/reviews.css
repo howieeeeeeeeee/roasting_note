@@ -1,0 +1,75 @@
+/* ============================================================
+   Reviews — full cards, modal cards, ratings, dates
+   ============================================================ */
+
+.reviews-list-full {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.review-section-footer {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: var(--space-3);
+}
+.review-card-full {
+  background: var(--surf2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+}
+.review-card-full:hover {
+  border-color: var(--txt3);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px var(--txt3), var(--shadow-sm);
+}
+.review-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  gap: var(--space-3);
+}
+.review-rating { color: var(--warn); letter-spacing: 1px; font-size: var(--text-md); }
+.review-rating-display { color: var(--warn); letter-spacing: 1px; font-size: var(--text-lg); }
+.review-date { font-size: var(--text-sm); color: var(--txt3); font-family: var(--font-mono); }
+.review-card-body { display: flex; flex-direction: column; gap: var(--space-2); }
+.review-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-base);
+  color: var(--txt);
+}
+.review-detail-item strong {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--txt3);
+}
+.review-notes {
+  white-space: pre-wrap;
+  color: var(--txt2);
+  line-height: 1.55;
+}
+.review-detail { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.reviews-modal-header { margin-bottom: var(--space-3); display: flex; justify-content: flex-end; }
+.reviews-modal-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.review-modal-card {
+  background: var(--surf2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+.review-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+.review-modal-body { display: flex; flex-direction: column; gap: var(--space-2); }

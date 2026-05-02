@@ -1,86 +1,105 @@
 {% extends "base.html" %}
 
-{% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Bean - RoastLogger{% endblock %}
+{% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Bean - Howie's Roast Log{% endblock %}
+
+{% block nav_tab %}beans{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>{% if is_edit %}Edit{% else %}Add New{% endif %} Bean</h1>
+    <div class="header-left">
+        <a href="{% if is_edit %}{{ url_for('beans_detail', bean_id=bean._id) }}{% else %}{{ url_for('beans_list') }}{% endif %}" class="btn-icon" title="Back">
+            <span class="material-icons">arrow_back</span>
+        </a>
+        <h1>{% if is_edit %}Edit{% else %}Add New{% endif %} Bean</h1>
+    </div>
 </div>
 
 <form action="{% if is_edit %}{{ url_for('api_beans_edit', bean_id=bean._id) }}{% else %}{{ url_for('api_beans_add') }}{% endif %}" method="POST" class="form">
-    <div class="form-group">
-        <label for="name">Bean Name *</label>
-        <input type="text" id="name" name="name" required value="{{ bean.name if bean else '' }}" placeholder="e.g., Ethiopia Yirgacheffe Gedeo">
-    </div>
+    <section class="form-section">
+        <h2>Bean Profile</h2>
 
-    <div class="form-row">
-        <div class="form-group">
-            <label for="origin">Origin</label>
-            <input type="text" id="origin" name="origin" value="{{ bean.origin if bean else '' }}" placeholder="e.g., Ethiopia">
+        <div class="form-group form-group-title">
+            <label for="name">Bean Name *</label>
+            <input type="text" id="name" name="name" required value="{{ bean.name if bean else '' }}" placeholder="e.g., Ethiopia Yirgacheffe Gedeo">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="origin">Origin</label>
+                <input type="text" id="origin" name="origin" value="{{ bean.origin if bean else '' }}" placeholder="e.g., Ethiopia">
+            </div>
+
+            <div class="form-group">
+                <label for="process">Process</label>
+                <input type="text" id="process" name="process" value="{{ bean.process if bean else '' }}" placeholder="e.g., Washed, Natural, Honey">
+            </div>
         </div>
 
         <div class="form-group">
-            <label for="process">Process</label>
-            <input type="text" id="process" name="process" value="{{ bean.process if bean else '' }}" placeholder="e.g., Washed, Natural, Honey">
-        </div>
-    </div>
-
-    <div class="form-group">
-        <label for="supplier">Supplier</label>
-        <input type="text" id="supplier" name="supplier" value="{{ bean.supplier if bean else "Sweet Maria's" }}" placeholder="e.g., Sweet Maria's">
-    </div>
-
-    <div class="form-group">
-        <label for="shortFlavorNoteInput">Short Flavor Notes</label>
-        <textarea id="short_flavor_notes" name="short_flavor_notes" class="short-flavor-notes-hidden"
-            tabindex="-1" aria-hidden="true">{% if bean and bean.short_flavor_notes %}{% if bean.short_flavor_notes is string %}{{ bean.short_flavor_notes }}{% else %}{{ bean.short_flavor_notes | join('\n') }}{% endif %}{% endif %}</textarea>
-        <div class="short-flavor-editor" id="shortFlavorEditor">
-            <div class="short-flavor-tag-list" id="shortFlavorTagList" aria-live="polite"></div>
-            <input type="text" id="shortFlavorNoteInput" class="short-flavor-tag-input"
-                placeholder="Type a note and press Enter">
-        </div>
-        <p class="helper-text">Press Enter to add each note. Short notes appear on the Beans tab preview and label auto-fill.</p>
-    </div>
-
-    <div class="form-row">
-        <div class="form-group">
-            <label for="purchase_date">Purchase Date</label>
-            <input type="text" id="purchase_date" name="purchase_date" class="form-control flatpickr-date"
-                value="{{ bean.purchase_date.strftime('%Y-%m-%d') if bean and bean.purchase_date else '' }}"
-                placeholder="Select date" readonly data-flatpickr data-flatpickr-mode="date">
+            <label for="supplier">Supplier</label>
+            <input type="text" id="supplier" name="supplier" value="{{ bean.supplier if bean else "Sweet Maria's" }}" placeholder="e.g., Sweet Maria's">
         </div>
 
         <div class="form-group">
-            <label for="purchase_weight_grams">Purchase Weight (grams)</label>
-            <input type="number" id="purchase_weight_grams" name="purchase_weight_grams" value="{{ bean.purchase_weight_grams if bean else '' }}" min="0">
+            <label for="color">Label Color</label>
+            <div class="color-picker-wrapper">
+                <input type="color" id="color" name="color" value="{{ bean.color if bean and bean.color else '#6B8E6F' }}" class="color-picker-input">
+                <span class="color-preview" id="colorPreview">{{ bean.color if bean and bean.color else '#6B8E6F' }}</span>
+            </div>
+            <p class="helper-text">Choose a color to visually identify this bean on the roast list</p>
         </div>
-    </div>
+    </section>
 
-    <div class="form-row">
+    <section class="form-section">
+        <h2>Flavor Notes</h2>
+
         <div class="form-group">
-            <label for="purchase_price_total">Total Purchase Price</label>
-            <input type="number" step="0.01" id="purchase_price_total" name="purchase_price_total" value="{{ bean.purchase_price_total.to_decimal() if bean and bean.purchase_price_total else '' }}" min="0">
+            <label for="shortFlavorNoteInput">Short Flavor Notes</label>
+            <textarea id="short_flavor_notes" name="short_flavor_notes" class="short-flavor-notes-hidden"
+                tabindex="-1" aria-hidden="true">{% if bean and bean.short_flavor_notes %}{% if bean.short_flavor_notes is string %}{{ bean.short_flavor_notes }}{% else %}{{ bean.short_flavor_notes | join('\n') }}{% endif %}{% endif %}</textarea>
+            <div class="short-flavor-editor" id="shortFlavorEditor">
+                <div class="short-flavor-tag-list" id="shortFlavorTagList" aria-live="polite"></div>
+                <input type="text" id="shortFlavorNoteInput" class="short-flavor-tag-input"
+                    placeholder="Type a note and press Enter">
+            </div>
+            <p class="helper-text">Press Enter to add each note. Short notes appear on the Beans tab preview and label auto-fill.</p>
         </div>
 
         <div class="form-group">
-            <label for="stock_grams">Current Stock (grams)</label>
-            <input type="number" id="stock_grams" name="stock_grams" value="{{ bean.stock_grams if bean else '' }}" min="0">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="4" placeholder="Tasting notes, website description, etc.">{{ bean.notes if bean else '' }}</textarea>
         </div>
-    </div>
+    </section>
 
-    <div class="form-group">
-        <label for="notes">Notes</label>
-        <textarea id="notes" name="notes" rows="4" placeholder="Tasting notes, website description, etc.">{{ bean.notes if bean else '' }}</textarea>
-    </div>
+    <section class="form-section">
+        <h2>Inventory</h2>
 
-    <div class="form-group">
-        <label for="color">Label Color</label>
-        <div class="color-picker-wrapper">
-            <input type="color" id="color" name="color" value="{{ bean.color if bean and bean.color else '#6B8E6F' }}" class="color-picker-input">
-            <span class="color-preview" id="colorPreview">{{ bean.color if bean and bean.color else '#6B8E6F' }}</span>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="purchase_date">Purchase Date</label>
+                <input type="text" id="purchase_date" name="purchase_date" class="form-control flatpickr-date"
+                    value="{{ bean.purchase_date.strftime('%Y-%m-%d') if bean and bean.purchase_date else '' }}"
+                    placeholder="Select date" readonly data-flatpickr data-flatpickr-mode="date">
+            </div>
+
+            <div class="form-group">
+                <label for="purchase_weight_grams">Purchase Weight (grams)</label>
+                <input type="number" id="purchase_weight_grams" name="purchase_weight_grams" value="{{ bean.purchase_weight_grams if bean else '' }}" min="0">
+            </div>
         </div>
-        <p class="helper-text">Choose a color to visually identify this bean on the roast list</p>
-    </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="purchase_price_total">Total Purchase Price</label>
+                <input type="number" step="0.01" id="purchase_price_total" name="purchase_price_total" value="{{ bean.purchase_price_total.to_decimal() if bean and bean.purchase_price_total else '' }}" min="0">
+            </div>
+
+            <div class="form-group">
+                <label for="stock_grams">Current Stock (grams)</label>
+                <input type="number" id="stock_grams" name="stock_grams" value="{{ bean.stock_grams if bean else '' }}" min="0">
+            </div>
+        </div>
+    </section>
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">{% if is_edit %}Update{% else %}Add{% endif %} Bean</button>

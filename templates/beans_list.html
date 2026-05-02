@@ -1,26 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}Beans - RoastLogger{% endblock %}
+{% block title %}Beans - Howie's Roast Log{% endblock %}
+
+{% block nav_tab %}beans{% endblock %}
+
+{% block nav_actions %}
+<button class="btn btn-secondary btn-sm btn-filter" onclick="toggleFilter()" id="filterBtn">
+    <span class="material-icons">filter_list</span>
+    {% if filter_out_of_stock %}Hide{% else %}Show{% endif %} Out of Stock
+</button>
+<button type="button" class="btn btn-secondary btn-sm" onclick="openStickerSheetModal()">
+    <span class="material-icons">grid_view</span>
+    Stickers
+</button>
+<a href="{{ url_for('beans_add_form') }}" class="btn btn-primary btn-sm">
+    <span class="material-icons">add</span>
+    Add Bean
+</a>
+{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Coffee Beans</h1>
-    <div class="header-actions">
-        <button class="btn btn-secondary btn-filter" onclick="toggleFilter()" id="filterBtn">
-            <span class="material-icons">filter_list</span>
-            {% if filter_out_of_stock %}Hide{% else %}Show{% endif %} Out of Stock
-        </button>
-        <button type="button" class="btn btn-primary btn-header-icon" onclick="openStickerSheetModal()">
-            <span class="material-icons">grid_view</span>
-            Create Stickers
-        </button>
-        <a href="{{ url_for('beans_add_form') }}" class="btn btn-primary">Add New Bean</a>
-    </div>
-</div>
-
 {% if beans %}
 <div class="beans-table-container">
     <table class="beans-table">
+        <colgroup>
+            <col class="beans-col-name">
+            <col class="beans-col-origin">
+            <col class="beans-col-process">
+            <col class="beans-col-supplier">
+            <col class="beans-col-stock">
+            <col class="beans-col-date">
+            <col class="beans-col-price">
+        </colgroup>
         <thead>
             <tr>
                 <th>Bean Name</th>
@@ -55,7 +66,7 @@
                         <span class="bean-color-indicator" style="background-color: {{ bean.color if bean.color else '#6B8E6F' }};"></span>
                         <div class="bean-name-info">
                             <a href="{{ url_for('beans_detail', bean_id=bean._id) }}" class="bean-link">
-                                <strong>{{ bean.name }}</strong>
+                                <strong class="bean-record-title">{{ bean.name }}</strong>
                             </a>
                             {% if bean.short_flavor_notes %}
                             <div class="bean-short-flavor-preview">

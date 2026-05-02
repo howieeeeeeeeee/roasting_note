@@ -43,6 +43,17 @@ Adopt a new design system delivered as an Anthropic design bundle and apply it a
 - **Out of scope**: backend behaviour, API contracts, data model, hardware integration, label / sticker template *content* (visual styling of those templates is in scope; the printable layouts they generate are not).
 - please note that i want to keep th ecurrent roast live interaction untouched, this is the key.
 
+## Implementation Notes
+
+- 2026-05-02 refinement pass: edit bean now uses the same `.form-section` design-system panels as edit roast, grouped by Bean Profile, Flavor Notes, and Inventory.
+- Shared form controls now use tokenized inset fields, a section accent rule, and `.form-group-title` for bean/roast names.
+- Beans table now uses a fixed `colgroup`, centered sortable metric columns, and horizontal overflow so Stock, Purchase Date, and Price/kg headers align with their values.
+- Bean and roast record names now use the `--font-display` title role (`Raleway`) in list rows, detail headers, and title inputs.
+- Follow-up: roast list/history tables no longer expose an Actions header/column. Row actions render only as a right-edge hover/focus overlay on a neutral row highlight, edit forms are left-aligned at a wider max width, and empty review panels use a compact Add Review button.
+- Follow-up: sticker sheet modal now uses reduced chrome and viewport-bounded preview sizing so the full sheet stays visible; the selected-image list handles overflow internally.
+- Follow-up: review card hover now uses a neutral grey contour instead of the dark primary outline.
+- Follow-up: review cards no longer use a left color strip; they use a plain neutral border at rest.
+
 ## Acceptance Criteria
 
 - [ ] Design bundle fetched, unpacked, and its README summarized in the implementing branch's PR description.

@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - RoastLogger{% endblock %}
+{% block title %}Roasts - Howie's Roast Log{% endblock %}
+
+{% block nav_tab %}roasts{% endblock %}
+
+{% block nav_actions %}
+<a href="{{ url_for('roast_new') }}" class="btn btn-primary btn-sm">
+    <span class="material-icons">add</span>
+    New Roast
+</a>
+{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Roast Dashboard</h1>
-    <a href="{{ url_for('roast_new') }}" class="btn btn-primary">Start New Roast</a>
-</div>
-
 {% if roasts %}
 <div class="roasts-table-container">
     <table class="roasts-table">
@@ -21,14 +25,13 @@
                 <th>Duration</th>
                 <th>After FC</th>
                 <th>Loss %</th>
-                <th class="actions-column">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for roast in roasts %}
             <tr class="roast-row">
                 <td class="roast-name-cell">
-                    <a href="{{ roast.lifecycle_url }}" class="roast-link">
+                    <a href="{{ roast.lifecycle_url }}" class="roast-link roast-record-title">
                         {{ roast.title }}
                     </a>
                 </td>
@@ -72,7 +75,7 @@
                     {% endif %}
                 </td>
                 <td class="actions-cell">
-                    <div class="action-buttons">
+                    <div class="action-buttons row-action-buttons">
                         <a href="{{ roast.lifecycle_url }}" class="btn-icon" title="{{ roast.lifecycle_action_label }}">
                             <span class="material-icons">{{ roast.lifecycle_icon }}</span>
                         </a>

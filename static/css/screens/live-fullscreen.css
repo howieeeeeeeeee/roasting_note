@@ -1,0 +1,164 @@
+/* ============================================================
+   Live Roasting — fullscreen mode (tablet propped next to roaster)
+   ============================================================ */
+
+body.fullscreen-mode { overflow: hidden; }
+body.fullscreen-mode .navbar,
+body.fullscreen-mode footer,
+body.fullscreen-mode .page-header,
+body.fullscreen-mode .setup-section { display: none; }
+body.fullscreen-mode .container {
+  max-width: 100vw;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+body.fullscreen-mode .live-roast-container {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 0;
+  background: var(--bg);
+}
+body.fullscreen-mode .live-roast-new { gap: 0; height: 100%; display: contents; }
+
+.fullscreen-readings {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  background: var(--surf);
+  border-bottom: 1px solid var(--bd);
+  gap: var(--space-6);
+}
+body.fullscreen-mode .fullscreen-readings { display: flex !important; }
+body.fullscreen-mode .live-topbar { display: none; }
+.fs-readings-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-7);
+  flex-wrap: wrap;
+  flex: 1;
+}
+.fs-readings-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+.fs-reading-item { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+.fs-label {
+  font-size: var(--text-xxs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--txt3);
+}
+.fs-value {
+  font-family: var(--font-mono);
+  font-size: 2.4rem;
+  font-weight: 500;
+  color: var(--pr);
+  line-height: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.fs-unit { font-size: 1rem; color: var(--txt2); }
+.fs-fc-badge { font-size: 0.95rem; color: var(--err); margin-left: var(--space-2); }
+.fs-sensor-status { font-size: var(--text-xxs); }
+.fs-action-btn { min-height: 54px; padding: 0.7rem 1.5rem; font-size: var(--text-md); }
+.exit-fullscreen-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  background: var(--surf);
+  color: var(--txt2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.exit-fullscreen-btn:hover { border-color: var(--pr); color: var(--pr); }
+
+body.fullscreen-mode .live-chart-area {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  height: auto;
+  flex: 1;
+}
+body.fullscreen-mode .live-controls-bar {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.fs-controls-bar {
+  display: none;
+  background: var(--surf);
+  border-top: 1px solid var(--bd);
+  padding: var(--space-3) var(--space-5);
+}
+.fs-controls-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.fs-event-buttons { display: flex; gap: var(--space-2); }
+.fs-event-btn {
+  min-height: 54px;
+  min-width: 64px;
+  padding: 0.4rem 0.85rem;
+  font-weight: 700;
+}
+.fs-settings { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.fs-setting-group { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.fs-setting-group label {
+  font-size: var(--text-xxs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--txt3);
+}
+.fs-input {
+  height: 44px;
+  padding: 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  background: var(--surf2);
+  color: var(--pr);
+  border: 1.5px solid var(--bd);
+  border-radius: var(--radius-md);
+  text-align: center;
+  outline: none;
+  width: 96px;
+}
+.fs-input:focus { border-color: var(--pr); background: var(--surf); }
+.fs-stepper {
+  display: flex;
+  align-items: center;
+  background: var(--surf2);
+  border: 1.5px solid var(--bd);
+  border-radius: var(--radius-md);
+  height: 44px;
+  overflow: hidden;
+}
+.fs-stepper-value {
+  min-width: 2rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  color: var(--pr);
+  padding: 0 var(--space-2);
+}
+.fs-log-action { display: flex; align-items: center; gap: var(--space-2); flex: 1; min-width: 200px; }
+.fs-note-input { flex: 1; }
+
+body.fullscreen-compact .fs-controls-bar { display: block; }
+body.fullscreen-compact .fullscreen-readings { display: none !important; }
+body.fullscreen-portrait .live-chart-area { height: 60vh; }
