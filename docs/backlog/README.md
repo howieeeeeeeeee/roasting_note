@@ -32,6 +32,7 @@ Use `docs/backlog/TEMPLATE.md` when creating a new ticket.
 | RN-0015 | [BUG] | High | database-sync | [Make Database Sync Timestamp-Aware](./RN-0015-timestamp-aware-db-sync.md) | 2026-05-01 | - |
 | RN-0016 | [FEATURE] | High | design-system | [New Design System Rollout & Full UI Redesign](./RN-0016-design-system-rollout.md) | 2026-05-01 | - |
 | RN-0003 | [TODO] | Medium | testing | [UI/Interface Testing Framework](./RN-0003-ui-interface-testing-framework.md) | 2026-01-11 | - |
+| RN-0017 | [FEATURE] | Medium | live-roasting | [Manually Set Draft Roast to Completed](./RN-0017-manual-draft-complete.md) | 2026-05-02 | - |
 
 ### In Progress
 
