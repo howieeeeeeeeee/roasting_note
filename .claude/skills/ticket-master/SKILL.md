@@ -1,9 +1,9 @@
 ---
-name: ticket-creator
+name: ticket-master
 description: Create, refine, or help select RoastLogger backlog tickets in docs/backlog/. Product-side requirement-gathering only — interrogate the user, write the ticket, identify which docs will need updating after the fix. NEVER implements the work itself. Use when the user wants to "add a ticket", "write up an issue", "refine RN-XXXX", "what should I work on next", or describes a problem/feature without committing to build it.
 ---
 
-# Ticket Creator
+# Ticket Master
 
 This skill turns vague product ideas into well-structured RoastLogger backlog tickets at `docs/backlog/RN-XXXX-*.md`. Its only job is **understanding the requirement** and **writing it down clearly**. It does not edit application code, run migrations, or start implementation — even if the requirement looks small.
 
@@ -17,6 +17,7 @@ This skill turns vague product ideas into well-structured RoastLogger backlog ti
 ## When to Use
 
 Trigger this skill when the user:
+
 - Describes a bug, feature, improvement, refactor, or todo without already being mid-implementation.
 - Says things like "let's track this", "add a ticket for…", "write this up", "refine RN-0013", "what should I pick up next?", "help me think through what we need before I start".
 - Has an open `docs/backlog/RN-*.md` file in the IDE and is asking questions about it.

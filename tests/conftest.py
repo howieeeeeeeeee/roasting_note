@@ -79,6 +79,7 @@ def test_bean_data():
         'purchase_weight_grams': '1000',
         'stock_grams': '1000',
         'color': '#8B4513',
+        'short_flavor_notes': 'Blueberry\nJasmine\nDark Chocolate',
         'notes': 'Test bean notes',
     }
 
@@ -96,6 +97,7 @@ def created_test_bean(beans_collection, test_bean_data):
         'purchase_weight_grams': int(test_bean_data['purchase_weight_grams']),
         'stock_grams': int(test_bean_data['stock_grams']),
         'color': test_bean_data['color'],
+        'short_flavor_notes': ['Blueberry', 'Jasmine', 'Dark Chocolate'],
         'notes': test_bean_data['notes'],
         'unit_price_per_kg': Decimal128('45.00'),
         'archived': False,

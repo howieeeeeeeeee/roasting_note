@@ -52,6 +52,21 @@
         </div>
     </section>
 
+    {% if bean.short_flavor_notes %}
+    <section class="detail-section">
+        <h2>Short Flavor Notes</h2>
+        <div class="short-flavor-note-list">
+            {% if bean.short_flavor_notes is string %}
+            <span class="short-flavor-note-chip">{{ bean.short_flavor_notes }}</span>
+            {% else %}
+            {% for note in bean.short_flavor_notes %}
+            <span class="short-flavor-note-chip">{{ note }}</span>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
     {% if bean.notes %}
     <section class="detail-section">
         <h2>Notes</h2>
@@ -333,6 +348,7 @@
         name: {{ bean.name | tojson }},
         origin: {{ (bean.origin or '') | tojson }},
         process: {{ (bean.process or '') | tojson }},
+        shortFlavorNotes: {{ (bean.short_flavor_notes or []) | tojson }},
         color: {{ (bean.color or '#6B8E6F') | tojson }},
         label: {{ (bean.label or {}) | tojson }}
     };
@@ -442,6 +458,18 @@
         document.getElementById('labelModal').style.display = 'none';
     }
 
+    function normalizeShortFlavorNotesForClient(value) {
+        if (Array.isArray(value)) {
+            return value.map(function (note) { return String(note).trim(); }).filter(Boolean);
+        }
+        if (!value) return [];
+        return String(value).split(/\r?\n/).map(function (note) { return note.trim(); }).filter(Boolean);
+    }
+
+    function getShortFlavorNoteText() {
+        return normalizeShortFlavorNotesForClient(beanData.shortFlavorNotes).join('\n');
+    }
+
     function loadImageOptions() {
         return fetch('/api/label/images')
             .then(function (resp) { return resp.json(); })
@@ -474,7 +502,7 @@
         document.getElementById('labelOrigin').value      = beanData.origin;
         document.getElementById('labelProcess').value     = beanData.process;
         document.getElementById('labelRoastLevel').value  = '';
-        document.getElementById('labelFlavorNotes').value = '';
+        document.getElementById('labelFlavorNotes').value = getShortFlavorNoteText();
         var dateEl = document.getElementById('labelRoastDate');
         dateEl.value = getTodayStr();
         if (dateEl._flatpickr) dateEl._flatpickr.setDate(getTodayStr());

@@ -30,6 +30,18 @@
         <input type="text" id="supplier" name="supplier" value="{{ bean.supplier if bean else "Sweet Maria's" }}" placeholder="e.g., Sweet Maria's">
     </div>
 
+    <div class="form-group">
+        <label for="shortFlavorNoteInput">Short Flavor Notes</label>
+        <textarea id="short_flavor_notes" name="short_flavor_notes" class="short-flavor-notes-hidden"
+            tabindex="-1" aria-hidden="true">{% if bean and bean.short_flavor_notes %}{% if bean.short_flavor_notes is string %}{{ bean.short_flavor_notes }}{% else %}{{ bean.short_flavor_notes | join('\n') }}{% endif %}{% endif %}</textarea>
+        <div class="short-flavor-editor" id="shortFlavorEditor">
+            <div class="short-flavor-tag-list" id="shortFlavorTagList" aria-live="polite"></div>
+            <input type="text" id="shortFlavorNoteInput" class="short-flavor-tag-input"
+                placeholder="Type a note and press Enter">
+        </div>
+        <p class="helper-text">Press Enter to add each note. Short notes appear on the Beans tab preview and label auto-fill.</p>
+    </div>
+
     <div class="form-row">
         <div class="form-group">
             <label for="purchase_date">Purchase Date</label>
@@ -77,6 +89,86 @@
 </form>
 
 <script>
+    const shortFlavorHidden = document.getElementById('short_flavor_notes');
+    const shortFlavorEditor = document.getElementById('shortFlavorEditor');
+    const shortFlavorTagList = document.getElementById('shortFlavorTagList');
+    const shortFlavorInput = document.getElementById('shortFlavorNoteInput');
+    let shortFlavorNotes = [];
+
+    function normalizeShortFlavorNote(value) {
+        return value.trim().replace(/\s+/g, ' ');
+    }
+
+    function syncShortFlavorHidden() {
+        shortFlavorHidden.value = shortFlavorNotes.join('\n');
+    }
+
+    function renderShortFlavorTags() {
+        shortFlavorTagList.innerHTML = '';
+        shortFlavorNotes.forEach(function(note, index) {
+            const tag = document.createElement('span');
+            tag.className = 'short-flavor-edit-tag';
+            tag.textContent = note;
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'short-flavor-remove';
+            remove.setAttribute('aria-label', 'Remove ' + note);
+            remove.textContent = '×';
+            remove.addEventListener('click', function() {
+                shortFlavorNotes.splice(index, 1);
+                syncShortFlavorHidden();
+                renderShortFlavorTags();
+                shortFlavorInput.focus();
+            });
+
+            tag.appendChild(remove);
+            shortFlavorTagList.appendChild(tag);
+        });
+    }
+
+    function addShortFlavorNote(value) {
+        const note = normalizeShortFlavorNote(value);
+        if (!note) return;
+        const exists = shortFlavorNotes.some(function(existing) {
+            return existing.toLowerCase() === note.toLowerCase();
+        });
+        if (!exists) {
+            shortFlavorNotes.push(note);
+            syncShortFlavorHidden();
+            renderShortFlavorTags();
+        }
+    }
+
+    shortFlavorHidden.value.split(/\r?\n/).forEach(addShortFlavorNote);
+    shortFlavorInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ',') {
+            event.preventDefault();
+            addShortFlavorNote(shortFlavorInput.value);
+            shortFlavorInput.value = '';
+        } else if (event.key === 'Backspace' && !shortFlavorInput.value && shortFlavorNotes.length) {
+            shortFlavorNotes.pop();
+            syncShortFlavorHidden();
+            renderShortFlavorTags();
+        }
+    });
+    shortFlavorInput.addEventListener('paste', function(event) {
+        const text = (event.clipboardData || window.clipboardData).getData('text');
+        if (text && /[\n,]/.test(text)) {
+            event.preventDefault();
+            text.split(/[\n,]/).forEach(addShortFlavorNote);
+            shortFlavorInput.value = '';
+        }
+    });
+    shortFlavorEditor.addEventListener('click', function() {
+        shortFlavorInput.focus();
+    });
+    document.querySelector('form').addEventListener('submit', function() {
+        addShortFlavorNote(shortFlavorInput.value);
+        shortFlavorInput.value = '';
+        syncShortFlavorHidden();
+    });
+
     // Update color preview when color changes
     const colorInput = document.getElementById('color');
     const colorPreview = document.getElementById('colorPreview');

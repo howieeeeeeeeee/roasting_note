@@ -5,7 +5,7 @@ RoastLogger uses a warm, earth-toned palette. Colours are defined as CSS custom 
 ## Token Reference
 
 | Token | Light | Dark | Role |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `--primary-color` | `#6B5B4D` | `#C9A87A` | Headings, active states, numeric readouts, primary buttons |
 | `--primary-hover` | `#5A4A3D` | `#D9B88A` | Primary button hover |
 | `--secondary-color` | `#8B7D6B` | `#9A8A78` | Secondary buttons, input hover borders |
@@ -23,6 +23,8 @@ RoastLogger uses a warm, earth-toned palette. Colours are defined as CSS custom 
 ## Semantic Roles
 
 **`--primary-color`** is the dominant accent. It colours all numeric instrument readouts (timer, temperature, RoR), primary CTAs, active tab underlines, and card headings. In dark mode it is intentionally lighter and warmer (`#C9A87A` tan) rather than a darker version of the light primary — muted browns disappear on dark backgrounds.
+
+The browser favicon (`static/img/favicon.svg`) uses the Material `local_cafe` glyph filled with the light primary brown (`#6B5B4D`). It is hardcoded in the SVG because browser favicon rendering cannot reliably consume CSS variables or respond to app dark mode.
 
 **`--success-color`** is reserved for **positive confirmation of user action** (a fired event button) and the **RoR line** on the chart. It is not used for generic "success" toasts without prior user action.
 
