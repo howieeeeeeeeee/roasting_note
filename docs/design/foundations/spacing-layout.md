@@ -4,7 +4,7 @@ Spacing uses a `rem`-based scale. Layout is tablet-first: the live roasting scre
 
 ## Spacing Scale
 
-No formal token variables — spacing is applied inline in CSS using rem values. The recurring rhythm is:
+Spacing is exposed as CSS custom properties (`--space-*`) in [static/css/tokens.css](../../../static/css/tokens.css). The recurring rhythm is:
 
 | Value | Usage |
 |---|---|
@@ -47,7 +47,7 @@ Tablet-first interaction rules:
 Common grid patterns found in the codebase:
 
 - **Cards grid** (`.beans-grid`, `.roasts-list`): `repeat(auto-fill, minmax(300px, 1fr))` + `1.25rem` gap.
-- **Form row** (`.form-row`): `repeat(auto-fit, minmax(200px, 1fr))` + `1rem` gap.
+- **Form row** (`.form-row`): `1fr 1fr` + `var(--space-4)` gap, collapsed to one column below 768px.
 - **Detail grid** (`.detail-grid`): fixed `repeat(2, 1fr)` with `0.75rem 2rem` gaps.
 - **Compact event buttons** (`.event-buttons-compact`): fixed `repeat(5, 1fr)` — one row across the live controls bar.
 

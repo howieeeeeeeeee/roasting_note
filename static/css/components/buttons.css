@@ -1,0 +1,79 @@
+/* ============================================================
+   Buttons — primary / secondary / success / danger / icon / stepper
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.55rem 1.1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, filter 0.12s ease, transform 0.06s ease;
+  text-decoration: none;
+}
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn .material-icons { font-size: 1.05rem; }
+
+.btn-primary   { background: var(--pr);   color: #fff; border-color: var(--pr); }
+.btn-primary:hover:not(:disabled)   { filter: brightness(1.10); }
+.btn-secondary { background: var(--surf); color: var(--txt2); border-color: var(--bd); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); }
+.btn-success   { background: var(--ok);   color: #fff; border-color: var(--ok); }
+.btn-success:hover:not(:disabled)   { filter: brightness(1.10); }
+.btn-danger    { background: var(--err);  color: #fff; border-color: var(--err); }
+.btn-danger:hover:not(:disabled)    { filter: brightness(1.10); }
+
+.btn-sm { padding: 0.32rem 0.7rem; font-size: var(--text-sm); }
+.btn-lg { padding: 0.72rem 1.4rem; font-size: var(--text-md); min-height: 48px; }
+.btn-full-width { width: 100%; }
+.btn-header-icon { padding-left: 0.85rem; }
+
+/* Icon-only ghost button */
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--txt2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.btn-icon .material-icons { font-size: 1.1rem; }
+.btn-icon:hover { background: var(--surf2); color: var(--txt); }
+.btn-icon-danger { color: var(--err); }
+.btn-icon-danger:hover { background: var(--err-l); color: var(--err); }
+
+.dark-mode-toggle.active { color: var(--pr); background: var(--pr-l); }
+
+/* Stepper button — used on live roasting */
+.btn-stepper {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: transparent;
+  color: var(--txt2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease, transform 0.06s ease;
+}
+.btn-stepper:hover:not(:disabled) { background: var(--pr-l); color: var(--pr); }
+.btn-stepper:active:not(:disabled) { transform: scale(0.92); }
+.btn-stepper:disabled { color: var(--txt3); cursor: not-allowed; }
+.btn-stepper .material-icons { font-size: 1.05rem; }
+
+.btn-filter { gap: var(--space-2); }

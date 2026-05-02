@@ -1,0 +1,132 @@
+/* ============================================================
+   Cards — page header, detail sections, notes box, empty state
+   ============================================================ */
+
+/* Page header — used on form and detail pages */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--bd);
+}
+.page-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+}
+.page-header h1 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0;
+}
+.page-header h1.record-title-heading {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.12;
+}
+.page-header .header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Detail sections (cards on detail pages) */
+.roast-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.detail-section {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.detail-section h2 {
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--bd2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--txt3);
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4) var(--space-6);
+}
+.detail-item {
+  font-size: var(--text-base);
+  color: var(--txt);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.detail-item strong {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--txt3);
+}
+
+.notes-content,
+.markdown-content {
+  background: var(--surf2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  font-size: var(--text-base);
+  color: var(--txt2);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.markdown-content { white-space: normal; }
+.markdown-content p { margin-bottom: var(--space-3); }
+.markdown-content p:last-child { margin-bottom: 0; }
+.markdown-content ul,
+.markdown-content ol { padding-left: var(--space-5); margin-bottom: var(--space-3); }
+.markdown-content code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--surf);
+  padding: 0.05rem 0.35rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Empty states */
+.empty-state {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  background: var(--surf);
+  border: 1px dashed var(--bd);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+}
+.empty-state p { color: var(--txt2); font-size: var(--text-md); margin: 0; }
+.empty-log,
+.empty-reviews {
+  text-align: center;
+  padding: var(--space-7) var(--space-5);
+  color: var(--txt3);
+  font-size: var(--text-base);
+}

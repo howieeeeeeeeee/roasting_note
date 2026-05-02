@@ -1,0 +1,42 @@
+/* ============================================================
+   Flatpickr — token-aligned overrides for date/time pickers
+   ============================================================ */
+
+.flatpickr-calendar {
+  background: var(--surf) !important;
+  border: 1px solid var(--bd) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  font-family: var(--font-ui) !important;
+  color: var(--txt) !important;
+}
+.flatpickr-calendar.arrowTop::before,
+.flatpickr-calendar.arrowTop::after { border-bottom-color: var(--bd) !important; }
+.flatpickr-months,
+.flatpickr-month,
+.flatpickr-current-month input.cur-year,
+.flatpickr-monthDropdown-months {
+  background: transparent !important;
+  color: var(--txt) !important;
+}
+.flatpickr-weekday { color: var(--txt3) !important; }
+.flatpickr-day {
+  color: var(--txt) !important;
+  border-radius: var(--radius-sm) !important;
+}
+.flatpickr-day.today    { border-color: var(--pr) !important; color: var(--pr) !important; }
+.flatpickr-day.selected,
+.flatpickr-day.selected.inRange {
+  background: var(--pr) !important;
+  border-color: var(--pr) !important;
+  color: #fff !important;
+}
+.flatpickr-day:hover    { background: var(--pr-l) !important; color: var(--pr) !important; }
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay { color: var(--txt3) !important; }
+.flatpickr-time input,
+.flatpickr-time .flatpickr-am-pm { color: var(--txt) !important; }
+
+/* html2pdf overlay used by sticker-sheet PDF export */
+.html2pdf__overlay { z-index: 200; }
+.html2pdf__container { font-family: var(--font-ui); }

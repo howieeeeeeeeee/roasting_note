@@ -10,21 +10,26 @@
 <script src="{{ url_for('static', filename='js/roast-chart.js') }}"></script>
 {% endblock %}
 
+{% block nav_tab %}roasts{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div class="header-left">
-        <h1>{{ roast.title }}</h1>
+        <a href="{{ url_for('index') }}" class="btn-icon" title="Back to Roasts">
+            <span class="material-icons">arrow_back</span>
+        </a>
+        <h1 class="record-title-heading">{{ roast.title }}</h1>
     </div>
     <div class="header-actions">
+        <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="btn btn-secondary">
+            <span class="material-icons">edit</span>
+            Edit
+        </a>
         <div class="dropdown-menu-container">
             <button class="btn-icon dropdown-toggle" onclick="toggleDropdown()" title="More actions">
                 <span class="material-icons">more_vert</span>
             </button>
             <div class="dropdown-menu" id="actionDropdown">
-                <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="dropdown-item">
-                    <span class="material-icons">edit</span>
-                    Edit
-                </a>
                 <form action="{{ url_for('api_roast_delete', roast_id=roast._id) }}" method="POST"
                     onsubmit="return confirm('Are you sure you want to delete this roast?');"
                     class="dropdown-item-form">
@@ -35,7 +40,6 @@
                 </form>
             </div>
         </div>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Dashboard</a>
     </div>
 </div>
 
@@ -156,7 +160,12 @@
         <p>No reviews yet.</p>
         {% endif %}
 
-        <button class="btn btn-primary btn-full-width" onclick="showReviewModal(null, 'create')">Add Review</button>
+        <div class="review-section-footer">
+            <button class="btn btn-primary" onclick="showReviewModal(null, 'create')">
+                <span class="material-icons">add</span>
+                Add Review
+            </button>
+        </div>
     </section>
 
     {% if roast.key_timings or roast.temp_curve %}

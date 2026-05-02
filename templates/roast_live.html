@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Live Roast - {{ roast.title }} - RoastLogger{% endblock %}
+{% block title %}Live Roast - {{ roast.title }} - Howie's Roast Log{% endblock %}
+
+{% block nav_tab %}roasts{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -11,11 +13,18 @@
 
 {% block content %}
 <div class="page-header" id="pageHeader">
-    <h1>Live Roasting</h1>
-    <button id="fullscreenBtn" class="btn btn-secondary" onclick="toggleFullscreen()">
-        <span class="material-icons">fullscreen</span>
-        Fullscreen
-    </button>
+    <div class="header-left">
+        <a href="{{ url_for('index') }}" class="btn-icon" title="Back to Roasts">
+            <span class="material-icons">arrow_back</span>
+        </a>
+        <h1>Live Roasting</h1>
+    </div>
+    <div class="header-actions">
+        <button id="fullscreenBtn" class="btn btn-secondary" onclick="toggleFullscreen()">
+            <span class="material-icons">fullscreen</span>
+            Fullscreen
+        </button>
+    </div>
 </div>
 
 <!-- Toast notification container -->

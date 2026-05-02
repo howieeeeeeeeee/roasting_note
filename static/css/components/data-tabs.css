@@ -1,0 +1,89 @@
+/* ============================================================
+   Roast data tabs + data table + chart container
+   ============================================================ */
+
+.roast-data-section .panel-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--bd);
+  margin-bottom: var(--space-5);
+}
+.panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--txt2);
+  position: relative;
+  transition: color 0.12s ease;
+}
+.panel-tab .material-icons { font-size: 1rem; }
+.panel-tab:hover { color: var(--txt); }
+.panel-tab.active { color: var(--pr); font-weight: 600; }
+.panel-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--pr);
+  border-radius: 2px 2px 0 0;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeUp 0.18s ease both; }
+
+.chart-container-large {
+  position: relative;
+  height: 420px;
+  width: 100%;
+  background: var(--surf);
+  border: 1px solid var(--bd2);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-md);
+  background: var(--surf);
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-base);
+}
+.data-table thead th {
+  background: var(--surf2);
+  text-align: left;
+  padding: 0.6rem 0.9rem;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--txt3);
+  border-bottom: 1px solid var(--bd);
+  white-space: nowrap;
+}
+.data-table tbody td {
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--bd2);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--txt);
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.combined-events-table .event-row-key { background: var(--pr-ll); }
+.combined-events-table .event-row-key td { font-family: var(--font-ui); }
+.event-time { color: var(--txt2); }
+.event-description { font-family: var(--font-ui); white-space: normal; }
+.key-event-name { color: var(--pr); font-weight: 600; }
+.temp-note { color: var(--txt2); font-style: italic; }

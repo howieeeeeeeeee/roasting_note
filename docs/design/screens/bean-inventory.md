@@ -33,16 +33,21 @@ Table-style inventory view (not a card grid — density matters when managing do
 | Create Stickers | `.btn.btn-primary` with a Material icon — opens the [sticker sheet modal](./sticker-sheet.md) |
 | Table | `.beans-table` (sortable via `.sort-btn-inline` + `.sortable-header`) |
 | Row | `.bean-row.clickable-row` — whole row links to detail |
-| Color cell | `.bean-name-cell` containing `.bean-color-indicator` (dot filled with `bean.color`) plus `.bean-short-flavor-preview` chips when `short_flavor_notes` exists |
-| Actions | `.btn-icon` + `.dropdown-menu-container` in the last column |
+| Color cell | `.bean-name-cell` containing `.bean-color-indicator`, `.bean-record-title`, and `.bean-short-flavor-preview` chips when `short_flavor_notes` exists |
 
 The bean **color indicator** (the dot next to each name) is the first use of the user-defined `bean.color` field — users pick a hex value that then flows through to the bean detail header and the label creator's accent colour.
 
-Short flavor notes render as small rounded chips below the bean name. They are intentionally compact and use `short_flavor_notes` only; the longer `notes` field stays on the bean detail page.
+Bean names use the shared record-title typography (`--font-display`) so they carry more character than utility text. Short flavor notes render as small rounded chips below the bean name. They are intentionally compact and use `short_flavor_notes` only; the longer `notes` field stays on the bean detail page.
 
 ## Bean Form
 
-The add/edit bean form uses a chip editor for `short_flavor_notes`: typing a note and pressing Enter creates a removable tag, Backspace removes the last tag when the input is empty, and pasted newline/comma-separated notes are split into tags. The form still submits the notes as newline-separated text so the backend can normalize them into the stored array.
+The add/edit bean form is grouped into three `.form-section` panels:
+
+- **Bean Profile** — name, origin, process, supplier, and label colour.
+- **Flavor Notes** — short note chip editor and long notes textarea.
+- **Inventory** — purchase date, purchase weight, total price, and current stock.
+
+The bean name field uses `.form-group-title` so it matches record-title typography. The `short_flavor_notes` chip editor still submits newline-separated text so the backend can normalize it into the stored array.
 
 ## Bean Detail
 
@@ -78,6 +83,7 @@ Both screens inherit automatically. The table's hover row (`.data-table tr:hover
 
 The beans list uses a custom `.beans-table` rather than the generic `.data-table`. Both share the same header/body/hover pattern but `.beans-table` adds:
 
-- Fixed-width action column (`.actions-column`, 120px).
 - Clickable rows (`.clickable-row` — cursor pointer, row background shift on hover).
 - Inline sort buttons in the header (`.sort-btn-inline` with a toggling Material icon for asc/desc/unfold).
+- A fixed `colgroup` and `table-layout: fixed` so Stock, Purchase Date, and Price/kg headers stay aligned with their centered values.
+- Horizontal overflow at narrow widths instead of squeezed columns.

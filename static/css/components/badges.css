@@ -1,0 +1,68 @@
+/* ============================================================
+   Badges, chips, pills — status, bean, origin, stock, loss
+   ============================================================ */
+
+.roast-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;          /* fixed so Completed / In Progress / Draft all align as a column */
+  padding: 0.22rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+/* Class names mirror app.annotate_roast_lifecycle: completed | active | draft */
+.roast-status-completed,
+.roast-status-complete            { background: var(--ok-l);  color: var(--ok); }
+.roast-status-draft               { background: var(--warn-l); color: var(--warn); }
+.roast-status-active,
+.roast-status-live                { background: var(--err-l); color: var(--err); }
+body.dark-mode .roast-status-draft { background: rgba(212, 196, 152, 0.16); color: var(--warn); }
+
+.bean-label,
+.origin-label {
+  display: inline-block;
+  padding: 0.16rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stock-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  padding: 0.18rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  background: var(--ok-l);
+  color: var(--ok);
+}
+.stock-badge.stock-low { background: var(--err-l); color: var(--err); font-weight: 700; }
+
+.loss-badge {
+  display: inline-block;
+  padding: 0.16rem 0.55rem;
+  border-radius: var(--radius-sm);
+  background: var(--surf2);
+  color: var(--txt2);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.extraction-method-label {
+  display: inline-block;
+  padding: 0.16rem 0.6rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

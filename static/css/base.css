@@ -1,0 +1,85 @@
+/* ============================================================
+   Base — resets, body, headings, animations, helpers, scrollbars
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: var(--txt);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+a { color: var(--pr); text-decoration: none; transition: color 0.12s ease; }
+a:hover { color: var(--pr-h); }
+
+/* Form controls inherit page typography by default — without this, native
+   inputs (number, date, etc) fall back to user-agent serif/system fonts. */
+input, button, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--txt);
+  line-height: 1.25;
+}
+h1 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: 0; }
+h2 { font-size: var(--text-xl); font-weight: 600; color: var(--pr); }
+h3 { font-size: var(--text-lg); }
+
+::selection { background: var(--pr-l); color: var(--pr); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bd); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--txt3); }
+
+@keyframes blink     { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+@keyframes fadeUp    { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes spin      { to { transform: rotate(360deg); } }
+@keyframes toastIn   { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut  { to { opacity: 0; transform: translateY(-8px); } }
+
+.spinning { animation: spin 1s linear infinite; display: inline-block; }
+.material-icons { vertical-align: middle; user-select: none; }
+
+.text-muted  { color: var(--txt3); font-style: italic; }
+.text-center { text-align: center; }
+
+/* ── LAYOUT ───────────────────────────────────────────────── */
+.container {
+  flex: 1;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-7);
+  animation: fadeUp 0.2s ease both;
+}
+
+footer {
+  text-align: center;
+  padding: var(--space-5) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--txt3);
+  border-top: 1px solid var(--bd);
+  background: var(--surf);
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+@media (max-width: 768px) {
+  .container { padding: var(--space-5); }
+}

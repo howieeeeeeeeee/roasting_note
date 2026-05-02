@@ -1,22 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}{{ bean.name }} - RoastLogger{% endblock %}
+{% block title %}{{ bean.name }} - Howie's Roast Log{% endblock %}
+
+{% block nav_tab %}beans{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>
-        <span class="bean-color-indicator" style="background-color: {{ bean.color if bean.color else '#6B8E6F' }};"></span>
-        {{ bean.name }}
-    </h1>
+    <div class="header-left">
+        <a href="{{ url_for('beans_list') }}" class="btn-icon" title="Back to Beans">
+            <span class="material-icons">arrow_back</span>
+        </a>
+        <h1 class="record-title-heading">
+            <span class="bean-color-indicator" style="background-color: {{ bean.color if bean.color else '#6B8E6F' }};"></span>
+            {{ bean.name }}
+        </h1>
+    </div>
     <div class="header-actions">
-        <button type="button" class="btn btn-primary" onclick="openLabelModal()">
-            <span class="material-icons" style="font-size: 18px; vertical-align: middle; margin-right: 4px;">label</span>Create Label
+        <button type="button" class="btn btn-secondary" onclick="openLabelModal()">
+            <span class="material-icons">label</span>
+            Create Label
         </button>
-        <a href="{{ url_for('beans_edit_form', bean_id=bean._id) }}" class="btn btn-primary">Edit Bean</a>
+        <a href="{{ url_for('beans_edit_form', bean_id=bean._id) }}" class="btn btn-secondary">
+            <span class="material-icons">edit</span>
+            Edit
+        </a>
         <form action="{{ url_for('api_beans_delete', bean_id=bean._id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to archive this bean?');">
-            <button type="submit" class="btn btn-danger">Archive Bean</button>
+            <button type="submit" class="btn btn-danger">
+                <span class="material-icons">archive</span>
+                Archive
+            </button>
         </form>
-        <a href="{{ url_for('beans_list') }}" class="btn btn-secondary">Back to Beans</a>
     </div>
 </div>
 
@@ -88,14 +101,13 @@
                         <th>Duration</th>
                         <th>After FC</th>
                         <th>Loss %</th>
-                        <th class="actions-column">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for roast in roasts %}
                     <tr class="roast-row">
                         <td class="roast-name-cell">
-                            <a href="{{ roast.lifecycle_url }}" class="roast-link">{{ roast.title }}</a>
+                            <a href="{{ roast.lifecycle_url }}" class="roast-link roast-record-title">{{ roast.title }}</a>
                         </td>
                         <td>
                             <span class="roast-status-badge roast-status-{{ roast.lifecycle_state }}">
@@ -120,7 +132,7 @@
                             {% else %}<span class="text-muted">N/A</span>{% endif %}
                         </td>
                         <td class="actions-cell">
-                            <div class="action-buttons">
+                            <div class="action-buttons row-action-buttons">
                                 <a href="{{ roast.lifecycle_url }}" class="btn-icon" title="{{ roast.lifecycle_action_label }}">
                                     <span class="material-icons">{{ roast.lifecycle_icon }}</span>
                                 </a>
@@ -154,8 +166,14 @@
         </div>
         <div class="modal-body">
             <div class="label-modal-top">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="autoFillLabel()">Auto-fill from Bean</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="saveLabelInfo()">Save Label Info</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="autoFillLabel()">
+                    <span class="material-icons">content_copy</span>
+                    Auto-fill from Bean
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveLabelInfo()">
+                    <span class="material-icons">save</span>
+                    Save Label Info
+                </button>
                 <span id="labelSaveStatus" style="margin-left: 0.5rem; font-size: 0.85rem; color: var(--success-color);"></span>
             </div>
 

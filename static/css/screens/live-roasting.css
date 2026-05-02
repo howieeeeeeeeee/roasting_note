@@ -1,0 +1,273 @@
+/* ============================================================
+   Live Roasting — setup section, top bar, chart, controls bar.
+   DOM is preserved from the original template; only tokens change.
+   ≥54px touch targets are required on roasting controls.
+   ============================================================ */
+
+.live-roast-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── SETUP SECTION (collapsible) ──────────────────────────── */
+.setup-section {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-6);
+  box-shadow: var(--shadow-sm);
+  transition: padding 0.2s ease;
+}
+.setup-section h2 {
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--txt3);
+}
+.setup-section h2 .material-icons { color: var(--txt3); transition: transform 0.2s ease; }
+.setup-section.collapsed > div { display: none; }
+.setup-section.collapsed h2 .material-icons { transform: rotate(180deg); }
+.setup-section #setupContent { padding-top: var(--space-4); display: grid; gap: var(--space-4); }
+
+.live-roast-new {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ── TOP BAR (key readings — instrument tiles) ────────────── */
+.live-topbar {
+  display: flex;
+  align-items: stretch;
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  min-height: 96px;
+}
+.tb-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-3) var(--space-6);
+  border-right: 1px solid var(--bd);
+  flex: 1;
+  min-width: 0;
+}
+.tb-tile:last-of-type { border-right: none; }
+.tb-label {
+  font-size: var(--text-xxs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--txt3);
+  margin-bottom: 4px;
+}
+.tb-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xl);
+  font-weight: 500;
+  color: var(--pr);
+  line-height: 1;
+  letter-spacing: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.tb-value-fc { font-size: 2rem; }
+.tb-unit { font-size: 1rem; color: var(--txt2); font-weight: 400; }
+.tb-sub  { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--err); margin-top: 4px; }
+.tb-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-5);
+  flex-shrink: 0;
+  background: var(--surf);
+}
+.tb-end .btn-lg { min-height: 54px; padding: 0.7rem 1.4rem; font-size: var(--text-md); }
+
+.fc-time-badge {
+  display: inline-block;
+  margin-left: var(--space-3);
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  color: var(--err);
+  background: var(--err-l);
+  padding: 0.18rem 0.55rem;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.sensor-status {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xxs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sensor-status-idle    { background: var(--surf2);  color: var(--txt3); }
+.sensor-status-reading { background: var(--ok-l);   color: var(--ok); }
+.sensor-status-error   { background: var(--err-l);  color: var(--err); }
+.sensor-status-fault   { background: var(--err-l);  color: var(--err); }
+
+/* ── CHART AREA ───────────────────────────────────────────── */
+.live-chart-area {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3);
+  height: 380px;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+.live-chart-area canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── CONTROLS BAR (events + steppers + log button) ────────── */
+.live-controls-bar {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.live-ev-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-2);
+}
+.live-ev-btn {
+  height: 54px;
+  background: var(--surf2);
+  border: 1.5px solid var(--bd);
+  color: var(--txt);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.12s ease;
+}
+.live-ev-btn:hover:not(:disabled) {
+  border-color: var(--pr);
+  color: var(--pr);
+  background: var(--pr-l);
+}
+.live-ev-btn:active:not(:disabled) { transform: scale(0.97); }
+.live-ev-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.live-ev-btn.fired,
+.live-ev-btn.done {
+  background: var(--ok-l);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.live-ev-btn .ev-abbr { font-size: 1.05rem; font-weight: 800; }
+.live-ev-btn .ev-full {
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  color: var(--txt3);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.live-ev-btn:hover:not(:disabled) .ev-full { color: var(--pr); }
+.live-ev-btn.fired .ev-full,
+.live-ev-btn.done .ev-full { color: var(--ok); opacity: 0.75; }
+
+.live-input-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.live-stepper-group,
+.live-note-group,
+.live-log-action-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+.live-note-group { flex: 1; align-items: stretch; min-width: 200px; }
+.live-log-action-group { align-items: stretch; }
+.sg-label {
+  font-size: var(--text-xxs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--txt3);
+  text-align: center;
+}
+.sg-label--strip-spacer { visibility: hidden; }
+
+.stepper-control {
+  display: flex;
+  align-items: center;
+  background: var(--surf2);
+  border: 1.5px solid var(--bd);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  height: 54px;
+}
+.stepper-control .btn-stepper { width: 44px; height: 100%; }
+.stepper-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 500;
+  color: var(--pr);
+  text-align: center;
+  min-width: 2rem;
+  padding: 0 var(--space-2);
+}
+
+.live-note-input {
+  height: 54px;
+  width: 100%;
+  background: var(--surf2);
+  border: 1.5px solid var(--bd);
+  border-radius: var(--radius-lg);
+  padding: 0 var(--space-4);
+  color: var(--txt);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  outline: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.live-note-input:focus { border-color: var(--pr); background: var(--surf); }
+.live-note-input::placeholder { color: var(--txt3); }
+
+.live-log-event-btn { height: 54px; min-width: 130px; }
+
+/* ── HIDDEN TIMELINE LIST (legacy structure) ─────────────── */
+.timeline-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.timeline-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--surf2);
+  border-radius: var(--radius-md);
+}
+.timeline-time { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--pr); min-width: 56px; }
+.timeline-key { border-left: 3px solid var(--warn); }
+.timeline-temp { border-left: 3px solid var(--bd); }
+.timeline-content { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; }
+.timeline-label { font-weight: 600; color: var(--txt); }
+.timeline-temp-value { font-family: var(--font-mono); color: var(--txt); }
+.timeline-settings { font-size: var(--text-sm); color: var(--txt2); }
+.timeline-note { font-size: var(--text-sm); color: var(--txt2); font-style: italic; }

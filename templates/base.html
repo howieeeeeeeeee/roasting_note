@@ -17,27 +17,48 @@
 </head>
 
 <body>
+    {# Variant B unified header: brand · divider · tabs · spacer · contextual actions · icons.
+       Pages set `{% block nav_tab %}roasts|beans{% endblock %}` to highlight the active tab,
+       and may fill `{% block nav_actions %}` with contextual CTAs (e.g. "+ New Roast").
+       The `set ... block ... endset` pattern captures the block's content into a variable
+       without writing it to the page body. #}
+    {% set active_tab %}{% block nav_tab %}{% endblock %}{% endset %}
+    {% set active_tab = active_tab | trim %}
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-brand">
                 <a href="{{ url_for('index') }}">Howie's Roast Log</a>
             </div>
+            <span class="nav-brand-divider" aria-hidden="true"></span>
             <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
                 <span></span>
                 <span></span>
                 <span></span>
             </button>
             <ul class="nav-menu" id="navMenu">
-                <li><a href="{{ url_for('index') }}">Roasts</a></li>
-                <li><a href="{{ url_for('beans_list') }}">Beans</a></li>
+                <li>
+                    <a href="{{ url_for('index') }}" class="{% if active_tab == 'roasts' %}active{% endif %}">
+                        Roasts
+                        <span class="nav-tab-count">{{ nav_roast_count }}</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('beans_list') }}" class="{% if active_tab == 'beans' %}active{% endif %}">
+                        Beans
+                        <span class="nav-tab-count">{{ nav_bean_count }}</span>
+                    </a>
+                </li>
             </ul>
-            <button class="btn-icon dark-mode-toggle" id="darkModeToggle" onclick="toggleDarkMode()"
-                title="Toggle dark mode">
-                <span class="material-icons" id="darkModeIcon">dark_mode</span>
-            </button>
-            <button class="btn-icon settings-btn" onclick="openSettingsModal()" title="Settings">
-                <span class="material-icons">settings</span>
-            </button>
+            <div class="nav-actions">
+                {% block nav_actions %}{% endblock %}
+                <button class="btn-icon dark-mode-toggle" id="darkModeToggle" onclick="toggleDarkMode()"
+                    title="Toggle dark mode">
+                    <span class="material-icons" id="darkModeIcon">dark_mode</span>
+                </button>
+                <button class="btn-icon settings-btn" onclick="openSettingsModal()" title="Settings">
+                    <span class="material-icons">settings</span>
+                </button>
+            </div>
         </div>
     </nav>
 

@@ -20,7 +20,7 @@ padding: 1.5rem to 2rem;
 | `.bean-card`, `.roast-card` | Grid cards on list pages | `1.5rem` header + body + footer segments |
 | `.setup-section`, `.timer-section`, `.data-entry-section`, `.timeline-section` | Large panels on the live roast screen | `1.75rem` |
 | `.chart-section`, `.log-section` | Chart + log panels | `1.5rem` – `1.75rem` |
-| `.form` | Full-width forms (add/edit bean, roast edit) | `2rem` |
+| `.form-section` | Full-page edit form panels (add/edit bean, roast edit) | `var(--space-7)` |
 | `.roast-detail` | Detail page container | `2rem` |
 | `.modal-content` | Modal body | variable (see form/modal patterns) |
 
@@ -67,11 +67,13 @@ Hover lift is reserved for **clickable** cards (the whole card is a link). Stati
 
 ## Borders vs Shadows
 
-RoastLogger prefers **shadow over border** for card elevation. Borders are used for:
+RoastLogger prefers quiet elevation with a border and low shadow for durable work surfaces. Borders are used for:
 
 - Internal dividers (card header → body → footer: `1px solid var(--border-color)`).
 - Form inputs (`1px solid var(--border-color)`, shifts to `--primary-color` on focus).
 - Instrument panels sitting *inside* a card, where a subtle border helps them read as distinct sub-surfaces.
+
+Full-page forms should not put a card around other cards. The `.form` wrapper only constrains width; each `.form-section` is the visible surface.
 
 ## Dark Mode
 
@@ -81,13 +83,17 @@ Explicit dark-mode overrides exist for `.setup-section`, `.timer-section`, `.dat
 
 ## Review Cards (`.review-card`)
 
-Special variant — uses a coloured **left accent border** instead of the full card shadow:
+Compact review cards use the same neutral surface recipe as other dense cards:
 
 ```css
-background: #f9f9f9;
-border-left: 4px solid var(--primary-color);
-padding: 1rem;
-border-radius: 4px;
+background: var(--surf2);
+border: 1px solid var(--bd2);
+padding: var(--space-4);
+border-radius: var(--radius-md);
 ```
 
-Smaller, flatter, denser — appropriate because reviews are read in lists of many.
+No left accent strip. Reviews are often scanned in a grid, and the colored strip adds visual noise without adding information.
+
+Empty review sections keep the same `.detail-section` shell but use `.review-section-footer` for a compact Add Review action. Do not use a full-width primary button in an empty review panel; it creates a heavy bar that competes with roast data.
+
+Review card hover uses a neutral grey contour (`--txt3`) rather than the primary accent. Hover should only clarify the target area.

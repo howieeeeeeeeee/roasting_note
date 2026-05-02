@@ -55,5 +55,7 @@ RoastLogger is a **tablet-first instrument panel** for home coffee roasters. The
 When adding or editing a design doc:
 
 - Every doc **must link to at least one concrete code path** (CSS variable, class name, file) so the design system stays tied to the implementation.
+- New UI must consume `var(--*)` tokens and reference an existing component recipe under `components/`. If a new visual pattern does not fit an existing recipe, add the component doc in the same change.
+- Do not add ad-hoc page CSS for reusable controls. Put shared controls in `static/css/components/` and screen-only layout in `static/css/screens/`.
 - Foundations answer *"what value?"*. Components answer *"what recipe?"*. Screens answer *"where does each component go?"*. Patterns answer *"how does this family of things work as a system?"*.
 - Design content should live here, not duplicated in feature docs. If you find yourself writing "the button is …" in a feature doc, move it to [components/buttons.md](./components/buttons.md) and link.

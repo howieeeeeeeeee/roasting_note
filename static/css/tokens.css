@@ -1,0 +1,183 @@
+/* ============================================================
+   Roast Log — Design Tokens
+   Single source of truth for color, typography, spacing, radii,
+   shadows. Components must consume var(--*) — no hardcoded hex.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Raleway:wght@400;600;800;900&family=Playfair+Display:wght@400;700;900&family=Barlow+Condensed:wght@400;600;700;800&family=Roboto+Slab:wght@300;400;500;700&display=swap');
+
+/* ── BASE PALETTE ─────────────────────────────────────────── */
+:root {
+  --color-pr-900:  #3A2E26;
+  --color-pr-700:  #5A4A3D;
+  --color-pr-500:  #6B5B4D;
+  --color-pr-400:  #8B7D6B;
+  --color-pr-300:  #A89884;
+  --color-pr-100:  rgba(107, 91, 77, 0.10);
+  --color-pr-050:  rgba(107, 91, 77, 0.05);
+
+  --color-ok-500:  #6B8E6F;
+  --color-ok-100:  rgba(107, 142, 111, 0.14);
+
+  --color-err-500: #B85C5C;
+  --color-err-100: rgba(184, 92, 92, 0.12);
+
+  --color-warn-500: #C4893A;
+  --color-warn-100: rgba(196, 137, 58, 0.14);
+
+  --color-n-900:  #1A1714;
+  --color-n-800:  #2C2C2C;
+  --color-n-700:  #484440;
+  --color-n-600:  #666666;
+  --color-n-500:  #777370;
+  --color-n-400:  #8A8680;
+  --color-n-300:  #B0ACA8;
+  --color-n-200:  #E8E6E3;
+  --color-n-150:  #F0EDEA;
+  --color-n-100:  #F4F2F0;
+  --color-n-050:  #FAFAF9;
+  --color-white:  #FFFFFF;
+
+  --color-dk-pr:    #C9A87A;
+  --color-dk-pr-h:  #D9B88A;
+  --color-dk-ok:    #7FB385;
+  --color-dk-err:   #D07070;
+  --color-dk-warn:  #D4A060;
+  --color-dk-bg:    #0E0D0B;
+  --color-dk-surf:  #171512;
+  --color-dk-surf2: #201D18;
+  --color-dk-bd:    #2A2620;
+  --color-dk-txt:   #EDE9E3;
+  --color-dk-txt2:  #8A8680;
+  --color-dk-txt3:  #484440;
+}
+
+/* ── SEMANTIC TOKENS — LIGHT ──────────────────────────────── */
+:root {
+  --pr:       var(--color-pr-500);
+  --pr-h:     var(--color-pr-700);
+  --pr-l:     var(--color-pr-100);
+  --pr-ll:    var(--color-pr-050);
+  --ok:       var(--color-ok-500);
+  --ok-l:     var(--color-ok-100);
+  --err:      var(--color-err-500);
+  --err-l:    var(--color-err-100);
+  --warn:     var(--color-warn-500);
+  --warn-l:   var(--color-warn-100);
+
+  --bg:       var(--color-n-050);
+  --surf:     var(--color-white);
+  --surf2:    var(--color-n-100);
+  --surf3:    var(--color-n-150);
+  --bd:       var(--color-n-200);
+  --bd2:      var(--color-n-150);
+
+  --txt:      var(--color-n-800);
+  --txt2:     var(--color-n-500);
+  --txt3:     var(--color-n-300);
+
+  --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md:    0 2px 6px rgba(0, 0, 0, 0.12);
+  --shadow-lg:    0 4px 16px rgba(0, 0, 0, 0.14);
+  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.18);
+
+  /* Legacy aliases — keep so existing JS / inline styles still work. */
+  --primary-color:   var(--pr);
+  --primary-hover:   var(--pr-h);
+  --secondary-color: var(--color-pr-400);
+  --accent-color:    var(--color-pr-300);
+  --success-color:   var(--ok);
+  --danger-color:    var(--err);
+  --warn-color:      var(--warn);
+  --text-color:      var(--txt);
+  --text-light:      var(--txt2);
+  --bg-color:        var(--bg);
+  --card-bg:         var(--surf);
+  --border-color:    var(--bd);
+  --shadow:          var(--shadow-sm);
+  --shadow-hover:    var(--shadow-md);
+}
+
+/* ── SEMANTIC TOKENS — DARK ───────────────────────────────── */
+body.dark-mode {
+  --pr:       var(--color-dk-pr);
+  --pr-h:     var(--color-dk-pr-h);
+  --pr-l:     rgba(201, 168, 122, 0.12);
+  --pr-ll:    rgba(201, 168, 122, 0.05);
+  --ok:       var(--color-dk-ok);
+  --ok-l:     rgba(127, 179, 133, 0.14);
+  --err:      var(--color-dk-err);
+  --err-l:    rgba(208, 112, 112, 0.16);
+  --warn:     var(--color-dk-warn);
+  --warn-l:   rgba(212, 160, 96, 0.16);
+
+  --bg:       var(--color-dk-bg);
+  --surf:     var(--color-dk-surf);
+  --surf2:    var(--color-dk-surf2);
+  --surf3:    #241F1A;
+  --bd:       var(--color-dk-bd);
+  --bd2:      #241F1A;
+
+  --txt:      var(--color-dk-txt);
+  --txt2:     var(--color-dk-txt2);
+  --txt3:     var(--color-dk-txt3);
+
+  --shadow-sm:    0 1px 4px rgba(0, 0, 0, 0.40);
+  --shadow-md:    0 2px 8px rgba(0, 0, 0, 0.50);
+  --shadow-lg:    0 4px 20px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 12px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.25);
+
+  --primary-color:   var(--pr);
+  --primary-hover:   var(--pr-h);
+  --secondary-color: #9A8A78;
+  --accent-color:    #7A6A58;
+  --success-color:   var(--ok);
+  --danger-color:    var(--err);
+  --warn-color:      var(--warn);
+  --text-color:      var(--txt);
+  --text-light:      var(--txt2);
+  --bg-color:        var(--bg);
+  --card-bg:         var(--surf);
+  --border-color:    var(--bd);
+  --shadow:          var(--shadow-sm);
+  --shadow-hover:    var(--shadow-md);
+}
+
+/* ── TYPOGRAPHY + SPACING + RADII ─────────────────────────── */
+:root {
+  --font-ui:   'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Raleway', var(--font-ui);
+  --font-mono: 'DM Mono', 'Courier New', monospace;
+
+  --text-xxs:  0.5625rem;
+  --text-xs:   0.625rem;
+  --text-sm:   0.75rem;
+  --text-base: 0.875rem;
+  --text-md:   1rem;
+  --text-lg:   1.25rem;
+  --text-xl:   1.5rem;
+  --text-2xl:  2rem;
+  --text-3xl:  2.5rem;
+
+  --eyebrow-size:    0.65rem;
+  --eyebrow-weight:  700;
+  --eyebrow-spacing: 0.09em;
+
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-7:  1.75rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   9px;
+  --radius-pill: 20px;
+  --radius-full: 9999px;
+}
