@@ -1,15 +1,15 @@
 ---
 name: ticket-master
-description: Create, refine, or help select RoastLogger backlog tickets in docs/backlog/. Product-side requirement-gathering only — interrogate the user, write the ticket, identify which docs will need updating after the fix. NEVER implements the work itself. Use when the user wants to "add a ticket", "write up an issue", "refine RN-XXXX", "what should I work on next", or describes a problem/feature without committing to build it.
+description: Create, refine, or help select RoastLogger tracked issues (`RN-XXXX`) in docs/issues/. Product-side requirement-gathering only — interrogate the user, write the ticket, identify which docs will need updating after the fix. NEVER implements the work itself. Use when the user wants to "add a ticket", "write up an issue", "refine RN-XXXX", "what should I work on next", or describes a problem/feature without committing to build it.
 ---
 
 # Ticket Master
 
-This skill turns vague product ideas into well-structured RoastLogger backlog tickets at `docs/backlog/RN-XXXX-*.md`. Its only job is **understanding the requirement** and **writing it down clearly**. It does not edit application code, run migrations, or start implementation — even if the requirement looks small.
+This skill turns vague product ideas into well-structured RoastLogger issue tickets at `docs/issues/RN-XXXX-*.md`. Its only job is **understanding the requirement** and **writing it down clearly**. It does not edit application code, run migrations, or start implementation — even if the requirement looks small.
 
 ## Hard Guardrails
 
-- **NEVER implement.** Do not edit anything outside `docs/backlog/` (and the regenerated index). No code changes, no template changes, no JS/CSS/Python edits. If the user asks you to start building, stop and remind them this skill is requirement-gathering only, then suggest they run the work in a fresh session on a `feat/`, `fix/`, or `improve/` branch.
+- **NEVER implement.** Do not edit anything outside `docs/issues/` (and the regenerated index). No code changes, no template changes, no JS/CSS/Python edits. If the user asks you to start building, stop and remind them this skill is requirement-gathering only, then suggest they run the work in a fresh session on a `feat/`, `fix/`, or `improve/` branch.
 - **Read-only exploration is allowed and encouraged.** You may read files under `templates/`, `static/`, `app/`, `docs/features/`, `docs/design/`, `docs/architecture/`, and existing tickets to understand dependencies and current behaviour. Use `rg` and `Read`.
 - **Product first, technical second.** Lead with user-facing behaviour, acceptance criteria, and open questions. Only mention implementation hints when they materially shape scope.
 - **Ask, don't assume.** Use the **AskUserQuestion** tool for high-leverage clarifications. For lower-priority or async-friendly clarifications, write them into the ticket's `## Open Questions` section so the user can answer by editing the markdown later.
@@ -20,7 +20,7 @@ Trigger this skill when the user:
 
 - Describes a bug, feature, improvement, refactor, or todo without already being mid-implementation.
 - Says things like "let's track this", "add a ticket for…", "write this up", "refine RN-0013", "what should I pick up next?", "help me think through what we need before I start".
-- Has an open `docs/backlog/RN-*.md` file in the IDE and is asking questions about it.
+- Has an open `docs/issues/RN-*.md` file in the IDE and is asking questions about it.
 
 Do **not** trigger if the user is already on an implementation branch and asking you to write code — in that case the ticket should already exist; offer to refine it instead.
 
@@ -38,8 +38,8 @@ If unclear, ask via AskUserQuestion with the three modes as options.
 
 ### 1. Orient
 
-- Read [docs/backlog/README.md](../../../docs/backlog/README.md) for the current ticket inventory and metadata rules.
-- Read [docs/backlog/TEMPLATE.md](../../../docs/backlog/TEMPLATE.md) for the canonical structure.
+- Read [docs/issues/README.md](../../../docs/issues/README.md) for the current ticket inventory and metadata rules.
+- Read [docs/issues/TEMPLATE.md](../../../docs/issues/TEMPLATE.md) for the canonical structure.
 - For "refine" mode, read the target ticket file fully.
 - For "help me pick" mode, summarize Pending tickets grouped by priority and area, then ask which one the user wants to dig into.
 
@@ -92,7 +92,7 @@ This is a forward-looking note for the future implementer — it is **not** a ta
 
 For new tickets:
 
-- Find the highest existing `RN-XXXX` id by listing `docs/backlog/RN-*.md`.
+- Find the highest existing `RN-XXXX` id by listing `docs/issues/RN-*.md`.
 - Use the next zero-padded id (e.g. after `RN-0013` → `RN-0014`).
 - Filename convention: `RN-XXXX-short-kebab-slug.md`. Keep the slug short (≤ 6 words).
 
@@ -110,15 +110,15 @@ Use exactly the structure from `TEMPLATE.md`. Required sections in order:
 
 Skip the `## Resolution` section — it's added when resolved.
 
-### 7. Regenerate the backlog index
+### 7. Regenerate the issues index
 
 After writing or editing any ticket frontmatter, run:
 
 ```bash
-uv run python scripts/generate_backlog_index.py
+uv run python scripts/generate_issues_index.py
 ```
 
-Never hand-edit `docs/backlog/README.md` — it's generated.
+Never hand-edit `docs/issues/README.md` — it's generated.
 
 ### 8. Hand off
 

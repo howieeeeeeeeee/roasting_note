@@ -11,7 +11,7 @@ docs/
 ├── design/           # Principles, tokens, components, screens, patterns
 ├── features/         # Feature specifications (behaviour, API, data model)
 ├── hardware/         # ESP32 temperature sensor
-├── backlog/          # Bugs, features, improvements, todos (YAML-frontmatter tickets)
+├── issues/           # Bugs, features, improvements, todos (YAML-frontmatter tickets)
 └── deployment/       # Render deployment guide
 
 tests/README.md       # How to run tests, fixtures, when to run them
@@ -29,13 +29,13 @@ When your change touches the project, update the docs listed below **in the same
 | New or changed feature behaviour | `docs/features/<feature>.md` |
 | **UI / CSS / visual change** (colour, font, spacing, layout, component, screen redesign, new design pattern) | **Relevant file under `docs/design/`** — foundations for token changes, components for reusable UI, screens for page-level layout, patterns for design systems |
 | New screen or major layout change | `docs/design/screens/<screen>.md` + `docs/README.md` navigation |
-| Bug fix or any ticketed work | Update the ticket in `docs/backlog/` (see workflow below) |
+| Bug fix or any ticketed work | Update the ticket in `docs/issues/` (see workflow below) |
 
 These index files must also stay current when structure changes:
 
 - `docs/README.md` — top-level navigation
 - `docs/design/README.md` — design folder navigation
-- `docs/backlog/README.md` — generated index, do not hand-edit
+- `docs/issues/README.md` — generated index, do not hand-edit
 
 If a feature change has visual implications, update **both** the feature doc (behaviour) and the design doc (look and feel). Do not duplicate content — link between them.
 
@@ -52,7 +52,7 @@ git checkout -b docs/<topic>             # doc-only changes
 
 1. Create a new branch from `main`.
 2. Read `docs/README.md` for project overview.
-3. Check `docs/backlog/README.md` for related tickets.
+3. Check `docs/issues/README.md` for related tickets.
 4. Read the relevant docs — features, design, architecture — that overlap with your change.
 
 ## Testing
@@ -66,17 +66,17 @@ uv run pytest -v        # verbose
 
 Full details, fixtures, when-to-run rules, and how to add tests live in [tests/README.md](./tests/README.md).
 
-## Backlog
+## Issues
 
-Tickets live in `docs/backlog/` as Markdown files with YAML frontmatter. Each ticket has a stable `RN-XXXX` id — filenames never change when status changes; update the `status` field instead.
+Tickets live in `docs/issues/` as Markdown files with YAML frontmatter. Each ticket has a stable `RN-XXXX` id — filenames never change when status changes; update the `status` field instead.
 
-Use `docs/backlog/TEMPLATE.md` for new tickets. After creating or changing any ticket metadata, regenerate the index:
+Use `docs/issues/TEMPLATE.md` for new tickets. After creating or changing any ticket metadata, regenerate the index:
 
 ```bash
-uv run python scripts/generate_backlog_index.py
+uv run python scripts/generate_issues_index.py
 ```
 
-Do not hand-edit `docs/backlog/README.md` — it is generated from ticket frontmatter. Field definitions, allowed values, and the full workflow live in [docs/backlog/README.md](./docs/backlog/README.md).
+Do not hand-edit `docs/issues/README.md` — it is generated from ticket frontmatter. Field definitions, allowed values, and the full workflow live in [docs/issues/README.md](./docs/issues/README.md).
 
 ## Quick Reference
 
@@ -87,5 +87,5 @@ Do not hand-edit `docs/backlog/README.md` — it is generated from ticket frontm
 | See DB schema | `docs/architecture/data-models.md` |
 | Understand a feature's behaviour | `docs/features/` |
 | Look up a design token / component / screen | `docs/design/` |
-| Check pending work | `docs/backlog/README.md` |
+| Check pending work | `docs/issues/README.md` |
 | Run tests | `tests/README.md` |

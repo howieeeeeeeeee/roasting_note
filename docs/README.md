@@ -10,7 +10,7 @@ A personal, mobile-responsive web application for tracking coffee beans, logging
 | [Design](./design/) | Design principles, tokens, components, screens |
 | [Features](./features/) | Detailed feature specifications |
 | [Hardware](./hardware/) | Temperature sensor setup (ESP32/K-Type) |
-| [Backlog](./backlog/) | Bugs, features, improvements, todos |
+| [Issues](./issues/) | Bugs, features, improvements, todos |
 | [Deployment](./deployment/) | Render deployment guide |
 
 ## Project Overview
@@ -65,8 +65,8 @@ docs/
 │   └── chart-visualization.md
 ├── hardware/              # Hardware docs
 │   └── thermo-sensor.md   # ESP32 K-Type sensor
-├── backlog/               # Issue/task tracking
-│   ├── README.md          # Backlog overview
+├── issues/               # RN issues (YAML-frontmatter tickets)
+│   ├── README.md          # Generated issues index — run scripts/generate_issues_index.py after ticket changes
 │   └── *.md               # Individual items
 └── deployment/            # Deployment guides
 ```
@@ -83,7 +83,7 @@ When you change the project, update the docs that describe what you changed — 
 | Feature behaviour, lifecycle, or API surface | [features/](./features/) (the matching feature file) |
 | **UI / CSS / visual change** — colour, font, spacing, layout, component, screen, design pattern | **[design/](./design/)** — foundations, components, screens, or patterns depending on what changed |
 | New screen or major layout change | [design/screens/](./design/screens/) + this README's navigation block |
-| Bug fix or any ticketed work | The ticket under [backlog/](./backlog/), then regenerate the index |
+| Bug fix or any ticketed work | The ticket under [issues/](./issues/), then run `uv run python scripts/generate_issues_index.py` |
 
 If a single change has both behaviour and visual implications, update the feature doc (behaviour) **and** the design doc (look & feel). Link between them rather than duplicating.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate docs/backlog/README.md from ticket frontmatter.
+"""Generate docs/issues/README.md from ticket frontmatter.
 
-The parser intentionally supports only the small YAML subset used by backlog
+The parser intentionally supports only the small YAML subset used by issue
 tickets, so this script has no dependency beyond the Python standard library.
 """
 
@@ -12,8 +12,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BACKLOG_DIR = ROOT / "docs" / "backlog"
-README = BACKLOG_DIR / "README.md"
+ISSUES_DIR = ROOT / "docs" / "issues"
+README = ISSUES_DIR / "README.md"
 EXCLUDED = {"README.md", "TEMPLATE.md"}
 
 STATUS_ORDER = ["pending", "in_progress", "resolved", "wont_fix"]
@@ -108,7 +108,7 @@ def parse_frontmatter(path: Path) -> dict[str, str | list[str]]:
 
 def load_tickets() -> list[Ticket]:
     tickets: list[Ticket] = []
-    for path in sorted(BACKLOG_DIR.glob("*.md")):
+    for path in sorted(ISSUES_DIR.glob("*.md")):
         if path.name in EXCLUDED:
             continue
         tickets.append(Ticket(path=path, metadata=parse_frontmatter(path)))
@@ -156,15 +156,15 @@ def render_table(tickets: list[Ticket], include_resolved: bool = False) -> list[
 
 def render_readme(tickets: list[Ticket]) -> str:
     lines = [
-        "# Backlog",
+        "# Issues",
         "",
         "Tracking for bugs, features, improvements, refactors, and todos.",
         "",
-        "> This file is generated from ticket frontmatter. To update it, edit ticket metadata and run `uv run python scripts/generate_backlog_index.py`.",
+        "> This file is generated from ticket frontmatter. To update it, edit ticket metadata and run `uv run python scripts/generate_issues_index.py`.",
         "",
         "## Ticket Metadata",
         "",
-        "Tickets live in `docs/backlog/` as Markdown files with YAML frontmatter.",
+        "Tickets live in `docs/issues/` as Markdown files with YAML frontmatter.",
         "Filenames are stable and do not need to change when status changes; use the `status` field instead.",
         "",
         "| Field | Values / Format | Notes |",
@@ -179,7 +179,7 @@ def render_readme(tickets: list[Ticket]) -> str:
         "| `area` | Short slug | Example: `live-roasting`, `testing`, `docs`. |",
         "| `tags` | YAML list | Optional discovery labels. |",
         "",
-        "Use `docs/backlog/TEMPLATE.md` when creating a new ticket.",
+        "Use `docs/issues/TEMPLATE.md` when creating a new ticket.",
         "",
         "## Current Tickets",
         "",

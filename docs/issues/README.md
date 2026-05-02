@@ -1,12 +1,12 @@
-# Backlog
+# Issues
 
 Tracking for bugs, features, improvements, refactors, and todos.
 
-> This file is generated from ticket frontmatter. To update it, edit ticket metadata and run `uv run python scripts/generate_backlog_index.py`.
+> This file is generated from ticket frontmatter. To update it, edit ticket metadata and run `uv run python scripts/generate_issues_index.py`.
 
 ## Ticket Metadata
 
-Tickets live in `docs/backlog/` as Markdown files with YAML frontmatter.
+Tickets live in `docs/issues/` as Markdown files with YAML frontmatter.
 Filenames are stable and do not need to change when status changes; use the `status` field instead.
 
 | Field | Values / Format | Notes |
@@ -21,7 +21,7 @@ Filenames are stable and do not need to change when status changes; use the `sta
 | `area` | Short slug | Example: `live-roasting`, `testing`, `docs`. |
 | `tags` | YAML list | Optional discovery labels. |
 
-Use `docs/backlog/TEMPLATE.md` when creating a new ticket.
+Use `docs/issues/TEMPLATE.md` when creating a new ticket.
 
 ## Current Tickets
 

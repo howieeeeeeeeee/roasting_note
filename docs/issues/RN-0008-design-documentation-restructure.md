@@ -55,4 +55,4 @@ Updated top-level navigation in `docs/README.md` to include the `design/` sectio
 - `docs/features/bean-label-creator.md`
 - `docs/features/live-roasting.md`
 - `docs/README.md`
-- `docs/backlog/README.md`
+- `docs/issues/README.md`
