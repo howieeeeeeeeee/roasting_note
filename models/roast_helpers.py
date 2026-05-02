@@ -34,6 +34,7 @@ def create_draft_roast(roasts_collection):
         'key_timings': [],
         'temp_curve': [],
         'reviews': [],
+        'lifecycle_status': 'draft',
         'archived': False,
         'created_at': current_time_utc,
         'updated_at': current_time_utc
@@ -58,6 +59,7 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
     # Get the existing roast to compare original_weight_grams
     existing_roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
 
+    current_time = get_current_time_with_tz()
     update_doc = {
         'title': roast_data.get('title', 'Untitled Roast'),
         'roaster': roast_data.get('roaster', 'Freshroast SR800'),
@@ -65,8 +67,10 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
         'ambient_temp_celsius': float(roast_data['ambient_temp_celsius']) if roast_data.get('ambient_temp_celsius') else None,
         'ambient_humidity': float(roast_data['ambient_humidity']) if roast_data.get('ambient_humidity') else None,
         'general_notes': roast_data.get('general_notes', ''),
-        'updated_at': get_current_time_with_tz()
+        'updated_at': current_time
     }
+    if existing_roast and not isinstance(existing_roast.get('created_at'), datetime):
+        update_doc['created_at'] = current_time
 
     # Handle roast date - keep as local time WITH timezone info
     if roast_data.get('roast_date'):
@@ -128,19 +132,28 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
             if old_original_weight > 0:
                 beans_collection.update_one(
                     {'_id': ObjectId(old_bean_id)},
-                    {'$inc': {'stock_grams': old_original_weight}}
+                    {
+                        '$inc': {'stock_grams': old_original_weight},
+                        '$set': {'updated_at': current_time}
+                    }
                 )
             # Deduct stock from new bean
             if new_original_weight > 0:
                 beans_collection.update_one(
                     {'_id': ObjectId(new_bean_id)},
-                    {'$inc': {'stock_grams': -new_original_weight}}
+                    {
+                        '$inc': {'stock_grams': -new_original_weight},
+                        '$set': {'updated_at': current_time}
+                    }
                 )
         elif new_bean_id:
             # Same bean, just adjust the difference
             beans_collection.update_one(
                 {'_id': ObjectId(new_bean_id)},
-                {'$inc': {'stock_grams': -weight_difference}}
+                {
+                    '$inc': {'stock_grams': -weight_difference},
+                    '$set': {'updated_at': current_time}
+                }
             )
 
     # Update the roast

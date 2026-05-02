@@ -38,9 +38,10 @@ All REST API routes for RoastLogger.
 | `/api/roast/create` | POST | Create draft roast, returns `{ new_roast_id }` |
 | `/api/roast/update/<roast_id>` | POST | Update roast data |
 | `/api/roast/delete/<roast_id>` | POST | Archive roast (soft delete, restore stock) |
-| `/api/roast/start/<roast_id>` | POST | Set `roast_start_time` |
-| `/api/roast/end/<roast_id>` | POST | Set `roast_end_time` |
+| `/api/roast/start/<roast_id>` | POST | Set `roast_start_time` and `lifecycle_status: "started"` |
+| `/api/roast/end/<roast_id>` | POST | Set `roast_end_time` and `lifecycle_status: "completed"` |
 | `/api/roast/update_setup/<roast_id>` | POST | Save draft setup fields before roast start |
+| `/api/roast/complete_draft/<roast_id>` | POST | Mark a draft roast completed without creating live-roast data |
 | `/api/roast/update_title/<roast_id>` | POST | Update roast title |
 | `/api/roast/add_timing/<roast_id>` | POST | Add key timing event |
 | `/api/roast/add_event/<roast_id>` | POST | Add temp curve event |
@@ -123,7 +124,8 @@ can distinguish fresh, retrying, stale, offline, and faulted sensor states.
 
 ```json
 {
-  "mode": "local"
+  "mode": "local",
+  "default": "local"
 }
 ```
 
@@ -132,10 +134,26 @@ can distinguish fresh, retrying, stale, offline, and faulted sensor states.
 ```json
 {
   "success": true,
-  "beans": { "added": 5, "updated": 2 },
-  "roasts": { "added": 10, "updated": 3 }
+  "beans": {
+    "added": 5,
+    "updated": 2,
+    "skipped": 1,
+    "conflicts": 0,
+    "conflict_ids": []
+  },
+  "roasts": {
+    "added": 10,
+    "updated": 3,
+    "skipped": 2,
+    "conflicts": 1,
+    "conflict_ids": ["6653f2a4e5a8f6c75159a111"]
+  }
 }
 ```
+
+Existing target documents are only replaced when both source and target have
+valid `updated_at` values and the source document is newer. Missing or invalid
+timestamps are returned as conflicts and are not overwritten.
 
 ### Clean Test Data Response
 

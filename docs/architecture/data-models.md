@@ -9,6 +9,18 @@ MongoDB collection schemas for RoastLogger.
 
 ---
 
+## Timestamp Policy
+
+Application-created bean and roast documents include both `created_at` and
+`updated_at`.
+
+- Insert paths set both fields to the creation time.
+- Update paths refresh `updated_at` on every mutated document.
+- Form-update paths backfill `created_at` for legacy documents that are missing it.
+- Database sync preserves source timestamps when possible and fills missing
+  `created_at` / `updated_at` values on newly copied documents so future sync
+  comparisons remain reliable.
+
 ## `beans` Collection
 
 Stores information about each type of green coffee bean in inventory.
@@ -110,6 +122,7 @@ Stores all data related to a single roasting session.
   "roaster": "String",
   "ambient_temp_celsius": "Float",
   "ambient_humidity": "Integer",
+  "lifecycle_status": "String",
   "roast_start_time": "Date",
   "roast_end_time": "Date",
   "roast_duration_seconds": "Integer",
@@ -122,6 +135,18 @@ Stores all data related to a single roasting session.
   "updated_at": "Date"
 }
 ```
+
+`lifecycle_status` is written for new and updated roasts and uses:
+
+| Value | Meaning |
+| --- | --- |
+| `draft` | Setup has been created but the live roast has not started. |
+| `started` | The live roast timer has started and stock has been deducted when a bean/weight was provided. |
+| `completed` | The roast is complete. This can come from the live **End Roast** action or the draft-only **Set to Completed** action. |
+
+Older roasts without `lifecycle_status` remain readable by deriving lifecycle
+from timestamps: `roast_end_time` means completed, `roast_start_time` without
+`roast_end_time` means started, and neither timestamp means draft.
 
 ### Embedded: `key_timings` Array
 
@@ -213,12 +238,33 @@ Post-roast tasting reviews.
 ## Stock Management Logic
 
 ### On Roast Create
+
+Draft roast creation writes `lifecycle_status: "draft"` and does not adjust
+bean stock.
+
+### On Roast Start
+
 ```javascript
 db.beans.updateOne(
   { _id: bean_id },
   { $inc: { stock_grams: -original_weight } }
 )
 ```
+
+The roast also receives `roast_start_time` and `lifecycle_status: "started"`.
+
+### On Roast End
+
+Ending a started live roast writes `roast_end_time`,
+`lifecycle_status: "completed"`, and appends the final live roast data such as
+Drop timing when available.
+
+### On Manual Draft Completion
+
+Manually completing a draft writes `lifecycle_status: "completed"` and refreshes
+`updated_at`. It does not create `roast_start_time`, `roast_end_time`,
+temperature curve readings, sensor diagnostics, key timing events, a Drop event,
+or bean-stock adjustments.
 
 ### On Roast Archive
 ```javascript

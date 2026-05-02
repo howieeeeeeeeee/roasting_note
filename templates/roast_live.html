@@ -20,6 +20,12 @@
         <h1>Live Roasting</h1>
     </div>
     <div class="header-actions">
+        {% if roast.lifecycle_state == 'draft' %}
+        <button id="completeDraftBtn" class="btn btn-secondary">
+            <span class="material-icons">check_circle</span>
+            Set to Completed
+        </button>
+        {% endif %}
         <button id="fullscreenBtn" class="btn btn-secondary" onclick="toggleFullscreen()">
             <span class="material-icons">fullscreen</span>
             Fullscreen
@@ -155,7 +161,7 @@
     <!-- New Top Bar Layout -->
     <div class="live-roast-new" id="liveRoastNew">
 
-        {% if not roast.roast_end_time %}
+        {% if roast.lifecycle_state != 'completed' %}
         <!-- Top Bar: Key Metrics -->
         <div class="live-topbar" id="liveTopbar">
             <div class="tb-tile">
@@ -201,16 +207,16 @@
 
         <!-- Roast Curve Chart -->
         <div class="live-chart-area">
-            {% if not roast.roast_end_time %}
+            {% if roast.lifecycle_state != 'completed' %}
             <canvas id="roastCurveChart"></canvas>
             {% else %}
             <p class="empty-log" style="padding:2rem;text-align:center;">
-                Roast has ended. <a href="{{ url_for('roast_detail', roast_id=roast._id) }}">View details →</a>
+                Roast has been completed. <a href="{{ url_for('roast_detail', roast_id=roast._id) }}">View details →</a>
             </p>
             {% endif %}
         </div>
 
-        {% if not roast.roast_end_time %}
+        {% if roast.lifecycle_state != 'completed' %}
         <!-- Controls Bar -->
         <div class="live-controls-bar">
             <!-- Quick Key Events -->
@@ -319,8 +325,8 @@
     let seconds = 0;
     let isRunning = false;
     const roastId = '{{ roast._id }}';
-    const roastStarted = {% if roast.roast_start_time %}true{% else %} false{% endif %};
-    const roastEnded = {% if roast.roast_end_time %}true{% else %} false{% endif %};
+    const roastStarted = {% if roast.lifecycle_state == 'started' %}true{% else %} false{% endif %};
+    const roastEnded = {% if roast.lifecycle_state == 'completed' %}true{% else %} false{% endif %};
     let setupLocked = roastStarted || roastEnded;
 
     // Remember last values
@@ -335,6 +341,7 @@
     const timerDisplay = document.getElementById('timerDisplay');
     const startBtn = document.getElementById('startBtn');
     const endBtn = document.getElementById('endBtn');
+    const completeDraftBtn = document.getElementById('completeDraftBtn');
     const eventButtons = document.querySelectorAll('.event-btn-compact');
     const addEventBtn = document.getElementById('addEventBtn');
     const timelineList = document.getElementById('timelineList');
@@ -1027,6 +1034,41 @@
             }
             startSyncLoop();
             initChart();  // Initialize the roast curve chart
+        }
+    });
+
+    if (completeDraftBtn) completeDraftBtn.addEventListener('click', async () => {
+        const confirmed = confirm(
+            'Set this draft roast to completed? This only changes its lifecycle status. It will not create temperature readings, sensor diagnostics, key timing events, or a Drop event.'
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        completeDraftBtn.disabled = true;
+
+        try {
+            if (setupSaveTimer) {
+                clearTimeout(setupSaveTimer);
+                setupSaveTimer = null;
+            }
+            await saveSetupFields();
+
+            const response = await fetch(`/api/roast/complete_draft/${roastId}`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                window.location.href = `/roast/edit/${roastId}`;
+            } else {
+                alert(data.error || 'Error completing draft roast. Please try again.');
+                completeDraftBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error completing draft roast. Please try again.');
+            completeDraftBtn.disabled = false;
         }
     });
 

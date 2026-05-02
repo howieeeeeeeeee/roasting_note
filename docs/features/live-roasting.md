@@ -78,17 +78,26 @@ The live roasting page is the tablet-first interface used during an active roast
 
 ## Roast Lifecycle
 
+New and updated roasts store an explicit `lifecycle_status` value:
+`draft`, `started`, or `completed`. Older roasts without this field fall back
+to timestamp-derived lifecycle:
+
+- `roast_end_time` present -> completed.
+- `roast_start_time` present and no `roast_end_time` -> started.
+- Neither timestamp present -> draft.
+
 1. **Pre-Start**: Setup section visible, timer at 00:00. Draft setup fields autosave to `/api/roast/update_setup/<roast_id>`.
-2. **Start**: Click "Start Roast" → begins timer, starts polling.
+2. **Start**: Click "Start Roast" -> begins timer, starts polling, writes `lifecycle_status: "started"`, and deducts bean stock when bean/weight are provided.
 3. **During**: Log events, adjust settings, monitor chart.
-4. **End**: Click "End Roast" → stops timer, final temp logged.
-5. **Post**: Redirected to Edit page for roasted weight entry.
+4. **End**: Click "End Roast" -> stops timer, final temp logged, writes `lifecycle_status: "completed"`.
+5. **Manual Complete**: Draft-only **Set to Completed** writes `lifecycle_status: "completed"` and refreshes `updated_at` without creating `roast_start_time`, `roast_end_time`, temperature curve readings, sensor diagnostics, key timing events, a Drop event, or bean-stock adjustments.
+6. **Post**: Live ending and manual completion redirect to Edit page for roasted weight entry.
 
 Dashboard and bean-history links are lifecycle-aware:
 
-- Draft roasts (`roast_start_time` and `roast_end_time` missing) open `/roast/live/<roast_id>` as **Resume Setup**.
-- Active roasts (`roast_start_time` present, `roast_end_time` missing) open `/roast/live/<roast_id>` as **Resume Roast**.
-- Completed roasts (`roast_end_time` present) open `/roast/detail/<roast_id>` as **View**.
+- Draft roasts open `/roast/live/<roast_id>` as **Resume Setup**.
+- Started roasts open `/roast/live/<roast_id>` as **Resume Roast** and display as **In Progress**.
+- Completed roasts open `/roast/detail/<roast_id>` as **View**, even when they were manually completed without live-roast timing data.
 
 ## Dark Mode
 

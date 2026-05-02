@@ -11,3 +11,5 @@ services:
         generateValue: true
       - key: MONGO_URI
         sync: false
+      - key: DEFAULT_DB
+        value: local

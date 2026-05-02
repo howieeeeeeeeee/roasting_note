@@ -1,6 +1,7 @@
 import os
 import collections
 import time
+from copy import deepcopy
 from datetime import datetime
 from urllib.parse import urlsplit, urlunsplit
 from flask import (
@@ -54,7 +55,9 @@ app.config["SECRET_KEY"] = os.environ.get(
 # ============================================
 # Dual MongoDB Connection (Local + Online)
 # ============================================
-DEFAULT_DB = os.environ.get("DEFAULT_DB", "local")
+DEFAULT_DB = os.environ.get("DEFAULT_DB", "local").strip().lower() or "local"
+if DEFAULT_DB not in {"local", "online"}:
+    DEFAULT_DB = "local"
 
 # RoR Calculation Settings
 ROR_WINDOW_SECONDS = 20  # How far back to look for comparison temp
@@ -62,6 +65,15 @@ ROR_TOLERANCE_SECONDS = 5  # Acceptable deviation from target time
 
 # Database Logging Settings
 DB_LOG_INTERVAL_SECONDS = 1  # How often to log to MongoDB (1 = every second)
+
+ROAST_LIFECYCLE_DRAFT = "draft"
+ROAST_LIFECYCLE_STARTED = "started"
+ROAST_LIFECYCLE_COMPLETED = "completed"
+VALID_ROAST_LIFECYCLE_STATUSES = {
+    ROAST_LIFECYCLE_DRAFT,
+    ROAST_LIFECYCLE_STARTED,
+    ROAST_LIFECYCLE_COMPLETED,
+}
 
 # Online DB (MongoDB Atlas)
 MONGO_URI_ONLINE = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
@@ -76,7 +88,10 @@ db_local = mongo_local.roastlogger
 
 def get_current_db_mode():
     """Get current database mode from session or default"""
-    return session.get("db_mode", DEFAULT_DB)
+    mode = session.get("db_mode", DEFAULT_DB)
+    if mode not in {"local", "online"}:
+        return "local"
+    return mode
 
 
 def get_beans_collection():
@@ -105,22 +120,35 @@ def inject_nav_counts():
     return {"nav_roast_count": roast_count, "nav_bean_count": bean_count}
 
 
+def get_roast_lifecycle_status(roast):
+    """Return explicit roast lifecycle status with timestamp fallback."""
+    lifecycle_status = roast.get("lifecycle_status")
+    if lifecycle_status in VALID_ROAST_LIFECYCLE_STATUSES:
+        return lifecycle_status
+
+    if roast.get("roast_end_time"):
+        return ROAST_LIFECYCLE_COMPLETED
+    if roast.get("roast_start_time"):
+        return ROAST_LIFECYCLE_STARTED
+    return ROAST_LIFECYCLE_DRAFT
+
+
 def annotate_roast_lifecycle(roast):
     """Add display metadata for routing roasts by lifecycle state."""
-    if roast.get("roast_end_time"):
-        roast["lifecycle_state"] = "completed"
+    lifecycle_status = get_roast_lifecycle_status(roast)
+    roast["lifecycle_state"] = lifecycle_status
+
+    if lifecycle_status == ROAST_LIFECYCLE_COMPLETED:
         roast["lifecycle_label"] = "Completed"
         roast["lifecycle_action_label"] = "View"
         roast["lifecycle_icon"] = "visibility"
         roast["lifecycle_url"] = url_for("roast_detail", roast_id=roast["_id"])
-    elif roast.get("roast_start_time"):
-        roast["lifecycle_state"] = "active"
+    elif lifecycle_status == ROAST_LIFECYCLE_STARTED:
         roast["lifecycle_label"] = "In Progress"
         roast["lifecycle_action_label"] = "Resume Roast"
         roast["lifecycle_icon"] = "play_circle"
         roast["lifecycle_url"] = url_for("roast_live", roast_id=roast["_id"])
     else:
-        roast["lifecycle_state"] = "draft"
         roast["lifecycle_label"] = "Draft"
         roast["lifecycle_action_label"] = "Resume Setup"
         roast["lifecycle_icon"] = "edit_note"
@@ -537,6 +565,7 @@ def roast_live(roast_id):
     if not roast:
         return "Roast not found", 404
 
+    annotate_roast_lifecycle(roast)
     beans = list(
         get_beans_collection().find({"archived": {"$ne": True}}).sort("name", 1)
     )
@@ -699,10 +728,29 @@ def api_roast_create():
 def api_roast_start(roast_id):
     """Start roast timer"""
     data = request.get_json(silent=True) or {}
+    roast = get_roasts_collection().find_one(
+        {"_id": ObjectId(roast_id), "archived": {"$ne": True}}
+    )
 
+    if not roast:
+        return jsonify({"success": False, "error": "Roast not found"}), 404
+
+    if get_roast_lifecycle_status(roast) != ROAST_LIFECYCLE_DRAFT:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Only draft roasts can be started",
+                }
+            ),
+            409,
+        )
+
+    current_time = get_current_time_with_tz()
     update_data = {
-        "roast_start_time": get_current_time_with_tz(),
-        "updated_at": get_current_time_with_tz(),
+        "roast_start_time": current_time,
+        "lifecycle_status": ROAST_LIFECYCLE_STARTED,
+        "updated_at": current_time,
     }
 
     # Update bean_id and original_weight if provided
@@ -715,7 +763,10 @@ def api_roast_start(roast_id):
         if data.get("bean_id"):
             get_beans_collection().update_one(
                 {"_id": ObjectId(data["bean_id"])},
-                {"$inc": {"stock_grams": -int(data["original_weight_grams"])}},
+                {
+                    "$inc": {"stock_grams": -int(data["original_weight_grams"])},
+                    "$set": {"updated_at": current_time},
+                },
             )
 
     # Handle ambient temperature and humidity
@@ -738,6 +789,17 @@ def api_roast_end(roast_id):
 
     if not roast:
         return jsonify({"success": False, "error": "Roast not found"}), 404
+
+    if get_roast_lifecycle_status(roast) != ROAST_LIFECYCLE_STARTED:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Only started roasts can be ended",
+                }
+            ),
+            409,
+        )
 
     data = request.get_json(silent=True) or {}
     end_time = get_current_time_with_tz()
@@ -785,7 +847,11 @@ def api_roast_end(roast_id):
             }
 
             get_roasts_collection().update_one(
-                {"_id": ObjectId(roast_id)}, {"$push": {"temp_curve": final_temp_event}}
+                {"_id": ObjectId(roast_id)},
+                {
+                    "$push": {"temp_curve": final_temp_event},
+                    "$set": {"updated_at": end_time},
+                },
             )
 
         # Add "Drop" event to key_timings
@@ -798,7 +864,11 @@ def api_roast_end(roast_id):
             drop_event["power_setting"] = last_power
 
         get_roasts_collection().update_one(
-            {"_id": ObjectId(roast_id)}, {"$push": {"key_timings": drop_event}}
+            {"_id": ObjectId(roast_id)},
+            {
+                "$push": {"key_timings": drop_event},
+                "$set": {"updated_at": end_time},
+            },
         )
 
     # Set roast end time
@@ -807,7 +877,8 @@ def api_roast_end(roast_id):
         {
             "$set": {
                 "roast_end_time": end_time,
-                "updated_at": get_current_time_with_tz(),
+                "lifecycle_status": ROAST_LIFECYCLE_COMPLETED,
+                "updated_at": end_time,
             }
         },
     )
@@ -840,7 +911,7 @@ def api_roast_update_setup(roast_id):
     if not roast:
         return jsonify({"success": False, "error": "Roast not found"}), 404
 
-    if roast.get("roast_start_time") or roast.get("roast_end_time"):
+    if get_roast_lifecycle_status(roast) != ROAST_LIFECYCLE_DRAFT:
         return (
             jsonify(
                 {
@@ -893,6 +964,42 @@ def api_roast_update_setup(roast_id):
 
     get_roasts_collection().update_one({"_id": ObjectId(roast_id)}, update_operation)
     return jsonify({"success": True})
+
+
+@app.route("/api/roast/complete_draft/<roast_id>", methods=["POST"])
+def api_roast_complete_draft(roast_id):
+    """Mark a draft roast completed without creating live-roast data."""
+    roast = get_roasts_collection().find_one(
+        {"_id": ObjectId(roast_id), "archived": {"$ne": True}}
+    )
+    if not roast:
+        return jsonify({"success": False, "error": "Roast not found"}), 404
+
+    if get_roast_lifecycle_status(roast) != ROAST_LIFECYCLE_DRAFT:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Only draft roasts can be manually completed",
+                }
+            ),
+            409,
+        )
+
+    current_time = get_current_time_with_tz()
+    get_roasts_collection().update_one(
+        {"_id": ObjectId(roast_id)},
+        {
+            "$set": {
+                "lifecycle_status": ROAST_LIFECYCLE_COMPLETED,
+                "updated_at": current_time,
+            }
+        },
+    )
+
+    return jsonify(
+        {"success": True, "lifecycle_status": ROAST_LIFECYCLE_COMPLETED}
+    )
 
 
 @app.route("/api/roast/add_timing/<roast_id>", methods=["POST"])
@@ -1063,6 +1170,7 @@ def api_roast_delete(roast_id):
     roast = get_roasts_collection().find_one({"_id": ObjectId(roast_id)})
 
     # Restore bean stock only after start, when stock has actually been deducted.
+    current_time = get_current_time_with_tz()
     if (
         roast
         and roast.get("roast_start_time")
@@ -1071,13 +1179,16 @@ def api_roast_delete(roast_id):
     ):
         get_beans_collection().update_one(
             {"_id": ObjectId(roast["bean_id"])},
-            {"$inc": {"stock_grams": roast["original_weight_grams"]}},
+            {
+                "$inc": {"stock_grams": roast["original_weight_grams"]},
+                "$set": {"updated_at": current_time},
+            },
         )
 
     # Archive the roast instead of deleting
     get_roasts_collection().update_one(
         {"_id": ObjectId(roast_id)},
-        {"$set": {"archived": True, "updated_at": get_current_time_with_tz()}},
+        {"$set": {"archived": True, "updated_at": current_time}},
     )
     return redirect(url_for("index"))
 
@@ -1568,29 +1679,69 @@ def api_set_sensor_settings():
 
 def sync_collection(source_col, target_col):
     """
-    Sync documents from source to target collection.
-    Returns counts of added and updated documents.
+    Sync non-archived documents from source to target collection.
+
+    Existing target documents are only replaced when both sides have valid
+    updated_at timestamps and the source timestamp is newer. Missing or invalid
+    timestamps are reported as conflicts instead of being overwritten.
     """
-    added = 0
-    updated = 0
+    result = {
+        "added": 0,
+        "updated": 0,
+        "skipped": 0,
+        "conflicts": 0,
+        "conflict_ids": [],
+    }
 
-    # Get all non-archived documents from source
-    source_docs = list(source_col.find({"archived": {"$ne": True}}))
+    for source_doc in source_col.find({"archived": {"$ne": True}}):
+        target_doc = target_col.find_one({"_id": source_doc["_id"]})
 
-    # Get all existing IDs in target
-    target_ids = set(target_col.distinct("_id"))
+        if not target_doc:
+            target_col.insert_one(prepare_synced_document(source_doc))
+            result["added"] += 1
+            continue
 
-    for doc in source_docs:
-        if doc["_id"] not in target_ids:
-            # Insert new document
-            target_col.insert_one(doc)
-            added += 1
+        source_updated_at = normalize_sync_timestamp(source_doc.get("updated_at"))
+        target_updated_at = normalize_sync_timestamp(target_doc.get("updated_at"))
+
+        if not source_updated_at or not target_updated_at:
+            result["conflicts"] += 1
+            result["conflict_ids"].append(str(source_doc["_id"]))
+            continue
+
+        if source_updated_at > target_updated_at:
+            target_col.replace_one(
+                {"_id": source_doc["_id"]},
+                prepare_synced_document(source_doc),
+            )
+            result["updated"] += 1
         else:
-            # Update existing document
-            target_col.replace_one({"_id": doc["_id"]}, doc)
-            updated += 1
+            result["skipped"] += 1
 
-    return {"added": added, "updated": updated}
+    return result
+
+
+def prepare_synced_document(source_doc):
+    """Return a synced copy with reliable created_at and updated_at fields."""
+    sync_doc = deepcopy(source_doc)
+    sync_time = get_current_time_with_tz()
+
+    if not isinstance(sync_doc.get("updated_at"), datetime):
+        sync_doc["updated_at"] = sync_time
+
+    if not isinstance(sync_doc.get("created_at"), datetime):
+        sync_doc["created_at"] = sync_doc["updated_at"]
+
+    return sync_doc
+
+
+def normalize_sync_timestamp(value):
+    """Normalize valid datetime values for cross-database freshness checks."""
+    if not isinstance(value, datetime):
+        return None
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(pytz.utc).replace(tzinfo=None)
 
 
 @app.route("/api/sync/online-to-local", methods=["POST"])

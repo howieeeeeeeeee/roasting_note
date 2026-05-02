@@ -105,6 +105,9 @@ def update_bean(beans_collection, bean_id, bean_data):
     """
     from bson.objectid import ObjectId
 
+    current_time = datetime.now()
+    existing_bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
+
     # Parse and prepare update data
     update_doc = {
         'name': bean_data.get('name', ''),
@@ -116,8 +119,10 @@ def update_bean(beans_collection, bean_id, bean_data):
             bean_data.get('short_flavor_notes')
         ),
         'color': bean_data.get('color', '#6B8E6F'),
-        'updated_at': datetime.now()
+        'updated_at': current_time
     }
+    if existing_bean and not isinstance(existing_bean.get('created_at'), datetime):
+        update_doc['created_at'] = current_time
 
     # Handle date
     if bean_data.get('purchase_date'):

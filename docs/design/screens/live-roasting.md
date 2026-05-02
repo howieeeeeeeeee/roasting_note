@@ -53,6 +53,14 @@ The four key readings are fixed in a horizontal bar at the top. The chart takes 
   `Sensor fault`.
 - **End Roast** button lives in `.tb-end` (right-aligned via `margin-left: auto`). Uses `.btn-lg` + `.btn-danger`.
 
+### Draft Manual Completion
+
+Draft roasts expose a header action labeled **Set to Completed**. It uses the
+shared secondary button recipe and sits beside **Fullscreen**, outside the live
+top-bar controls so the roasting interaction remains unchanged once a roast has
+started. The action is hidden for started and completed roasts, and the
+confirmation copy states that only lifecycle metadata changes.
+
 ### Chart Area (`.live-chart-area`)
 
 - `flex: 1`, `min-height: 380px`.

@@ -25,7 +25,7 @@ Set these in Render dashboard:
 | `SECRET_KEY` | Random string for sessions |
 | `MONGO_URI` | MongoDB Atlas connection string |
 | `MONGO_URI_LOCAL` | Local MongoDB (not used in production) |
-| `DEFAULT_DB` | `online` for production |
+| `DEFAULT_DB` | `local` by default; switch to online manually when needed |
 | `TZ` | `Asia/Taipei` |
 
 ### Free Tier Limitations

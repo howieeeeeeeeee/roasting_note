@@ -62,7 +62,7 @@ Technologies and dependencies used in RoastLogger.
 | `SECRET_KEY` | Flask session secret | Required |
 | `MONGO_URI` | Online MongoDB connection | Required |
 | `MONGO_URI_LOCAL` | Local MongoDB connection | Required |
-| `DEFAULT_DB` | Default database mode | `local` |
+| `DEFAULT_DB` | Default database mode; invalid values fall back to local | `local` |
 | `TEMP_SENSOR_URL` | Temperature sensor endpoint | `http://192.168.0.47/temp` |
 | `TZ` | Application timezone | `Asia/Taipei` |
 

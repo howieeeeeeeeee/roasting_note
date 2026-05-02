@@ -42,6 +42,7 @@ class TestRoastCreate:
         assert roast['key_timings'] == []
         assert roast['temp_curve'] == []
         assert roast['reviews'] == []
+        assert roast['lifecycle_status'] == 'draft'
         assert roast['archived'] == False
 
         # Cleanup
@@ -63,7 +64,7 @@ class TestRoastNavigation:
     """Tests for lifecycle-aware roast navigation."""
 
     def test_dashboard_links_roasts_by_lifecycle_state(self, client, roasts_collection):
-        """Draft and active roasts return to live page; completed roasts open detail page."""
+        """Draft and started roasts return to live page; completed roasts open detail page."""
         now = datetime.now()
         roast_docs = [
             {
@@ -102,6 +103,18 @@ class TestRoastNavigation:
                 'updated_at': now,
                 **TEST_DATA_MARKER
             },
+            {
+                'title': 'Lifecycle Status Completed Roast',
+                'roast_date': now,
+                'lifecycle_status': 'completed',
+                'key_timings': [],
+                'temp_curve': [],
+                'reviews': [],
+                'archived': False,
+                'created_at': now,
+                'updated_at': now,
+                **TEST_DATA_MARKER
+            },
         ]
         inserted_ids = roasts_collection.insert_many(roast_docs).inserted_ids
 
@@ -117,8 +130,51 @@ class TestRoastNavigation:
             assert 'In Progress' in html
             assert f'/roast/detail/{inserted_ids[2]}' in html
             assert 'Completed' in html
+            assert f'/roast/detail/{inserted_ids[3]}' in html
         finally:
             roasts_collection.delete_many({'_id': {'$in': inserted_ids}})
+
+    def test_bean_history_uses_explicit_completed_lifecycle(
+        self, client, beans_collection, roasts_collection
+    ):
+        """Bean roast history opens completed-by-status roasts on the detail page."""
+        now = datetime.now()
+        bean_id = beans_collection.insert_one(
+            {
+                'name': 'Lifecycle Bean',
+                'stock_grams': 1000,
+                'archived': False,
+                'created_at': now,
+                'updated_at': now,
+                **TEST_DATA_MARKER
+            }
+        ).inserted_id
+        roast_id = roasts_collection.insert_one(
+            {
+                'title': 'Completed By Status',
+                'bean_id': bean_id,
+                'roast_date': now,
+                'lifecycle_status': 'completed',
+                'key_timings': [],
+                'temp_curve': [],
+                'reviews': [],
+                'archived': False,
+                'created_at': now,
+                'updated_at': now,
+                **TEST_DATA_MARKER
+            }
+        ).inserted_id
+
+        try:
+            response = client.get(f'/beans/detail/{bean_id}')
+            html = response.get_data(as_text=True)
+
+            assert response.status_code == 200
+            assert f'/roast/detail/{roast_id}' in html
+            assert 'Completed' in html
+        finally:
+            roasts_collection.delete_one({'_id': roast_id})
+            beans_collection.delete_one({'_id': bean_id})
 
 
 class TestRoastStart:
@@ -142,6 +198,7 @@ class TestRoastStart:
         # Verify start time was set
         roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
         assert roast['roast_start_time'] is not None
+        assert roast['lifecycle_status'] == 'started'
 
     def test_start_roast_with_bean_decrements_stock(
         self, client, beans_collection, roasts_collection, created_test_roast
@@ -150,6 +207,7 @@ class TestRoastStart:
         roast_id = created_test_roast['roast_id']
         bean_id = created_test_roast['bean_id']
         original_stock = created_test_roast['original_stock']
+        bean_before_start = beans_collection.find_one({'_id': ObjectId(bean_id)})
 
         start_data = {
             'bean_id': bean_id,
@@ -167,6 +225,10 @@ class TestRoastStart:
         # Verify stock was decremented
         bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
         assert bean['stock_grams'] == original_stock - 200
+        assert 'created_at' in bean
+        assert app_module.normalize_sync_timestamp(
+            bean['updated_at']
+        ) > app_module.normalize_sync_timestamp(bean_before_start['updated_at'])
 
     def test_start_roast_sets_ambient_conditions(self, client, roasts_collection, created_test_roast):
         """Test that starting a roast records ambient conditions."""
@@ -204,6 +266,7 @@ class TestRoastEnd:
         # Verify end time was set
         roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
         assert roast['roast_end_time'] is not None
+        assert roast['lifecycle_status'] == 'completed'
 
     def test_end_nonexistent_roast(self, client):
         """Test ending a roast that doesn't exist."""
@@ -211,6 +274,67 @@ class TestRoastEnd:
         response = client.post(f'/api/roast/end/{fake_id}')
 
         assert response.status_code == 404
+        data = response.get_json()
+        assert data['success'] == False
+
+
+class TestRoastManualCompletion:
+    """Tests for manually completing draft roasts."""
+
+    def test_complete_draft_roast_sets_completed_status(
+        self, client, roasts_collection, created_test_roast
+    ):
+        """Manual completion updates lifecycle metadata only."""
+        roast_id = created_test_roast['roast_id']
+        before = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+        original_updated_at = before['updated_at']
+
+        response = client.post(f'/api/roast/complete_draft/{roast_id}')
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] == True
+        assert data['lifecycle_status'] == 'completed'
+
+        roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+        assert roast['lifecycle_status'] == 'completed'
+        assert app_module.normalize_sync_timestamp(
+            roast['updated_at']
+        ) > app_module.normalize_sync_timestamp(original_updated_at)
+        assert roast.get('roast_start_time') is None
+        assert roast.get('roast_end_time') is None
+        assert roast['key_timings'] == []
+        assert roast['temp_curve'] == []
+        assert roast.get('sensor_diagnostics') is None
+
+    def test_complete_started_roast_is_rejected(
+        self, client, roasts_collection, started_test_roast
+    ):
+        """Manual completion is draft-only and rejects active roasts."""
+        roast_id = started_test_roast['roast_id']
+
+        response = client.post(f'/api/roast/complete_draft/{roast_id}')
+
+        assert response.status_code == 409
+        data = response.get_json()
+        assert data['success'] == False
+
+        roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+        assert roast.get('lifecycle_status') != 'completed'
+
+    def test_complete_completed_roast_is_rejected(
+        self, client, roasts_collection, created_test_roast
+    ):
+        """Manual completion rejects already completed roasts."""
+        roast_id = created_test_roast['roast_id']
+        roasts_collection.update_one(
+            {'_id': ObjectId(roast_id)},
+            {'$set': {'lifecycle_status': 'completed'}},
+        )
+
+        response = client.post(f'/api/roast/complete_draft/{roast_id}')
+
+        assert response.status_code == 409
         data = response.get_json()
         assert data['success'] == False
 
@@ -570,6 +694,10 @@ class TestRoastDelete:
         # Verify stock restored
         bean_after_delete = beans_collection.find_one({'_id': ObjectId(bean_id)})
         assert bean_after_delete['stock_grams'] == stock_after_start + 150
+        assert 'created_at' in bean_after_delete
+        assert app_module.normalize_sync_timestamp(
+            bean_after_delete['updated_at']
+        ) > app_module.normalize_sync_timestamp(bean_after_start['updated_at'])
 
 
 class TestRoastSyncState:

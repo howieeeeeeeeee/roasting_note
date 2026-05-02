@@ -2,10 +2,10 @@
 id: RN-0015
 title: Make Database Sync Timestamp-Aware
 type: bug
-status: pending
+status: resolved
 priority: high
 created: 2026-05-01
-resolved:
+resolved: 2026-05-02
 area: database-sync
 tags:
   - sync
@@ -30,30 +30,36 @@ The Settings modal can already run Local -> Online and Online -> Local database 
 
 ## Acceptance Criteria
 
-- [ ] Local -> Online sync inserts local beans and roasts that do not exist online.
-- [ ] Local -> Online sync overwrites an existing online bean/roast only when the online `updated_at` is older than the local `updated_at`.
-- [ ] Local -> Online sync skips existing online beans/roasts when the online `updated_at` is newer than or equal to the local `updated_at`.
-- [ ] Online -> Local sync inserts online beans and roasts that do not exist locally.
-- [ ] Online -> Local sync overwrites an existing local bean/roast only when the local `updated_at` is older than the online `updated_at`.
-- [ ] Online -> Local sync skips existing local beans/roasts when the local `updated_at` is newer than or equal to the online `updated_at`.
-- [ ] Sync responses include skipped/conflict counts in addition to added/updated counts.
-- [ ] Missing or invalid `updated_at` values are handled explicitly and do not cause silent data loss.
-- [ ] Tests cover older target, newer target, equal timestamp, missing target document, and missing timestamp cases for beans and roasts.
-- [ ] Relevant docs updated when implemented: `docs/architecture/api-endpoints.md`, `docs/architecture/data-models.md`, and the database sync feature documentation (`docs/features/database-sync.md` if created, otherwise `docs/features/README.md`).
+- [x] Local -> Online sync inserts local beans and roasts that do not exist online.
+- [x] Local -> Online sync overwrites an existing online bean/roast only when the online `updated_at` is older than the local `updated_at`.
+- [x] Local -> Online sync skips existing online beans/roasts when the online `updated_at` is newer than or equal to the local `updated_at`.
+- [x] Online -> Local sync inserts online beans and roasts that do not exist locally.
+- [x] Online -> Local sync overwrites an existing local bean/roast only when the local `updated_at` is older than the online `updated_at`.
+- [x] Online -> Local sync skips existing local beans/roasts when the local `updated_at` is newer than or equal to the online `updated_at`.
+- [x] Sync responses include skipped/conflict counts in addition to added/updated counts.
+- [x] Missing or invalid `updated_at` values are handled explicitly and do not cause silent data loss.
+- [x] Tests cover older target, newer target, equal timestamp, missing target document, and missing timestamp cases for beans and roasts.
+- [x] Relevant docs updated when implemented: `docs/architecture/api-endpoints.md`, `docs/architecture/data-models.md`, and the database sync feature documentation (`docs/features/database-sync.md` if created, otherwise `docs/features/README.md`).
 
 ## Open Questions
 
 - Answered: timestamp-aware comparison applies to both Local -> Online and Online -> Local sync.
-- When the source document is copied to the target, should the target keep the source `updated_at`, or should sync stamp a new sync time in a separate field such as `synced_at`?
-- What should happen when one side has no `updated_at`: treat the missing timestamp as older, skip and report, or require manual resolution?
-- Should archived documents be included in timestamp-aware sync, or should sync continue to ignore archived documents as it does today?
+- Answered: when the source document is copied to the target, the target keeps the source `updated_at`; sync time is not written as `updated_at`.
+- Answered: when either existing side has no valid `updated_at`, sync skips the overwrite, increments `conflicts`, and reports the document id in `conflict_ids`.
+- Answered: archived documents continue to be ignored by sync.
+
+## Implementation Notes
+
+- `sync_collection()` now returns `added`, `updated`, `skipped`, `conflicts`, and `conflict_ids`.
+- Existing target documents are replaced only when both `updated_at` values are valid datetimes and the source timestamp is newer.
+- Missing target documents are still inserted, with missing `created_at` or `updated_at` values filled on the copied target document.
+- The Settings modal completion toast now reports skipped and conflict counts.
 
 ## Related Files
 
 - `app.py`
 - `templates/base.html`
-- `tests/test_beans_api.py`
-- `tests/test_roasts_api.py`
+- `tests/test_sync_api.py`
 - `docs/architecture/api-endpoints.md`
 - `docs/architecture/data-models.md`
-- `docs/features/README.md`
+- `docs/features/database-sync.md`

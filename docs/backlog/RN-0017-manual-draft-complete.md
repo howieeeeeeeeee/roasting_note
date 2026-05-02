@@ -2,10 +2,10 @@
 id: RN-0017
 title: Manually Set Draft Roast to Completed
 type: feature
-status: pending
+status: resolved
 priority: medium
 created: 2026-05-02
-resolved:
+resolved: 2026-05-02
 area: live-roasting
 tags:
   - lifecycle
@@ -38,24 +38,32 @@ Users need a way to manually finish a draft roast from the live setup page witho
 
 ## Acceptance Criteria
 
-- [ ] A draft roast on `/roast/live/<roast_id>` exposes a clear **Set to Completed** action.
-- [ ] Active/started roasts and already completed roasts do not expose the draft-only manual completion action.
-- [ ] New roast creation writes an explicit draft lifecycle/status value.
-- [ ] Starting a roast writes the started lifecycle/status value.
-- [ ] Ending a roast writes the completed lifecycle/status value.
-- [ ] Manually setting a draft to completed writes the completed lifecycle/status value and refreshes `updated_at`.
-- [ ] Manual completion does not create temperature curve readings, sensor diagnostics, key timing events, or a Drop event by itself.
-- [ ] Roasts missing the new lifecycle/status field still derive lifecycle from `roast_start_time` and `roast_end_time` exactly as they do today.
-- [ ] Dashboard and bean-detail roast history use the explicit lifecycle/status first, with timestamp fallback for old roasts.
-- [ ] Tests cover new roast status defaults, start/end status transitions, manual draft completion, active-roast rejection, completed-roast rejection, and old-roast fallback.
-- [ ] Relevant docs updated when implemented: `docs/architecture/data-models.md`, `docs/architecture/api-endpoints.md`, `docs/features/live-roasting.md`, `docs/design/screens/live-roasting.md`.
+- [x] A draft roast on `/roast/live/<roast_id>` exposes a clear **Set to Completed** action.
+- [x] Active/started roasts and already completed roasts do not expose the draft-only manual completion action.
+- [x] New roast creation writes an explicit draft lifecycle/status value.
+- [x] Starting a roast writes the started lifecycle/status value.
+- [x] Ending a roast writes the completed lifecycle/status value.
+- [x] Manually setting a draft to completed writes the completed lifecycle/status value and refreshes `updated_at`.
+- [x] Manual completion does not create temperature curve readings, sensor diagnostics, key timing events, or a Drop event by itself.
+- [x] Roasts missing the new lifecycle/status field still derive lifecycle from `roast_start_time` and `roast_end_time` exactly as they do today.
+- [x] Dashboard and bean-detail roast history use the explicit lifecycle/status first, with timestamp fallback for old roasts.
+- [x] Tests cover new roast status defaults, start/end status transitions, manual draft completion, active-roast rejection, completed-roast rejection, and old-roast fallback.
+- [x] Relevant docs updated when implemented: `docs/architecture/data-models.md`, `docs/architecture/api-endpoints.md`, `docs/features/live-roasting.md`, `docs/design/screens/live-roasting.md`.
 
 ## Open Questions
 
-- Should the stored lifecycle values be exactly `draft`, `started`, and `completed`, or should the middle value be `active` / `in_progress` to match current UI language?
-- When a draft is manually set to completed, should bean stock be decremented based on `original_weight_grams`, left unchanged, or handled through a confirmation choice?
-- After manual completion succeeds, should the user stay on the live setup page, redirect to the roast detail page, or redirect to the roast edit page for post-roast fields like roasted weight and notes?
-- Should manual completion require any minimum draft fields, such as bean, green weight, or roast date?
+- Answered: stored lifecycle values are `draft`, `started`, and `completed`. The UI still labels `started` as **In Progress**.
+- Answered: manual draft completion leaves bean stock unchanged. Stock is deducted only by starting a live roast.
+- Answered: after manual completion succeeds, the user is redirected to the roast edit page for post-roast fields like roasted weight and notes.
+- Answered: manual completion does not require minimum draft fields beyond the roast existing and still being in draft lifecycle.
+
+## Implementation Notes
+
+- New roasts write `lifecycle_status: "draft"`.
+- `/api/roast/start/<roast_id>` writes `lifecycle_status: "started"` and rejects non-draft roasts.
+- `/api/roast/end/<roast_id>` writes `lifecycle_status: "completed"` and rejects non-started roasts.
+- `/api/roast/complete_draft/<roast_id>` is draft-only and only updates `lifecycle_status` plus `updated_at`.
+- Dashboard and bean-history badges/routes use `lifecycle_status` first, with timestamp fallback for old documents.
 
 ## Related Files
 
