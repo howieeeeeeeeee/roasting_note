@@ -29,8 +29,9 @@ Use `docs/backlog/TEMPLATE.md` when creating a new ticket.
 
 | ID | Type | Priority | Area | Title | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- |
-| RN-0010 | [BUG] | High | live-roasting | [Temperature Updates Stall During Live Roast](./RN-0010-temperature-update-stalls.md) | 2026-04-24 | - |
+| RN-0010 | [BUG] | High | live-roasting | [Temperature Sensor Updates Stall During Live Roast](./RN-0010-temperature-update-stalls.md) | 2026-04-24 | - |
 | RN-0003 | [TODO] | Medium | testing | [UI/Interface Testing Framework](./RN-0003-ui-interface-testing-framework.md) | 2026-01-11 | - |
+| RN-0013 | [FEATURE] | Medium | label-creator | [US-4 Sticker Sheet Creator for Bean Labels](./RN-0013-us-4-sticker-sheet-creator.md) | 2026-05-01 | - |
 
 ### In Progress
 
