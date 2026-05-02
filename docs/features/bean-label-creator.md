@@ -29,7 +29,7 @@ The **Create Stickers** action lives on the beans list page and opens a separate
 
 ### Auto-fill
 
-**Auto-fill from Bean** populates `name`, `origin`, and `process` from the current bean. Roast level and flavor notes remain empty (no source fields on bean). Roast date defaults to today.
+**Auto-fill from Bean** populates `name`, `origin`, `process`, and `flavorNotes` from the current bean. Bean `short_flavor_notes` is stored as an array and joined with newlines for the label field, so notes such as `Blueberry`, `Jasmine`, and `Dark Chocolate` render as separate lines. If the bean has no short flavor notes, `flavorNotes` remains blank. Roast level remains empty, and roast date defaults to today.
 
 ## Behaviour
 

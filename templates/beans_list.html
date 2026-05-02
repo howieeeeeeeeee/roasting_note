@@ -57,8 +57,16 @@
                             <a href="{{ url_for('beans_detail', bean_id=bean._id) }}" class="bean-link">
                                 <strong>{{ bean.name }}</strong>
                             </a>
-                            {% if bean.notes %}
-                            <div class="bean-notes-preview">{{ bean.notes[:60] }}{% if bean.notes|length > 60 %}...{% endif %}</div>
+                            {% if bean.short_flavor_notes %}
+                            <div class="bean-short-flavor-preview">
+                                {% if bean.short_flavor_notes is string %}
+                                <span class="bean-short-flavor-note">{{ bean.short_flavor_notes }}</span>
+                                {% else %}
+                                {% for note in bean.short_flavor_notes[:3] %}
+                                <span class="bean-short-flavor-note">{{ note }}</span>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
                             {% endif %}
                         </div>
                     </div>

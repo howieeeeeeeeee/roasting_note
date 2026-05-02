@@ -25,6 +25,7 @@ Stores information about each type of green coffee bean in inventory.
   "purchase_weight_grams": "Integer",
   "unit_price_per_kg": "Decimal128",
   "stock_grams": "Integer",
+  "short_flavor_notes": ["String"],
   "notes": "String",
   "color": "String",
   "archived": "Boolean",
@@ -45,6 +46,7 @@ Stores information about each type of green coffee bean in inventory.
 | `purchase_price_total` | Decimal | No | - | Total cost for batch |
 | `purchase_weight_grams` | Integer | No | - | Original batch weight |
 | `stock_grams` | Integer | Yes | 0 | Current available stock |
+| `short_flavor_notes` | Array[String] | No | [] | Compact flavor notes for bean previews and label auto-fill, one note per array item |
 | `color` | String | No | "#6B8E6F" | Hex color for visual identification |
 | `archived` | Boolean | No | false | Soft delete flag |
 | `label` | Object | No | - | Label creator data (see below) |

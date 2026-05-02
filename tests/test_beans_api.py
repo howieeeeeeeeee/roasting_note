@@ -36,6 +36,11 @@ class TestBeanCreate:
         assert bean['origin'] == test_bean_data['origin']
         assert bean['process'] == test_bean_data['process']
         assert bean['supplier'] == test_bean_data['supplier']
+        assert bean['short_flavor_notes'] == [
+            'Blueberry',
+            'Jasmine',
+            'Dark Chocolate',
+        ]
         assert int(bean['stock_grams']) == int(test_bean_data['stock_grams'])
         assert bean['archived'] == False
 
@@ -58,6 +63,7 @@ class TestBeanCreate:
         bean = beans_collection.find_one({'name': 'Test Minimal Bean'})
         assert bean is not None
         assert bean['name'] == 'Test Minimal Bean'
+        assert bean['short_flavor_notes'] == []
 
         # Cleanup
         beans_collection.delete_one({'_id': bean['_id']})
@@ -120,6 +126,7 @@ class TestBeanEdit:
             'purchase_weight_grams': '1200',
             'stock_grams': '800',
             'color': '#FF5733',
+            'short_flavor_notes': 'Cherry\nCocoa',
             'notes': 'Updated notes',
         }
 
@@ -132,7 +139,25 @@ class TestBeanEdit:
         assert bean['name'] == 'Updated Bean Name'
         assert bean['origin'] == 'Colombia'
         assert bean['process'] == 'Natural'
+        assert bean['short_flavor_notes'] == ['Cherry', 'Cocoa']
         assert int(bean['stock_grams']) == 800
+
+    def test_edit_bean_clears_short_flavor_notes(self, client, beans_collection, created_test_bean):
+        """Test editing can clear short flavor notes."""
+        bean_id = created_test_bean
+
+        response = client.post(
+            f'/api/beans/edit/{bean_id}',
+            data={
+                'name': 'Cleared Notes Bean',
+                'short_flavor_notes': '',
+            },
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+        bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
+        assert bean['short_flavor_notes'] == []
 
     def test_edit_bean_recalculates_unit_price(self, client, beans_collection, created_test_bean):
         """Test that editing price/weight recalculates unit price."""

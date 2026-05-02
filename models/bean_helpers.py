@@ -2,6 +2,30 @@ from datetime import datetime
 from bson.decimal128 import Decimal128
 
 
+def normalize_short_flavor_notes(value):
+    """Return short flavor notes as a clean list of non-empty strings."""
+    if value is None:
+        return []
+
+    if isinstance(value, list):
+        raw_notes = value
+    else:
+        raw_notes = str(value).replace("\r\n", "\n").replace("\r", "\n").split("\n")
+
+    notes = []
+    seen = set()
+    for note in raw_notes:
+        cleaned = str(note).strip()
+        if not cleaned:
+            continue
+        key = cleaned.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        notes.append(cleaned)
+    return notes
+
+
 def create_bean(beans_collection, bean_data):
     """
     Create a new bean document
@@ -20,6 +44,9 @@ def create_bean(beans_collection, bean_data):
         'process': bean_data.get('process', ''),
         'supplier': bean_data.get('supplier', ''),
         'notes': bean_data.get('notes', ''),
+        'short_flavor_notes': normalize_short_flavor_notes(
+            bean_data.get('short_flavor_notes')
+        ),
         'color': bean_data.get('color', '#6B8E6F'),  # Default: muted green
         'archived': False,
         'created_at': datetime.now(),
@@ -85,6 +112,9 @@ def update_bean(beans_collection, bean_id, bean_data):
         'process': bean_data.get('process', ''),
         'supplier': bean_data.get('supplier', ''),
         'notes': bean_data.get('notes', ''),
+        'short_flavor_notes': normalize_short_flavor_notes(
+            bean_data.get('short_flavor_notes')
+        ),
         'color': bean_data.get('color', '#6B8E6F'),
         'updated_at': datetime.now()
     }

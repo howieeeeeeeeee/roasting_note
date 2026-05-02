@@ -41,7 +41,7 @@ On narrow screens the modal stacks top-to-bottom: controls above, preview below,
 2. **Pick a font preset** (Modern / Editorial / Technical / Bold / Craft) — preview re-renders.
 3. **Pick an aspect ratio** (2:1, 5:3, 5:4, 4:3, 3:4) — canvas dimensions change, preview re-renders.
 4. **Edit label fields** — each keystroke redraws the canvas.
-5. **(Optional) Click "Auto-fill from Bean"** — pulls `name`, `origin`, `process` from the bean. Leaves roast level / flavor notes empty. Roast date defaults to today.
+5. **(Optional) Click "Auto-fill from Bean"** — pulls `name`, `origin`, `process`, and `short_flavor_notes` from the bean. The short flavor notes array is joined with newlines for the label's multi-line flavor notes field. Roast level stays empty; roast date defaults to today.
 6. **(Optional) Tweak export size in cm** — live pixel-dimension readout sits beside the cm inputs.
 7. **Save**, **Download PNG**, or **Download PNG (Rotated 90°)** — the rotated variant emits the same render rotated 90° clockwise for sideways-feeding label printers.
 
