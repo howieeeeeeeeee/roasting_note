@@ -75,6 +75,10 @@ The bean name field uses `.form-group-title` so it matches record-title typograp
 | Sections | `.detail-section` + `.detail-grid` |
 | Create Label | `.btn.btn-primary` with a Material icon — opens the [label creator modal](./label-creator.md) |
 
+The bean detail roast-history Date column follows the main roast list: it shows
+`roast_start_time` when available, falls back to `roast_date` for draft/manual
+records, and formats the value as operator-local wall time using `TIMEZONE`.
+
 ## Dark Mode
 
 Both screens inherit automatically. The table's hover row (`.data-table tr:hover`) uses `#f5f5f5` in light mode; a dark-mode rule in [style.css](../../../static/css/style.css) swaps this for a subtle overlay.

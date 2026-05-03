@@ -50,6 +50,7 @@ Short anatomy doc — no new design decisions. Built from standard [cards](../co
 
 - Page header **right cluster** follows the standard pattern: one visible edit action plus a `⋮` dropdown menu holding destructive actions.
 - Roast list/history tables do not show an Actions column. Row-level buttons appear as a hover/focus overlay at the right edge of the row, and the hovered row uses `--surf2` so the icons remain visible.
+- Date/time values in the roast list and detail fact grid show operator-local wall time using `TIMEZONE`. The UI does not label these as UTC because raw UTC clock faces are not shown.
 - Clicking a row in the events table does not edit — the screen is read-only. Editing happens via the `Edit` CTA which routes to the roast edit form.
 - The chart reuses the live-roast `getChartColors()` dark-mode handling — same look in both contexts.
 - Empty review sections use a compact Add Review button in `.review-section-footer`, not a full-width bar.

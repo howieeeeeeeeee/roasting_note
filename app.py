@@ -1836,11 +1836,13 @@ def api_clean_local_db():
 
 @app.template_filter("format_date")
 def format_date(value):
-    """Format datetime for display (no timezone conversion - shows DB value as-is)"""
+    """Format datetimes in the configured operator timezone."""
     if value is None:
         return ""
     if isinstance(value, datetime):
-        return value.strftime("%Y-%m-%d %H:%M")
+        if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+            value = pytz.utc.localize(value)
+        return value.astimezone(local_tz).strftime("%Y-%m-%d %H:%M")
     return str(value)
 
 

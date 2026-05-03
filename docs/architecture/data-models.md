@@ -20,6 +20,11 @@ Application-created bean and roast documents include both `created_at` and
 - Database sync preserves source timestamps when possible and fills missing
   `created_at` / `updated_at` values on newly copied documents so future sync
   comparisons remain reliable.
+- Application-created datetimes use the configured `TIMEZONE` for operator
+  intent, but MongoDB persists BSON `Date` values as UTC instants. PyMongo reads
+  those values back as naive UTC datetimes by default. Display formatting treats
+  naive datetimes as UTC and converts them to `TIMEZONE`; duration and elapsed
+  calculations continue to use the stored instants.
 
 ## `beans` Collection
 

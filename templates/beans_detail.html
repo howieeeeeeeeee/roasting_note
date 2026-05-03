@@ -114,7 +114,7 @@
                                 {{ roast.lifecycle_label }}
                             </span>
                         </td>
-                        <td class="date-cell">{{ roast.roast_date | format_date if roast.roast_date else 'N/A' }}</td>
+                        <td class="date-cell">{{ roast.roast_start_time | format_date if roast.roast_start_time else (roast.roast_date | format_date if roast.roast_date else 'N/A') }}</td>
                         <td>
                             {% if roast.original_weight_grams %}{{ roast.original_weight_grams }}g
                             {% else %}<span class="text-muted">N/A</span>{% endif %}

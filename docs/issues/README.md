@@ -40,6 +40,7 @@ No tickets.
 
 | ID | Type | Priority | Area | Title | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- |
+| RN-0019 | [BUG] | Medium | live-roasting | [Show Roast Times in Operator Timezone (Not Raw UTC Clock)](./RN-0019-roast-datetime-local-display.md) | 2026-05-02 | 2026-05-03 |
 | RN-0017 | [FEATURE] | Medium | live-roasting | [Manually Set Draft Roast to Completed](./RN-0017-manual-draft-complete.md) | 2026-05-02 | 2026-05-02 |
 | RN-0015 | [BUG] | High | database-sync | [Make Database Sync Timestamp-Aware](./RN-0015-timestamp-aware-db-sync.md) | 2026-05-01 | 2026-05-02 |
 | RN-0013 | [FEATURE] | Medium | label-creator | [US-4 Sticker Sheet Creator for Bean Labels](./RN-0013-us-4-sticker-sheet-creator.md) | 2026-05-01 | 2026-05-02 |

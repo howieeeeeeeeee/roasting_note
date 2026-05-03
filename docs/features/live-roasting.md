@@ -99,6 +99,15 @@ Dashboard and bean-history links are lifecycle-aware:
 - Started roasts open `/roast/live/<roast_id>` as **Resume Roast** and display as **In Progress**.
 - Completed roasts open `/roast/detail/<roast_id>` as **View**, even when they were manually completed without live-roast timing data.
 
+### Timestamp Display
+
+Roast list, bean-history, roast detail, and review timestamps render in the
+configured operator timezone (`TIMEZONE`, default `America/New_York`). MongoDB
+BSON dates are stored as UTC instants, and PyMongo returns them as naive UTC
+datetimes by default, so display formatting interprets naive datetimes as UTC
+before converting them for the operator. Duration and elapsed-time calculations
+remain based on start/end deltas and are not shifted for display.
+
 ## Dark Mode
 
 Toggle via the moon icon in the navbar. Preference is persisted in `localStorage` under the key `roast-dark`. See [docs/design/foundations/dark-mode.md](../design/foundations/dark-mode.md) for the full system.
