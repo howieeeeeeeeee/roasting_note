@@ -30,6 +30,7 @@
   gap: var(--space-3);
   padding-right: var(--space-3);
   border-right: 1px solid var(--bd2);
+  height: fit-content;
 }
 .sticker-sheet-controls .form-group { margin-bottom: 0; }
 .sticker-file-actions {
@@ -45,7 +46,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  max-height: clamp(120px, calc(100vh - 360px), 240px);
+  max-height: clamp(120px, calc(100vh - 280px), 320px);
+  min-height: 0;
   overflow-y: auto;
 }
 .sticker-image-item {

@@ -40,6 +40,7 @@ No tickets.
 
 | ID | Type | Priority | Area | Title | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- |
+| RN-0020 | [BUG] | Low | label-creator | [Sticker modal image list — remove unused scrollbar and dead space](./RN-0020-sticker-modal-image-list-layout.md) | 2026-05-04 | 2026-05-04 |
 | RN-0019 | [BUG] | Medium | live-roasting | [Show Roast Times in Operator Timezone (Not Raw UTC Clock)](./RN-0019-roast-datetime-local-display.md) | 2026-05-02 | 2026-05-03 |
 | RN-0017 | [FEATURE] | Medium | live-roasting | [Manually Set Draft Roast to Completed](./RN-0017-manual-draft-complete.md) | 2026-05-02 | 2026-05-02 |
 | RN-0015 | [BUG] | High | database-sync | [Make Database Sync Timestamp-Aware](./RN-0015-timestamp-aware-db-sync.md) | 2026-05-01 | 2026-05-02 |
@@ -57,3 +58,9 @@ No tickets.
 | RN-0004 | [IMPROVEMENT] | High | live-roasting | [Live Roast Data Collection Accuracy](./RN-0004-live-roast-data-collection-accuracy.md) | 2026-01-11 | 2026-01-11 |
 | RN-0002 | [TODO] | High | testing | [API Testing Framework](./RN-0002-api-testing-framework.md) | 2026-01-11 | 2026-01-11 |
 | RN-0001 | [BUG] | High | charting | [Chart Visualization Fixes](./RN-0001-chart-visualization-fixes.md) | 2025-01-09 | 2025-01-10 |
+
+## Won't Fix Tickets
+
+| ID | Type | Priority | Area | Title | Created | Resolved |
+| --- | --- | --- | --- | --- | --- | --- |
+| RN-0021 | [BUG] | Medium | label-creator | [Label PNG Export Prints With Incorrect Colors](./RN-0021-label-png-print-color-shift.md) | 2026-05-05 | 2026-05-05 |
