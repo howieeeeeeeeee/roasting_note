@@ -33,7 +33,7 @@ Desktop keeps controls left and preview right:
 
 At narrow widths the preview moves above the image list so the sheet remains visible while adjusting quantities.
 
-The desktop modal is height-bounded to the viewport. The US Letter preview width is capped with `min(100%, 460px, 44vh)` so the full sheet remains visible without scrolling the whole modal; the image list is the scrollable region when selected files exceed the available height.
+The desktop modal is height-bounded to the viewport. The US Letter preview width is capped with `min(100%, 460px, 44vh)` so the full sheet remains visible without scrolling the whole modal. The image list grows with its rows up to a viewport-aware max height; a vertical scrollbar appears only when rows cannot fit (not for a full US-4 set on a typical desktop).
 
 ## Components
 
