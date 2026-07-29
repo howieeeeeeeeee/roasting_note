@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>__PROJECT_NAME__ · Issue Workbench</title>
+  <style>
+    :root {
+      --paper: #f4efe5;
+      --surface: #fffaf0;
+      --surface-2: #ebe2d3;
+      --ink: #29231f;
+      --muted: #75695f;
+      --line: #cfc2b2;
+      --coffee: #754c31;
+      --coffee-2: #4d3021;
+      --accent: #bc6c3c;
+      --ready: #2f7254;
+      --progress: #286681;
+      --blocked: #a23b31;
+      --done: #6f665f;
+      --focus: #1169a8;
+      --radius: 14px;
+      --detail-width: min(520px, 42vw);
+      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    }
+    [data-theme="dark"] {
+      --paper: #171411;
+      --surface: #211c18;
+      --surface-2: #302821;
+      --ink: #f4eadc;
+      --muted: #b9aa9b;
+      --line: #4c4036;
+      --coffee: #d29a70;
+      --coffee-2: #f0c49d;
+      --accent: #ed985f;
+      --ready: #6fc49a;
+      --progress: #6bb6d3;
+      --blocked: #ee8074;
+      --done: #aaa19a;
+      --focus: #78bee9;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--paper); color: var(--ink); }
+    body { margin: 0; min-height: 100vh; }
+    button, input, select { font: inherit; }
+    button, select, input {
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+    }
+    button { cursor: pointer; }
+    button:hover { border-color: var(--coffee); }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--focus) 45%, transparent);
+      outline-offset: 2px;
+    }
+    a { color: var(--coffee); }
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      min-height: 100vh;
+      transition: grid-template-columns 160ms ease;
+    }
+    body.detail-open .shell {
+      grid-template-columns: minmax(0, 1fr) var(--detail-width);
+    }
+    .workspace {
+      min-width: 0;
+      container: workspace / inline-size;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px clamp(18px, 3vw, 42px);
+      background: color-mix(in srgb, var(--paper) 91%, transparent);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+    }
+    .identity { min-width: 0; }
+    .eyebrow {
+      margin: 0 0 4px;
+      color: var(--accent);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 0;
+      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+      font-size: clamp(1.25rem, 2vw, 1.85rem);
+      letter-spacing: -.03em;
+    }
+    .theme-toggle { padding: 9px 12px; white-space: nowrap; }
+    main { padding: 28px clamp(18px, 3vw, 42px) 70px; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .metric {
+      padding: 15px 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .metric strong {
+      display: block;
+      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+      font-size: 1.65rem;
+    }
+    .metric span { color: var(--muted); font-size: .78rem; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 26px;
+      padding: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .views { display: flex; flex-wrap: wrap; gap: 6px; }
+    .views button { padding: 9px 13px; background: transparent; }
+    .views button[aria-pressed="true"] {
+      color: var(--surface);
+      background: var(--coffee-2);
+      border-color: var(--coffee-2);
+    }
+    .filters {
+      display: flex;
+      flex: 1 1 420px;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+    .filters input { flex: 1 1 210px; max-width: 380px; }
+    .filters input, .filters select { min-height: 38px; padding: 7px 10px; }
+    .view-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin: 0 0 18px;
+    }
+    .view-heading h2 {
+      margin-bottom: 4px;
+      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+      font-size: clamp(1.45rem, 2vw, 2rem);
+    }
+    .view-heading p { margin-bottom: 0; color: var(--muted); }
+    .count {
+      display: inline-flex;
+      min-width: 30px;
+      min-height: 30px;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+    .section { margin-top: 34px; }
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .section-heading h3 {
+      margin-bottom: 2px;
+      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+      font-size: 1.05rem;
+    }
+    .section-heading p { margin-bottom: 0; color: var(--muted); font-size: .8rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+      gap: 12px;
+    }
+    .standalone-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .record-card {
+      position: relative;
+      display: block;
+      width: 100%;
+      min-height: 156px;
+      padding: 16px;
+      text-align: left;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .record-card:hover { border-color: var(--coffee); }
+    .card-key {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+    .record-id {
+      color: var(--accent);
+      font-size: .74rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .record-card h3 {
+      margin-bottom: 12px;
+      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+    .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: .76rem; }
+    .relationship { margin-top: 13px; color: var(--muted); font-size: .76rem; }
+    .relationship strong { color: var(--ink); }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 7px;
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      font-size: .68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .status.ready { color: var(--ready); }
+    .status.progress { color: var(--progress); }
+    .status.blocked { color: var(--blocked); }
+    .status.done { color: var(--done); }
+    .status.decision { color: var(--accent); }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+    .column {
+      min-width: 0;
+      padding: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .column .record-card + .record-card { margin-top: 10px; }
+    .column-title {
+      display: flex;
+      justify-content: space-between;
+      margin: 2px 3px 12px;
+      color: var(--muted);
+      font-size: .8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .epic-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+    .epic-button {
+      flex: 0 0 250px;
+      min-height: 96px;
+      padding: 13px;
+      text-align: left;
+      background: var(--surface);
+      border-radius: var(--radius);
+    }
+    .progress-line {
+      display: flex;
+      height: 7px;
+      margin-top: 12px;
+      overflow: hidden;
+      background: var(--surface-2);
+      border-radius: 999px;
+    }
+    .progress-line span { display: block; }
+    .progress-line .complete { background: var(--ready); }
+    .progress-line .active { background: var(--progress); }
+    .progress-line .stuck { background: var(--blocked); }
+    .epic-group {
+      margin-bottom: 18px;
+      padding: 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .epic-group summary { cursor: pointer; list-style: none; }
+    .epic-group summary::-webkit-details-marker { display: none; }
+    .epic-summary { display: flex; justify-content: space-between; gap: 16px; }
+    .epic-children { margin-top: 14px; }
+    .dependency-row {
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr);
+      gap: 10px;
+      padding: 12px 0;
+      border-top: 1px solid var(--line);
+    }
+    .dependency-row:first-child { border-top: 0; }
+    .dependency-title {
+      padding: 0;
+      text-align: left;
+      background: transparent;
+      border: 0;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      padding: 4px 7px;
+      color: var(--coffee);
+      background: transparent;
+      border-color: var(--line);
+      font-size: .7rem;
+    }
+    .empty {
+      padding: 22px;
+      color: var(--muted);
+      text-align: center;
+      background: var(--surface);
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+    }
+    .detail {
+      position: sticky;
+      top: 0;
+      display: none;
+      height: 100vh;
+      overflow: auto;
+      padding: 22px;
+      background: var(--surface);
+      border-left: 1px solid var(--line);
+    }
+    body.detail-open .detail { display: block; }
+    .detail-close {
+      position: sticky;
+      top: 0;
+      float: right;
+      z-index: 2;
+      padding: 7px 10px;
+    }
+    .detail h2 {
+      clear: both;
+      padding-top: 18px;
+      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+      line-height: 1.15;
+    }
+    .detail-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 18px 0;
+    }
+    .meta-box {
+      padding: 10px;
+      background: var(--surface-2);
+      border-radius: 9px;
+      font-size: .78rem;
+    }
+    .meta-box span { color: var(--muted); }
+    .record-body {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    .record-body pre {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: var(--ink);
+      font: .82rem/1.65 ui-monospace, "SFMono-Regular", Consolas, monospace;
+    }
+    .source-link { display: inline-block; margin-top: 18px; }
+    @container workspace (max-width: 860px) {
+      .board { grid-template-columns: 1fr; }
+      .standalone-grid { grid-template-columns: 1fr; }
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dependency-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      body.detail-open .shell { display: block; }
+      .detail {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        width: 100%;
+        border-left: 0;
+      }
+      .filters { justify-content: stretch; }
+      .filters input { max-width: none; }
+    }
+    @media (max-width: 620px) {
+      .topbar { align-items: start; }
+      .summary { grid-template-columns: 1fr 1fr; }
+      .toolbar, .filters { display: grid; grid-template-columns: 1fr; }
+      .views { display: grid; grid-template-columns: 1fr 1fr; }
+      .views button { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="workspace">
+      <header class="topbar">
+        <div class="identity">
+          <p class="eyebrow">Issue workbench</p>
+          <h1>__PROJECT_NAME__</h1>
+        </div>
+        <button class="theme-toggle" id="theme-toggle" type="button">Toggle theme</button>
+      </header>
+      <main>
+        <section class="summary" id="summary"></section>
+        <section class="toolbar">
+          <nav class="views" aria-label="Dashboard views">
+            <button type="button" data-view="next">Next</button>
+            <button type="button" data-view="board">Board</button>
+            <button type="button" data-view="directory">Directory</button>
+            <button type="button" data-view="dependencies">Dependencies</button>
+          </nav>
+          <div class="filters">
+            <input id="search" type="search" placeholder="Search id, title, area, tag…" aria-label="Search records">
+            <select id="status-filter" aria-label="Filter status"></select>
+            <select id="area-filter" aria-label="Filter area"></select>
+            <select id="priority-filter" aria-label="Filter priority"></select>
+          </div>
+        </section>
+        <div id="app"></div>
+      </main>
+    </div>
+    <aside class="detail" id="detail" aria-label="Record details"></aside>
+  </div>
+  <script>
+    const data = __TRACKER_DATA__;
+    const byId = new Map(data.records.map(record => [record.id, record]));
+    const state = { view: "next", query: "", status: "all", area: "all", priority: "all" };
+    const activeStatuses = new Set(["pending", "in_progress", "blocked"]);
+    const priorityOrder = new Map(data.project.priorities.map((value, index) => [value, index]));
+    const app = document.querySelector("#app");
+    const detail = document.querySelector("#detail");
+
+    const escapeHtml = value => String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+    const label = value => String(value || "").replaceAll("_", " ").replace(/\b\w/g, char => char.toUpperCase());
+    const sortRecords = records => [...records].sort((left, right) =>
+      (priorityOrder.get(left.priority) ?? 99) - (priorityOrder.get(right.priority) ?? 99)
+      || left.id.localeCompare(right.id)
+    );
+    const displayStatus = record => record.kind === "decision"
+      ? record.readiness
+      : record.status === "pending" && record.type !== "epic" ? "ready" : record.status;
+    const tone = record => ({
+      pending: "ready", ready: "ready", in_progress: "progress", blocked: "blocked",
+      resolved: "done", wont_fix: "done", finalized: "done", waiting: "blocked"
+    })[displayStatus(record)] || "decision";
+    const isActiveTicket = record => record.kind === "ticket" && activeStatuses.has(record.status);
+    const matches = record => {
+      const haystack = [
+        record.id, record.title, record.type, record.status, record.area,
+        record.parent, ...(record.tags || []), ...(record.blockedBy || [])
+      ].join(" ").toLowerCase();
+      const status = displayStatus(record);
+      return (!state.query || haystack.includes(state.query))
+        && (state.status === "all" || status === state.status || record.status === state.status)
+        && (state.area === "all" || record.area === state.area)
+        && (state.priority === "all" || record.priority === state.priority);
+    };
+    const chips = ids => ids.length
+      ? `<div class="chips">${ids.map(id => `<button class="chip" type="button" data-record="${escapeHtml(id)}">${escapeHtml(id)}</button>`).join("")}</div>`
+      : `<span class="meta">None</span>`;
+    const progressLine = epic => {
+      const counts = epic.childCounts || {};
+      const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+      if (!total) return `<div class="meta">No child tickets</div>`;
+      const done = (counts.resolved || 0) + (counts.wont_fix || 0);
+      const active = (counts.pending || 0) + (counts.in_progress || 0);
+      const blocked = counts.blocked || 0;
+      return `<div class="progress-line" title="${done}/${total} complete">
+        <span class="complete" style="width:${done / total * 100}%"></span>
+        <span class="active" style="width:${active / total * 100}%"></span>
+        <span class="stuck" style="width:${blocked / total * 100}%"></span>
+      </div><div class="meta">${done}/${total} complete · ${blocked} blocked</div>`;
+    };
+    const card = record => {
+      const epic = record.parent ? byId.get(record.parent) : null;
+      const relationship = record.blockedBy.length
+        ? `<div class="relationship"><strong>Needs</strong> ${escapeHtml(record.blockedBy.join(", "))}</div>`
+        : record.unlocksNow.length
+          ? `<div class="relationship"><strong>Unlocks now</strong> ${escapeHtml(record.unlocksNow.join(", "))}</div>`
+          : "";
+      return `<button class="record-card" type="button" data-record="${escapeHtml(record.id)}">
+        <div class="card-key">
+          <span class="record-id">${escapeHtml(record.id)} · ${escapeHtml(label(record.type))}</span>
+          <span class="status ${tone(record)}">${escapeHtml(label(displayStatus(record)))}</span>
+        </div>
+        <h3>${escapeHtml(record.title)}</h3>
+        <div class="meta">
+          ${record.priority ? `<span>${escapeHtml(label(record.priority))}</span>` : ""}
+          <span>${escapeHtml(record.area)}</span>
+          ${epic ? `<span>Epic ${escapeHtml(epic.id)}</span>` : ""}
+        </div>
+        ${relationship}
+      </button>`;
+    };
+    const heading = (title, subtitle, count) => `<div class="view-heading">
+      <div><h2>${escapeHtml(title)}</h2><p>${escapeHtml(subtitle)}</p></div>
+      <span class="count">${count}</span>
+    </div>`;
+    const section = (title, subtitle, records) => `<section class="section">
+      <div class="section-heading"><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(subtitle)}</p></div><span class="count">${records.length}</span></div>
+      <div class="grid">${records.length ? records.map(card).join("") : `<div class="empty">Nothing here.</div>`}</div>
+    </section>`;
+    const epicStrip = epics => epics.length ? `<section class="section">
+      <div class="section-heading"><div><h3>Epics</h3><p>Active project arcs and child progress.</p></div><span class="count">${epics.length}</span></div>
+      <div class="epic-strip">${epics.map(epic => `<button class="epic-button" type="button" data-record="${escapeHtml(epic.id)}">
+        <span class="record-id">${escapeHtml(epic.id)}</span><br><strong>${escapeHtml(epic.title)}</strong>${progressLine(epic)}
+      </button>`).join("")}</div>
+    </section>` : "";
+
+    function renderNext() {
+      const readyDecisions = sortRecords(data.records.filter(record => record.kind === "decision" && record.readiness === "ready" && matches(record)));
+      const readyWork = sortRecords(data.records.filter(record => record.kind === "ticket" && record.type !== "epic" && record.status === "pending" && matches(record)));
+      const inProgress = sortRecords(data.records.filter(record => record.kind === "ticket" && record.type !== "epic" && record.status === "in_progress" && matches(record)));
+      const blocked = sortRecords(data.records.filter(record => record.kind === "ticket" && record.status === "blocked" && matches(record)));
+      const epics = sortRecords(data.records.filter(record => record.type === "epic" && isActiveTicket(record) && matches(record)));
+      const total = readyDecisions.length + readyWork.length + inProgress.length + blocked.length;
+      app.innerHTML = heading("What needs attention", "Decisions first, then actionable and blocked work.", total)
+        + section("Ready human decisions", "Choices that can be made now.", readyDecisions)
+        + section("Ready work", "Pending tickets with no blockers.", readyWork)
+        + section("In progress", "Work currently underway.", inProgress)
+        + epicStrip(epics)
+        + section("Blocked", "Work waiting on a decision or unfinished ticket.", blocked);
+    }
+
+    function renderBoard() {
+      const epics = sortRecords(data.records.filter(record => record.type === "epic" && isActiveTicket(record) && matches(record)));
+      const tickets = sortRecords(data.records.filter(record => record.kind === "ticket" && record.type !== "epic" && activeStatuses.has(record.status) && matches(record)));
+      const columns = [
+        ["In progress", tickets.filter(record => record.status === "in_progress")],
+        ["Ready", tickets.filter(record => record.status === "pending")],
+        ["Blocked", tickets.filter(record => record.status === "blocked")]
+      ];
+      app.innerHTML = heading("Board", "Active tickets grouped by current state.", tickets.length)
+        + epicStrip(epics)
+        + `<section class="section board">${columns.map(([title, records]) => `<div class="column">
+          <div class="column-title"><span>${title}</span><span>${records.length}</span></div>
+          ${records.length ? records.map(card).join("") : `<div class="empty">No tickets.</div>`}
+        </div>`).join("")}</section>`;
+    }
+
+    function renderDirectory() {
+      const selected = sortRecords(data.records.filter(matches));
+      const decisions = selected.filter(record => record.kind === "decision");
+      const epics = sortRecords(data.records.filter(record =>
+        record.type === "epic" && (
+          matches(record)
+          || (record.children || []).some(id => matches(byId.get(id)))
+        )
+      ));
+      const standalone = selected.filter(record => record.kind === "ticket" && !record.parent && record.type !== "epic");
+      const epicContent = epics.map(epic => {
+        const children = sortRecords((epic.children || []).map(id => byId.get(id)).filter(record => record && matches(record)));
+        return `<details class="epic-group" open>
+          <summary><div class="epic-summary"><div><span class="record-id">${escapeHtml(epic.id)} · Epic</span><br><strong>${escapeHtml(epic.title)}</strong></div><span class="status ${tone(epic)}">${escapeHtml(label(displayStatus(epic)))}</span></div>${progressLine(epic)}</summary>
+          <div class="epic-children grid">${children.length ? children.map(card).join("") : `<div class="empty">No matching children.</div>`}</div>
+        </details>`;
+      }).join("");
+      app.innerHTML = heading("Directory", "All epics, tickets, and decisions.", selected.length)
+        + section("Human decisions", "Pending and finalized choices.", decisions)
+        + `<section class="section"><div class="section-heading"><div><h3>Epics</h3><p>Project arcs and child tickets.</p></div><span class="count">${epics.length}</span></div>${epicContent || `<div class="empty">No epics match.</div>`}</section>`
+        + `<section class="section"><div class="section-heading"><div><h3>Standalone</h3><p>Tickets outside an epic.</p></div><span class="count">${standalone.length}</span></div><div class="grid standalone-grid">${standalone.length ? standalone.map(card).join("") : `<div class="empty">No standalone tickets match.</div>`}</div></section>`;
+    }
+
+    function renderDependencies() {
+      const records = sortRecords(data.records.filter(record =>
+        (record.blockedBy.length || record.dependents.length) && matches(record)
+      ));
+      app.innerHTML = heading("Dependencies", "Current blockers and direct downstream records.", records.length)
+        + `<section class="section">${records.length ? records.map(record => `<div class="dependency-row">
+          <button class="dependency-title" type="button" data-record="${escapeHtml(record.id)}"><span class="record-id">${escapeHtml(record.id)}</span><br><strong>${escapeHtml(record.title)}</strong></button>
+          <div><span class="meta">Needs</span>${chips(record.blockedBy)}</div>
+          <div><span class="meta">Directly blocks</span>${chips(record.dependents)}</div>
+        </div>`).join("") : `<div class="empty">No dependency relationships match.</div>`}</section>`;
+    }
+
+    function render() {
+      document.querySelectorAll("[data-view]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.view === state.view));
+      });
+      ({ next: renderNext, board: renderBoard, directory: renderDirectory, dependencies: renderDependencies })[state.view]();
+    }
+
+    function openDetail(recordId) {
+      const record = byId.get(recordId);
+      if (!record) return;
+      const epic = record.parent ? byId.get(record.parent) : null;
+      detail.innerHTML = `<button class="detail-close" type="button" aria-label="Close details">Close</button>
+        <span class="record-id">${escapeHtml(record.id)} · ${escapeHtml(label(record.type))}</span>
+        <h2>${escapeHtml(record.title)}</h2>
+        <span class="status ${tone(record)}">${escapeHtml(label(displayStatus(record)))}</span>
+        <div class="detail-meta">
+          <div class="meta-box"><span>Status</span><br>${escapeHtml(label(record.status))}</div>
+          <div class="meta-box"><span>Priority</span><br>${escapeHtml(label(record.priority || "—"))}</div>
+          <div class="meta-box"><span>Area</span><br>${escapeHtml(record.area)}</div>
+          <div class="meta-box"><span>Epic</span><br>${epic ? escapeHtml(epic.id) : "Standalone"}</div>
+        </div>
+        ${record.blockedBy.length ? `<div><strong>Blocked by</strong>${chips(record.blockedBy)}</div>` : ""}
+        ${record.dependents.length ? `<div><strong>Direct dependents</strong>${chips(record.dependents)}</div>` : ""}
+        <div class="record-body"><pre>${escapeHtml(record.markdown)}</pre></div>
+        <a class="source-link" href="${encodeURI(record.sourcePath)}">Open Markdown source</a>`;
+      document.body.classList.add("detail-open");
+      detail.scrollTop = 0;
+    }
+    function closeDetail() {
+      document.body.classList.remove("detail-open");
+      detail.innerHTML = "";
+    }
+    function fillSelect(selector, values, allLabel) {
+      document.querySelector(selector).innerHTML = `<option value="all">${escapeHtml(allLabel)}</option>`
+        + values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(label(value))}</option>`).join("");
+    }
+
+    document.querySelector("#summary").innerHTML = [
+      [data.summary.activeTickets, "Active tickets"],
+      [data.summary.blockedTickets, "Blocked"],
+      [data.summary.readyDecisions, "Ready decisions"],
+      [data.summary.tickets + data.summary.decisions, "All records"]
+    ].map(([value, name]) => `<div class="metric"><strong>${value}</strong><span>${name}</span></div>`).join("");
+    fillSelect("#status-filter", ["ready", "in_progress", "blocked", "resolved", "wont_fix", "waiting", "finalized"], "All statuses");
+    fillSelect("#area-filter", [...new Set(data.records.map(record => record.area))].sort(), "All areas");
+    fillSelect("#priority-filter", data.project.priorities, "All priorities");
+
+    document.addEventListener("click", event => {
+      const viewButton = event.target.closest("[data-view]");
+      if (viewButton) {
+        state.view = viewButton.dataset.view;
+        render();
+        return;
+      }
+      const recordButton = event.target.closest("[data-record]");
+      if (recordButton) {
+        openDetail(recordButton.dataset.record);
+        return;
+      }
+      if (event.target.closest(".detail-close")) closeDetail();
+    });
+    document.querySelector("#search").addEventListener("input", event => {
+      state.query = event.target.value.trim().toLowerCase();
+      render();
+    });
+    [["#status-filter", "status"], ["#area-filter", "area"], ["#priority-filter", "priority"]].forEach(([selector, key]) => {
+      document.querySelector(selector).addEventListener("change", event => {
+        state[key] = event.target.value;
+        render();
+      });
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeDetail();
+    });
+
+    const root = document.documentElement;
+    const storedTheme = localStorage.getItem("roastlogger-ticket-theme");
+    if (storedTheme) root.dataset.theme = storedTheme;
+    document.querySelector("#theme-toggle").addEventListener("click", () => {
+      const next = root.dataset.theme === "dark" ? "light" : "dark";
+      root.dataset.theme = next;
+      localStorage.setItem("roastlogger-ticket-theme", next);
+    });
+    render();
+  </script>
+</body>
+</html>

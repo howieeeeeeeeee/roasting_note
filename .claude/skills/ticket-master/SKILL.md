@@ -1,149 +1,237 @@
 ---
 name: ticket-master
-description: Create, refine, or help select RoastLogger tracked issues (`RN-XXXX`) in docs/issues/. Product-side requirement-gathering only — interrogate the user, write the ticket, identify which docs will need updating after the fix. NEVER implements the work itself. Use when the user wants to "add a ticket", "write up an issue", "refine RN-XXXX", "what should I work on next", or describes a problem/feature without committing to build it.
+description: "Create, refine, resolve, or select RoastLogger tickets (`RN-...`) and record or finalize human decisions (`HD-...`) in `docs/issues/`. Use for ticket planning, epics and child tickets, status changes, blocker propagation, dashboard maintenance, questions about remaining decisions, statements such as 'I decided', or product ideas that should be specified before implementation. Requirements and tracker maintenance only: update tracker records, but do not implement the underlying product work."
 ---
 
 # Ticket Master
 
-This skill turns vague product ideas into well-structured RoastLogger issue tickets at `docs/issues/RN-XXXX-*.md`. Its only job is **understanding the requirement** and **writing it down clearly**. It does not edit application code, run migrations, or start implementation — even if the requirement looks small.
+Turn RoastLogger work and unresolved human choices into concise, actionable
+records. Tickets track work. Human-decision records capture choices that require
+a person and make downstream blockers explicit.
 
-## Hard Guardrails
+## Guardrails
 
-- **NEVER implement.** Do not edit anything outside `docs/issues/` (and the regenerated index). No code changes, no template changes, no JS/CSS/Python edits. If the user asks you to start building, stop and remind them this skill is requirement-gathering only, then suggest they run the work in a fresh session on a `feat/`, `fix/`, or `improve/` branch.
-- **Read-only exploration is allowed and encouraged.** You may read files under `templates/`, `static/`, `app/`, `docs/features/`, `docs/design/`, `docs/architecture/`, and existing tickets to understand dependencies and current behaviour. Use `rg` and `Read`.
-- **Product first, technical second.** Lead with user-facing behaviour, acceptance criteria, and open questions. Only mention implementation hints when they materially shape scope.
-- **Ask, don't assume.** Use the **AskUserQuestion** tool for high-leverage clarifications. For lower-priority or async-friendly clarifications, write them into the ticket's `## Open Questions` section so the user can answer by editing the markdown later.
+- Do not implement application work while using this skill.
+- During an ordinary ticketing turn, edit only `docs/issues/**`.
+- During explicit ticket-system maintenance, also edit this skill, its bundled
+  resources, tests, and repository guidance requested by the user.
+- Before changing the generated dashboard, read `html/INSTRUCTIONS.md`
+  completely.
+- Read the applicable active template before writing:
+  - `docs/issues/templates/TICKET.md`
+  - `docs/issues/templates/HUMAN_DECISION.md`
+- Preserve ids and history. Status transitions change paths, not ids.
+- Ask only about choices that materially change scope, dependencies,
+  acceptance, or verification. Keep other unknowns as Open Questions.
+- Regenerate and validate the tracker after every record change.
+- Do not hand-edit generated Markdown views or `docs/issues/overview.html`.
 
-## When to Use
+## Core Flow
 
-Trigger this skill when the user:
+1. Choose the mode: create/refine a ticket or epic, create/finalize a human
+   decision, resolve a record, or recommend the next work.
+2. Read `docs/issues/README.md`, the applicable template, related records, and
+   the minimum product/docs context needed for accurate requirements.
+3. Read `DOCUMENTATION_WORKFLOW.md` completely and identify every document the
+   future implementation must update.
+4. Ask only missing questions that change record shape.
+5. Update records and propagate blockers across tickets and decisions.
+6. Run the generator, fix every validation error, and review the generated
+   Markdown views and dashboard.
+7. Hand off changed ids, current paths, blockers, documentation impact, and the
+   next action.
 
-- Describes a bug, feature, improvement, refactor, or todo without already being mid-implementation.
-- Says things like "let's track this", "add a ticket for…", "write this up", "refine RN-0013", "what should I pick up next?", "help me think through what we need before I start".
-- Has an open `docs/issues/RN-*.md` file in the IDE and is asking questions about it.
+## Record Model
 
-Do **not** trigger if the user is already on an implementation branch and asking you to write code — in that case the ticket should already exist; offer to refine it instead.
+Read project labels and allowed values from `docs/issues/tracker.toml`.
 
-## Inputs
+Tickets use:
 
-Figure out which mode applies before doing anything:
+- `RN-XXXX` for epics and standalone work;
+- `RN-XXXX-XX` for child tickets, with `parent: RN-XXXX`;
+- types `epic`, `bug`, `feature`, `improvement`, `refactor`, or `todo`;
+- priorities `high`, `medium`, or `low`; and
+- statuses `pending`, `in_progress`, `blocked`, `resolved`, or `wont_fix`.
 
-1. **Create new ticket** — user describes a problem or idea with no existing `RN-XXXX`.
-2. **Refine existing ticket** — user references a ticket id, filename, or has one open in the IDE.
-3. **Help pick a ticket to work on** — user asks "what should I do next" or similar.
+Every ticket includes these relationship fields, even when empty:
 
-If unclear, ask via AskUserQuestion with the three modes as options.
+```yaml
+parent:
+decisions: []
+blocked_by: []
+```
 
-## Workflow
+- `decisions` is durable provenance. Retain every governing `HD-XXXX` id after
+  finalization.
+- `blocked_by` is current state. List unresolved decisions and unfinished
+  tickets that prevent work from starting.
 
-### 1. Orient
+Human decisions use sequential ids such as `HD-0001`,
+`type: human-decision`, and status `pending` or `finalized`.
 
-- Read [docs/issues/README.md](../../../docs/issues/README.md) for the current ticket inventory and metadata rules.
-- Read [docs/issues/TEMPLATE.md](../../../docs/issues/TEMPLATE.md) for the canonical structure.
-- For "refine" mode, read the target ticket file fully.
-- For "help me pick" mode, summarize Pending tickets grouped by priority and area, then ask which one the user wants to dig into.
+- A pending decision with no blockers is ready for human review.
+- A pending decision with blockers is waiting for evidence.
+- A finalized decision records `finalized`, `outcome`, rationale, and the
+  decider when known.
 
-### 2. Interrogate the requirement
+## Block And Dependency Logic
 
-Use **AskUserQuestion** for the questions that genuinely block ticket structure. Batch related questions into a single AskUserQuestion call with multi-select where appropriate. Always include an "Other" or "Not sure — leave as Open Question" option so the user can defer.
+Treat frontmatter as authoritative:
 
-Always probe at minimum:
+- A ticket is `blocked` exactly when `blocked_by` is nonempty.
+- Every blocker is an existing pending decision or unfinished ticket.
+- Every pending decision must block at least one ticket.
+- A decision blocker on a ticket must also remain in its `decisions` list.
+- Consequential human choices use `HD-...` records, not unnamed prose blockers.
+- Finalizing a decision or resolving a ticket removes only that id from
+  downstream `blocked_by` lists.
+- A blocked ticket becomes `pending` only after its final blocker is removed.
+- Never move `in_progress`, `resolved`, or `wont_fix` work backward
+  automatically.
+- If an outcome makes work unnecessary, use `wont_fix`, fill `resolved`, and
+  explain why in `## Resolution`.
+- Keep Details, Open Questions, and Acceptance Criteria consistent with
+  frontmatter dependencies.
 
-- **User & trigger** — Who hits this? On which screen / flow / device? What action triggers it?
-- **Current behaviour** (for bugs/improvements) — What happens today? Is there a workaround?
-- **Desired behaviour** — What should happen instead? What's the minimum viable version vs the "nice to have" version?
-- **Scope boundaries** — What is explicitly *out of scope* for this ticket? (This is often the most valuable question.)
-- **Acceptance** — How will we know it's done? What can be checked in a browser or test?
-- **Priority & urgency** — Blocking a roast session? Cosmetic? Tied to a deadline?
-- **Type & area** — Map to the allowed `type` and a short `area` slug consistent with existing tickets (`live-roasting`, `label-creator`, `testing`, `docs`, `charting`, etc.).
+## Files And Layout
 
-For anything the user can't answer right now, **do not guess** — write it as a bullet under `## Open Questions` so they can answer by editing the file.
+```text
+docs/issues/
+  tracker.toml
+  overview.html
+  README.md
+  pending.md
+  in-progress.md
+  blocked.md
+  done.md
+  human-decisions.md
+  templates/
+    TICKET.md
+    HUMAN_DECISION.md
+  pending/
+  in_progress/
+  blocked/
+  resolved/
+  wont_fix/
+  decision-pending/
+  decision-finalized/
+```
 
-### 3. Read the codebase to ground the ticket
+File every epic and ticket under its own status. File child tickets inside an
+epic-named folder within that status. File decisions separately by decision
+status. Use stable ids, rather than hard-coded paths, when relating records.
 
-Before drafting, do a small amount of read-only exploration to:
+## New Ticket Or Epic
 
-- Confirm the relevant files exist and capture them under `## Related Files`.
-- Spot dependencies the user may not have mentioned (e.g., a feature touches both a template and a JS module and an API route).
-- Sanity-check claims about current behaviour against the actual code or existing feature doc.
+1. Read the generated tracker overview, relevant status page, and ticket
+   template.
+2. Ground the request with focused reads of related tickets, product docs, code,
+   and tests.
+3. Establish:
+   - user/trigger and current versus desired behavior;
+   - scope and explicit exclusions;
+   - parent epic or standalone placement;
+   - verification and acceptance;
+   - dependencies and human decisions;
+   - priority, type, area, and external effects; and
+   - documentation impact using `DOCUMENTATION_WORKFLOW.md`.
+4. Pick the next top-level id, or the next child suffix under an epic. Use a
+   short lowercase kebab filename.
+5. Write explicit `parent`, `decisions`, and `blocked_by` fields.
+6. Include `## Documentation Impact` and a documentation acceptance checkbox.
+7. Update the parent epic roadmap when applicable.
+8. Run the generator and fix every error.
 
-Keep this exploration tight — the goal is enough grounding to write a useful ticket, not a full investigation.
+Create an epic only for a meaningful multi-ticket outcome. Do not create empty
+epics or speculative child stubs.
 
-### 4. Identify docs that will need updating
+## Human Decisions
 
-Cross-reference the change against the project's "Keep Docs in Sync" table in [CLAUDE.md](../../../CLAUDE.md). For the proposed work, list which of these will need updates **when the ticket is later implemented**:
+### Create
 
-| Likely change | Doc to update |
-| --- | --- |
-| New / changed API route | `docs/architecture/api-endpoints.md` |
-| Schema change | `docs/architecture/data-models.md` |
-| New dependency | `docs/architecture/tech-stack.md` |
-| New / changed feature behaviour | `docs/features/<feature>.md` |
-| UI / CSS / visual change | Relevant file under `docs/design/` (foundations / components / screens / patterns) |
-| New screen or major layout change | `docs/design/screens/<screen>.md` + `docs/README.md` navigation |
+1. Pick the next `HD-XXXX` id.
+2. State one exact question, allowed outcomes, evidence, and deterministic
+   outcome actions.
+3. Add unfinished evidence records to the decision's `blocked_by`, or use an
+   empty list when it is ready now.
+4. Add the decision id to `decisions` on every related ticket.
+5. Add it to ticket `blocked_by` only where work truly cannot begin.
+6. Leave `finalized` and `outcome` blank.
+7. Run the generator and review readiness and related work.
 
-Embed this list inside the ticket's Acceptance Criteria as a single check item, e.g.:
+### Finalize When The User Says "I Decided"
 
-> - [ ] Relevant docs updated when implemented: `docs/features/bean-label-creator.md`, `docs/design/screens/label-creator.md`.
+1. Read the decision and every ticket that lists it in `decisions`.
+2. Match the user's statement to an allowed outcome; ask only when ambiguous.
+3. Set status to `finalized`; record the date, exact outcome, rationale, and
+   decider when known.
+4. Apply the declared outcome actions.
+5. Retain the decision id in all durable `decisions` lists.
+6. Remove it from downstream `blocked_by` lists.
+7. Recompute downstream statuses and decision readiness.
+8. Run the generator and report what was released, stayed blocked, resolved, or
+   became `wont_fix`.
 
-This is a forward-looking note for the future implementer — it is **not** a task for this skill to perform.
+## Resolve A Ticket
 
-### 5. Assign the ticket id
+1. Verify every acceptance criterion.
+2. Read the implementation diff and `DOCUMENTATION_WORKFLOW.md`; confirm all
+   affected docs were updated in the same branch.
+3. Update `## Documentation Impact` if implementation changed the expected doc
+   set.
+4. Add concise `## Resolution` notes, including verification and docs updated.
+5. Set status to `resolved` or `wont_fix` and fill `resolved`.
+6. Remove this id from downstream blockers and recompute their statuses.
+7. Run the generator and review every moved record and generated view.
 
-For new tickets:
+Do not mark a ticket complete while required documentation is missing.
 
-- Find the highest existing `RN-XXXX` id by listing `docs/issues/RN-*.md`.
-- Use the next zero-padded id (e.g. after `RN-0013` → `RN-0014`).
-- Filename convention: `RN-XXXX-short-kebab-slug.md`. Keep the slug short (≤ 6 words).
+## Choose The Next Work
 
-### 6. Write the ticket
+1. Read `pending.md`, `in-progress.md`, `blocked.md`, and
+   `human-decisions.md`.
+2. Separate actionable pending tickets from blocked work.
+3. Separate ready decisions from decisions waiting on evidence and state what
+   each decision would unlock.
+4. Recommend one next action and identify it as human review or implementation.
+5. Do not start implementation in the same ticketing turn.
 
-Use exactly the structure from `TEMPLATE.md`. Required sections in order:
+## Generation And Validation
 
-1. YAML frontmatter — `id`, `title`, `type`, `status: pending`, `priority`, `created` (today's date in `YYYY-MM-DD`), `resolved:` (blank), `area`, optional `tags` list.
-2. `# Title` (matches frontmatter title).
-3. `## Description` — 1–3 sentences, plain language, user-facing framing.
-4. `## Details` — bullet list of concrete requirements / repro steps / constraints.
-5. `## Acceptance Criteria` — `- [ ]` checkboxes the user or a future agent can verify, including the "docs updated" item.
-6. `## Open Questions` — every clarification the user couldn't or wouldn't answer in chat. Phrase each as a question the user can answer by typing inline. Inline answers (in the same bullet, after the question) are the convention — see RN-0013 for an example.
-7. `## Related Files` — file paths the implementer will likely touch. Backticked, no descriptions needed.
-
-Skip the `## Resolution` section — it's added when resolved.
-
-### 7. Regenerate the issues index
-
-After writing or editing any ticket frontmatter, run:
+Run from the repository root:
 
 ```bash
 uv run python scripts/generate_issues_index.py
+uv run python scripts/generate_issues_index.py --check
 ```
 
-Never hand-edit `docs/issues/README.md` — it's generated.
+The compatibility command delegates to this skill's generator. It validates
+ids, types, statuses, parents, decisions, blockers, cycles, and canonical paths;
+files records by status; refreshes Markdown indexes and decision related-work
+tables; and regenerates the offline dashboard.
 
-### 8. Hand off
+## RoastLogger Documentation Gate
 
-End with a short summary:
+Read `DOCUMENTATION_WORKFLOW.md` completely for the repository structure and
+routing table. In summary:
 
-- Ticket id, title, file path (as a clickable markdown link).
-- The Open Questions list, called out so the user knows to answer them.
-- The doc-update list that will apply at implementation time.
-- An explicit reminder: this skill does not implement; when ready, the user should branch (`feat/`, `fix/`, `improve/`) and pick the ticket up in a fresh session.
+- update architecture docs for routes, schemas, dependencies, or structural
+  changes;
+- update feature docs for behavior;
+- update design docs for visual or interaction changes;
+- update hardware or deployment docs when those surfaces change;
+- update `docs/README.md` or local indexes when navigation changes; and
+- update the governing ticket for ticketed implementation.
 
-## Refining an Existing Ticket
+When a change spans behavior and appearance, require both feature and design
+documentation and link between them instead of duplicating prose.
 
-For "refine" mode, the same workflow applies, but:
+## Handoff
 
-- Preserve the existing `id`, `created`, and filename.
-- If the title meaningfully changes, update both the frontmatter `title` and the `# Heading` — do **not** rename the file.
-- Treat the existing `## Open Questions` as a live list: ask the user about each one (AskUserQuestion), strike resolved ones by folding the answer into Details / Acceptance Criteria, and add new questions you uncover.
-- Re-run the index regeneration only if frontmatter changed.
+Report:
 
-## Helping Pick a Ticket
-
-For "what should I work on" mode:
-
-1. List pending tickets grouped by priority, then area.
-2. Ask via AskUserQuestion which area or priority the user wants to focus on (multi-select OK).
-3. For the chosen ticket, read it fully and summarize: what it asks for, what's still ambiguous (Open Questions), and what docs will need updating. Offer to switch into refine mode if the ticket is under-specified.
-
-Do not start implementation under any circumstances.
+- created or updated ids and current paths;
+- remaining decisions and Open Questions;
+- actionable versus blocked work with blocker ids;
+- verification and documentation targets; and
+- the next separate implementation or human-review action.

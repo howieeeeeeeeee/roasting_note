@@ -1,91 +1,57 @@
-# Codex Instructions for RoastLogger
+# RoastLogger Agent Guide
 
-> **Core responsibility:** whenever a change affects the **scope, behaviour, or appearance** of the project, update the relevant docs in the same change. Out-of-date docs are worse than no docs.
+Keep product changes, documentation, tickets, and verification in sync.
 
-## Documentation Map
+## Before Changing The Project
 
-```text
-docs/
-├── README.md         # Start here — overview + navigation
-├── architecture/     # Data models, API routes, tech stack
-├── design/           # Principles, tokens, components, screens, patterns
-├── features/         # Feature specifications (behaviour, API, data model)
-├── hardware/         # ESP32 temperature sensor
-├── issues/           # Bugs, features, improvements, todos (YAML-frontmatter tickets)
-└── deployment/       # Render deployment guide
+1. Create a branch from `main`: `feat/`, `fix/`, `improve/`, or `docs/`.
+2. Read `docs/README.md` for project context.
+3. Check `docs/issues/README.md` and related `RN-...` records.
+4. Read the feature, design, architecture, hardware, or deployment docs that
+   describe the affected behavior.
+5. Preserve unrelated user changes already in the worktree.
 
-tests/README.md       # How to run tests, fixtures, when to run them
-```
+## Documentation Is Part Of Done
 
-## Keep Docs in Sync — Required
+Update durable guidance in the same branch as the change:
 
-When your change touches the project, update the docs listed below **in the same branch**. If you're not sure whether a doc applies, err on updating it.
-
-| Change | Update |
+| Change | Documentation |
 | --- | --- |
-| New or changed API route | `docs/architecture/api-endpoints.md` |
-| Schema change | `docs/architecture/data-models.md` |
-| New dependency | `docs/architecture/tech-stack.md` |
-| New or changed feature behaviour | `docs/features/<feature>.md` |
-| **UI / CSS / visual change** (colour, font, spacing, layout, component, screen redesign, new design pattern) | **Relevant file under `docs/design/`** — foundations for token changes, components for reusable UI, screens for page-level layout, patterns for design systems |
-| New screen or major layout change | `docs/design/screens/<screen>.md` + `docs/README.md` navigation |
-| Bug fix or any ticketed work | Update the ticket in `docs/issues/` (see workflow below) |
+| API route | `docs/architecture/api-endpoints.md` |
+| Data shape/schema | `docs/architecture/data-models.md` |
+| Dependency or runtime | `docs/architecture/tech-stack.md` |
+| Feature behavior | Matching `docs/features/` file |
+| UI, CSS, layout, or interaction | Matching `docs/design/` foundation, component, screen, or pattern |
+| Hardware or deployment | Matching `docs/hardware/` or `docs/deployment/` file |
+| Testing workflow | `tests/README.md` |
+| Navigation/structure | Relevant `README.md` index |
+| Ticketed work | Governing record in `docs/issues/` |
 
-These index files must also stay current when structure changes:
+When behavior and appearance both change, update both feature and design docs.
+Link between documents instead of duplicating content. The full routing guide is
+`.claude/skills/ticket-master/DOCUMENTATION_WORKFLOW.md`.
 
-- `docs/README.md` — top-level navigation
-- `docs/design/README.md` — design folder navigation
-- `docs/issues/README.md` — generated index, do not hand-edit
+## Ticket Tracker
 
-If a feature change has visual implications, update **both** the feature doc (behaviour) and the design doc (look and feel). Do not duplicate content — link between them.
-
-## Branch Strategy
-
-```bash
-git checkout -b feat/<feature-name>      # new features
-git checkout -b fix/<bug-name>           # bug fixes
-git checkout -b improve/<improvement>    # improvements
-git checkout -b docs/<topic>             # doc-only changes
-```
-
-## Before Making Changes
-
-1. Create a new branch from `main`.
-2. Read `docs/README.md` for project overview.
-3. Check `docs/issues/README.md` for related tickets.
-4. Read the relevant docs — features, design, architecture — that overlap with your change.
-
-## Testing
-
-Run and write tests per `tests/README.md`. At minimum, run the API suite after any change to endpoints, database operations, or business logic, and before committing.
-
-```bash
-uv run pytest           # full suite
-uv run pytest -v        # verbose
-```
-
-Full details, fixtures, when-to-run rules, and how to add tests live in [tests/README.md](./tests/README.md).
-
-## Issues
-
-Tickets live in `docs/issues/` as Markdown files with YAML frontmatter. Each ticket has a stable `RN-XXXX` id — filenames never change when status changes; update the `status` field instead.
-
-Use `docs/issues/TEMPLATE.md` for new tickets. After creating or changing any ticket metadata, regenerate the index:
+- Use the `ticket-master` skill for `RN-...` tickets, epics, `HD-...` decisions,
+  blockers, status changes, and next-work selection.
+- Records are filed by status under `docs/issues/`; ids remain stable when paths
+  change.
+- Use `docs/issues/templates/`, not generated pages, as writing templates.
+- Never hand-edit `docs/issues/README.md`, status pages,
+  `human-decisions.md`, or `overview.html`.
+- After any record change, run:
 
 ```bash
 uv run python scripts/generate_issues_index.py
+uv run python scripts/generate_issues_index.py --check
 ```
 
-Do not hand-edit `docs/issues/README.md` — it is generated from ticket frontmatter. Field definitions, allowed values, and the full workflow live in [docs/issues/README.md](./docs/issues/README.md).
+## Verification
 
-## Quick Reference
+Follow `tests/README.md`. Run focused tests while iterating and the full suite
+before committing changes to application behavior:
 
-| Need to… | Go to |
-| --- | --- |
-| Understand the project | `docs/README.md` |
-| See API routes | `docs/architecture/api-endpoints.md` |
-| See DB schema | `docs/architecture/data-models.md` |
-| Understand a feature's behaviour | `docs/features/` |
-| Look up a design token / component / screen | `docs/design/` |
-| Check pending work | `docs/issues/README.md` |
-| Run tests | `tests/README.md` |
+```bash
+uv run pytest
+```

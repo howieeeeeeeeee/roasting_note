@@ -1,8 +1,11 @@
 ---
 name: ticket-master
-description: Create, refine, or help select RoastLogger tracked issues (`RN-XXXX`) in docs/issues/. Product-side requirement-gathering only — interrogate the user, write the ticket, identify which docs will need updating after the fix. NEVER implements the work itself. Use when the user wants to "add a ticket", "write up an issue", "refine RN-XXXX", "what should I work on next", or describes a problem/feature without committing to build it.
+description: Create, refine, resolve, or select RoastLogger tickets (`RN-...`) and human decisions (`HD-...`) in docs/issues/. Use for ticket planning, epics, child tickets, status changes, blocker propagation, dashboard maintenance, questions about remaining decisions, statements such as "I decided", or product ideas that should be specified before implementation. Tracker work only; do not implement the underlying product change.
 ---
 
 # Ticket Master
 
-Please read `.claude/skills/ticket-master/SKILL.md` for full instructions.
+Read `.claude/skills/ticket-master/SKILL.md` completely and follow it. Read
+`.claude/skills/ticket-master/DOCUMENTATION_WORKFLOW.md` whenever creating,
+refining, or resolving a ticket so the affected RoastLogger docs are recorded
+and updated with the future implementation.

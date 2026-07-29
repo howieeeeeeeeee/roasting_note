@@ -90,10 +90,13 @@ roasting_note/
 │   └── roast_*.html       # Roast pages
 ├── temp_logs/             # Local CSV temperature logs
 ├── docs/                  # Documentation
+├── .agents/skills/        # Repository-local Codex skill discovery
+├── .claude/skills/        # Repository-local skill instructions and resources
 ├── requirements.txt       # Python dependencies
 ├── .env                   # Environment variables (local)
 ├── .env.example           # Example environment file
-└── CLAUDE.md              # AI assistant instructions
+├── AGENTS.md              # Shared AI-agent workflow
+└── CLAUDE.md              # Claude-specific routing
 ```
 
 ---

@@ -10,7 +10,7 @@ A personal, mobile-responsive web application for tracking coffee beans, logging
 | [Design](./design/) | Design principles, tokens, components, screens |
 | [Features](./features/) | Detailed feature specifications |
 | [Hardware](./hardware/) | Temperature sensor setup (ESP32/K-Type) |
-| [Issues](./issues/) | Bugs, features, improvements, todos |
+| [Issues](./issues/) | Tickets, epics, human decisions, blockers, and dashboard |
 | [Deployment](./deployment/) | Render deployment guide |
 
 ## Project Overview
@@ -40,7 +40,8 @@ A personal, mobile-responsive web application for tracking coffee beans, logging
 | `models/roast_helpers.py` | Database helper functions |
 | `static/js/roast-chart.js` | Shared chart component |
 | `templates/roast_live.html` | Live roasting interface |
-| `CLAUDE.md` | AI assistant instructions |
+| `AGENTS.md` | Shared AI-agent workflow and documentation contract |
+| `CLAUDE.md` | Claude-specific routing to the shared workflow |
 
 ## Documentation Structure
 
@@ -65,9 +66,18 @@ docs/
 │   └── chart-visualization.md
 ├── hardware/              # Hardware docs
 │   └── thermo-sensor.md   # ESP32 K-Type sensor
-├── issues/               # RN issues (YAML-frontmatter tickets)
-│   ├── README.md          # Generated issues index — run scripts/generate_issues_index.py after ticket changes
-│   └── *.md               # Individual items
+├── issues/                # RN tickets, HD decisions, and generated workbench
+│   ├── README.md          # Generated tracker guide + status navigation
+│   ├── overview.html      # Generated self-contained dashboard
+│   ├── tracker.toml       # Prefixes, types, and priorities
+│   ├── templates/         # Active ticket and human-decision templates
+│   ├── pending/           # Ready work
+│   ├── in_progress/       # Work underway
+│   ├── blocked/           # Work with explicit blockers
+│   ├── resolved/          # Completed work
+│   ├── wont_fix/          # Intentionally closed work
+│   ├── decision-pending/  # Human choices awaiting evidence or a decision
+│   └── decision-finalized/# Recorded decisions and outcomes
 └── deployment/            # Deployment guides
 ```
 
@@ -83,10 +93,11 @@ When you change the project, update the docs that describe what you changed — 
 | Feature behaviour, lifecycle, or API surface | [features/](./features/) (the matching feature file) |
 | **UI / CSS / visual change** — colour, font, spacing, layout, component, screen, design pattern | **[design/](./design/)** — foundations, components, screens, or patterns depending on what changed |
 | New screen or major layout change | [design/screens/](./design/screens/) + this README's navigation block |
-| Bug fix or any ticketed work | The ticket under [issues/](./issues/), then run `uv run python scripts/generate_issues_index.py` |
+| Bug fix or any ticketed work | The record under [issues/](./issues/), then regenerate and validate the tracker |
 
 If a single change has both behaviour and visual implications, update the feature doc (behaviour) **and** the design doc (look & feel). Link between them rather than duplicating.
 
 ## For AI Assistants
 
-See [CLAUDE.md](../CLAUDE.md) for instructions on working with this repository.
+See [AGENTS.md](../AGENTS.md) for the shared workflow. Claude-specific routing
+lives in [CLAUDE.md](../CLAUDE.md).

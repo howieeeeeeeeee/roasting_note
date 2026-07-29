@@ -10,6 +10,7 @@ Run the test suite in these situations:
 2. **After adding new features** — write tests alongside the implementation, not after.
 3. **Before committing** — verify the suite passes before finalising changes.
 4. **When explicitly requested** — running specific tests or the full suite on demand.
+5. **After ticket-system changes** — run the tracker tests and stale-generation check after changing its schema, templates, generator, dashboard, or skill.
 
 For pure UI / CSS / documentation changes, running the API test suite is usually unnecessary — but it is always safe.
 
@@ -48,6 +49,7 @@ pytest tests/test_beans_api.py
 pytest tests/test_roasts_api.py
 pytest tests/test_reviews_api.py
 pytest tests/test_temperature_api.py
+pytest tests/test_ticket_system.py
 ```
 
 Run specific test class or method:
@@ -191,3 +193,18 @@ def test_my_feature(client, beans_collection):
 ```
 
 Or better, use the provided fixtures that handle cleanup automatically.
+
+## Ticket-System Verification
+
+The tracker has focused tests for metadata validation, epics and child filing,
+human-decision blockers, deterministic generation, stale output detection, and
+the offline dashboard:
+
+```bash
+uv run pytest tests/test_ticket_system.py
+uv run python scripts/generate_issues_index.py --check
+```
+
+Open `docs/issues/overview.html` directly after dashboard changes and verify the
+Next, Board, Directory, Dependencies, detail, filter, theme, desktop, and mobile
+states.

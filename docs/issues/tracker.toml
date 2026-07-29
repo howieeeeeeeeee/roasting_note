@@ -1,0 +1,7 @@
+[project]
+name = "RoastLogger"
+description = "Product, engineering, design, documentation, and hardware work for the RoastLogger application."
+ticket_prefix = "RN"
+decision_prefix = "HD"
+ticket_types = ["epic", "bug", "feature", "improvement", "refactor", "todo"]
+priorities = ["high", "medium", "low"]

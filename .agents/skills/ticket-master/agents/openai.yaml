@@ -1,0 +1,4 @@
+interface:
+  display_name: "RoastLogger Ticket Master"
+  short_description: "Plan work, decisions, blockers, and docs"
+  default_prompt: "Use $ticket-master to turn this RoastLogger request into a tracked ticket with dependencies and documentation impact."

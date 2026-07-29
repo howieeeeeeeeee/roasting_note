@@ -1,66 +1,59 @@
 # Issues
 
-Tracking for bugs, features, improvements, refactors, and todos.
+Issue and human-decision tracker for RoastLogger. Product, engineering, design, documentation, and hardware work for the RoastLogger application.
 
-> This file is generated from ticket frontmatter. To update it, edit ticket metadata and run `uv run python scripts/generate_issues_index.py`.
+> Generated from frontmatter by `.claude/skills/ticket-master/scripts/generate_issues_index.py`. Do not edit by hand.
+> Run `uv run python scripts/generate_issues_index.py` from the repository root after editing any record.
+
+## Status Overviews
+
+- [Visual Overview](./overview.html) — self-contained offline dashboard
+- [In Progress](./in-progress.md) — 0
+- [Blocked](./blocked.md) — 0
+- [Pending](./pending.md) — 2
+- [Done](./done.md) — 19 (resolved 18, won't-fix 1)
+- [Human Decisions](./human-decisions.md) — 0 pending, 0 finalized
+
+## Folder Layout
+
+- File every epic and ticket by its own status under `pending/`, `in_progress/`, `blocked/`, `resolved/`, or `wont_fix/`.
+- File a child ticket in an epic-named folder within its own status directory.
+- File human decisions under `decision-pending/` or `decision-finalized/`.
+- Keep ticket and decision templates under `templates/`.
+- Treat ids as stable; status transitions change paths.
 
 ## Ticket Metadata
 
-Tickets live in `docs/issues/` as Markdown files with YAML frontmatter.
-Filenames are stable and do not need to change when status changes; use the `status` field instead.
+| Field | Values / Format | Notes |
+| --- | --- | --- |
+| `id` | `RN-0001` or `RN-0001-01` | Stable epic/ticket id. |
+| `title` | Text | Human-readable title. |
+| `type` | `epic`, `bug`, `feature`, `improvement`, `refactor`, `todo` | Epics group child tickets; other values categorize work. |
+| `status` | `in_progress`, `blocked`, `pending`, `resolved`, `wont_fix` | Drives filing and overviews. |
+| `priority` | `high`, `medium`, `low` | Sort order within a status. |
+| `created` / `resolved` | `YYYY-MM-DD` | Completed work requires a resolution date. |
+| `parent` | `RN-XXXX` or blank | Parent epic for child tickets. |
+| `decisions` | List of `HD-XXXX` ids | Durable decision provenance. |
+| `blocked_by` | List of unresolved `HD-XXXX` or `RN-...` ids | Current blockers; nonempty exactly when status is blocked. |
+| `area` / `tags` | Slug / YAML list | Discovery metadata. |
+
+Use `docs/issues/templates/TICKET.md` for work and `docs/issues/templates/HUMAN_DECISION.md` for human choices.
+
+## Human-Decision Metadata
 
 | Field | Values / Format | Notes |
 | --- | --- | --- |
-| `id` | `RN-0001` | Stable ticket identifier. Increment for new tickets. |
-| `title` | Text | Human-readable ticket title. |
-| `type` | `bug`, `feature`, `improvement`, `refactor`, `todo` | Work category. |
-| `status` | `pending`, `in_progress`, `resolved`, `wont_fix` | Drives this index. |
-| `priority` | `high`, `medium`, `low` | Used for sorting within status. |
-| `created` | `YYYY-MM-DD` | Creation date. |
-| `resolved` | `YYYY-MM-DD` or blank | Fill when resolved. |
-| `area` | Short slug | Example: `live-roasting`, `testing`, `docs`. |
-| `tags` | YAML list | Optional discovery labels. |
+| `id` | `HD-XXXX` | Sequential human-decision id. |
+| `type` | `human-decision` | Separates decisions from implementation work. |
+| `status` | `pending`, `finalized` | Finalized requires an outcome and date. |
+| `outcome` | Allowed outcome key or blank | Exact recorded choice after finalization. |
+| `decided_by` | Name/role or blank | Optional provenance. |
+| `blocked_by` | Unfinished ticket or pending-decision ids | Empty means ready for review; nonempty means waiting for evidence. |
 
-Use `docs/issues/TEMPLATE.md` when creating a new ticket.
+## Block Logic
 
-## Current Tickets
+A ticket is `blocked` exactly when `blocked_by` is nonempty. A pending decision is ready exactly when `blocked_by` is empty. Finalizing a decision or resolving a ticket removes only that id from downstream blockers. A blocked ticket becomes pending only after no blockers remain.
 
-### Pending
+## Documentation Gate
 
-| ID | Type | Priority | Area | Title | Created | Resolved |
-| --- | --- | --- | --- | --- | --- | --- |
-| RN-0018 | [REFACTOR] | High | app-architecture | [Refactor Flask App into Smaller Modules](./RN-0018-refactor-app-py.md) | 2026-05-02 | - |
-| RN-0003 | [TODO] | Medium | testing | [UI/Interface Testing Framework](./RN-0003-ui-interface-testing-framework.md) | 2026-01-11 | - |
-
-### In Progress
-
-No tickets.
-
-## Resolved Tickets
-
-| ID | Type | Priority | Area | Title | Created | Resolved |
-| --- | --- | --- | --- | --- | --- | --- |
-| RN-0020 | [BUG] | Low | label-creator | [Sticker modal image list — remove unused scrollbar and dead space](./RN-0020-sticker-modal-image-list-layout.md) | 2026-05-04 | 2026-05-04 |
-| RN-0019 | [BUG] | Medium | live-roasting | [Show Roast Times in Operator Timezone (Not Raw UTC Clock)](./RN-0019-roast-datetime-local-display.md) | 2026-05-02 | 2026-05-03 |
-| RN-0017 | [FEATURE] | Medium | live-roasting | [Manually Set Draft Roast to Completed](./RN-0017-manual-draft-complete.md) | 2026-05-02 | 2026-05-02 |
-| RN-0015 | [BUG] | High | database-sync | [Make Database Sync Timestamp-Aware](./RN-0015-timestamp-aware-db-sync.md) | 2026-05-01 | 2026-05-02 |
-| RN-0013 | [FEATURE] | Medium | label-creator | [US-4 Sticker Sheet Creator for Bean Labels](./RN-0013-us-4-sticker-sheet-creator.md) | 2026-05-01 | 2026-05-02 |
-| RN-0010 | [BUG] | High | live-roasting | [Temperature Sensor Updates Stall During Live Roast](./RN-0010-temperature-update-stalls.md) | 2026-04-24 | 2026-05-02 |
-| RN-0016 | [FEATURE] | High | design-system | [New Design System Rollout & Full UI Redesign](./RN-0016-design-system-rollout.md) | 2026-05-01 | - |
-| RN-0014 | [FEATURE] | High | bean-inventory | [Add Short Flavor Note to Beans](./RN-0014-short-flavor-note.md) | 2026-05-01 | 2026-05-01 |
-| RN-0012 | [IMPROVEMENT] | Medium | label-creator | [Remember Last-Used Label Template, Font, and Aspect Ratio](./RN-0012-label-template-font-preferences.md) | 2026-04-25 | 2026-04-25 |
-| RN-0011 | [FEATURE] | Medium | label-creator | [Rotated (90°) PNG Download and Multi-Line Flavor Notes for Bean Labels](./RN-0011-label-png-rotated-download.md) | 2026-04-25 | 2026-04-25 |
-| RN-0009 | [BUG] | High | live-roasting | [Draft Roast Opens As Read-Only Detail Page](./RN-0009-draft-roast-readonly-detail.md) | 2026-04-24 | 2026-04-24 |
-| RN-0008 | [TODO] | Medium | docs | [Design Documentation Restructure](./RN-0008-design-documentation-restructure.md) | 2026-04-20 | 2026-04-24 |
-| RN-0007 | [IMPROVEMENT] | Medium | label-creator | [Label Creator Redesign](./RN-0007-label-creator-redesign.md) | 2026-04-20 | 2026-04-24 |
-| RN-0006 | [BUG] | High | live-roasting | [Live Chart and Data Recording Issues](./RN-0006-live-chart-data-recording-issues.md) | 2026-01-18 | 2026-01-18 |
-| RN-0005 | [FEATURE] | Medium | live-roasting | [Live Roast Page - Fullscreen Mode](./RN-0005-live-roast-fullscreen-mode.md) | 2026-01-16 | 2026-01-16 |
-| RN-0004 | [IMPROVEMENT] | High | live-roasting | [Live Roast Data Collection Accuracy](./RN-0004-live-roast-data-collection-accuracy.md) | 2026-01-11 | 2026-01-11 |
-| RN-0002 | [TODO] | High | testing | [API Testing Framework](./RN-0002-api-testing-framework.md) | 2026-01-11 | 2026-01-11 |
-| RN-0001 | [BUG] | High | charting | [Chart Visualization Fixes](./RN-0001-chart-visualization-fixes.md) | 2025-01-09 | 2025-01-10 |
-
-## Won't Fix Tickets
-
-| ID | Type | Priority | Area | Title | Created | Resolved |
-| --- | --- | --- | --- | --- | --- | --- |
-| RN-0021 | [BUG] | Medium | label-creator | [Label PNG Export Prints With Incorrect Colors](./RN-0021-label-png-print-color-shift.md) | 2026-05-05 | 2026-05-05 |
+Every new or refined ticket records exact documentation targets under `## Documentation Impact`. Before resolution, compare the implementation diff with `.claude/skills/ticket-master/DOCUMENTATION_WORKFLOW.md` and update every affected document in the same branch.
