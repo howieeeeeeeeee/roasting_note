@@ -2,7 +2,7 @@
 id: RN-0022
 title: Add Guarded, Audited Bidirectional Database Sync
 type: improvement
-status: pending
+status: in_progress
 priority: high
 created: 2026-07-29
 resolved:
@@ -406,6 +406,28 @@ file cannot remain tracked merely because a later ignore rule was added.
 - `docs/issues/templates/TICKET.md`
 - Conditional: `docs/architecture/data-models.md` if implementation changes the
   timestamp or document-shape contract instead of preserving `RN-0015`.
+
+## Database Operations Impact
+
+- Collections: `beans` and `roasts` are the default synchronization scope; an
+  applied run also reads and backs up every collection in the destination
+  database.
+- Local/online effects: the implementation changes synchronization,
+  preflight, backup, audit, configuration, and route behavior for both local
+  and online database roles.
+- Migration/backfill: none. The `RN-0015` timestamp and document-shape
+  contract is preserved.
+- Expected synchronization direction: both `online-to-local` and
+  `local-to-online` are supported, but no applied mirror is part of this
+  delivery.
+- Verification: automated work uses isolated fakes/fixtures. Configured live
+  checks are read-only `--dry-run` preflights. Resolution requires dry-run
+  evidence, full test results, documentation updates, and confirmation that
+  `db_backup/` has no tracked files.
+- Applied backup/audit evidence: not applicable unless the user separately
+  authorizes a run after seeing its preflight and supplies both run-specific
+  confirmation tokens. The current authorization explicitly excludes an
+  applied run.
 
 ## Open Questions
 
