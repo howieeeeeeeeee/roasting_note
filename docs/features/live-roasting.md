@@ -71,6 +71,15 @@ The live roasting page is the tablet-first interface used during an active roast
   duration. Non-`ok` sensor attempts are also stored in the bounded
   `sensor_diagnostics` array on the roast document.
 
+### Browser Module Boundary
+
+`templates/roast_live.html` keeps the server-rendered markup and existing DOM
+identifiers. Jinja-derived runtime state is encoded once in the
+`live-roast-config` JSON script element. `static/js/live-roast/index.js` reads
+that bootstrap and composes focused chart, session/polling, and fullscreen
+modules. The polling module schedules the next one-second request only after
+the current request completes, so requests do not overlap.
+
 ### Manual Events
 
 - Key timing events logged to `key_timings` array.
@@ -78,7 +87,9 @@ The live roasting page is the tablet-first interface used during an active roast
 
 ## Roast Lifecycle
 
-New and updated roasts store an explicit `lifecycle_status` value:
+New and updated roasts store an explicit `lifecycle_status` value. Lifecycle
+state and mutation behavior is implemented by focused services used by the
+roast route blueprint:
 `draft`, `started`, or `completed`. Older roasts without this field fall back
 to timestamp-derived lifecycle:
 

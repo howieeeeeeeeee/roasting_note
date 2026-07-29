@@ -25,6 +25,9 @@ Keep product changes, documentation, tickets, and verification in sync.
   limit.
 - Generated output, vendored or minified code, binaries, fonts, licenses, and
   lock files are exempt.
+- `tests/test_file_size_policy.py` enforces the policy for tracked
+  human-authored Python, JavaScript, HTML, CSS, C++, header, and Markdown
+  files.
 
 ## Documentation Is Part Of Done
 

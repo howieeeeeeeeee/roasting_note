@@ -33,37 +33,37 @@ pip install pytest pytest-flask
 Run all tests:
 
 ```bash
-pytest
+uv run pytest
 ```
 
 Run with verbose output:
 
 ```bash
-pytest -v
+uv run pytest -v
 ```
 
 Run specific test file:
 
 ```bash
-pytest tests/test_beans_api.py
-pytest tests/test_roasts_api.py
-pytest tests/test_reviews_api.py
-pytest tests/test_temperature_api.py
-pytest tests/test_ticket_system.py
+uv run pytest tests/test_beans_api.py
+uv run pytest tests/test_roasts_api.py
+uv run pytest tests/test_reviews_api.py
+uv run pytest tests/test_temperature_api.py
+uv run pytest tests/test_ticket_system.py
 ```
 
 Run specific test class or method:
 
 ```bash
-pytest tests/test_beans_api.py::TestBeanCreate
-pytest tests/test_beans_api.py::TestBeanCreate::test_create_bean_valid_data
+uv run pytest tests/test_beans_api.py::TestBeanCreate
+uv run pytest tests/test_beans_api.py::TestBeanCreate::test_create_bean_valid_data
 ```
 
 Run tests matching a pattern:
 
 ```bash
-pytest -k "stock"  # All tests with "stock" in name
-pytest -k "create or delete"  # Tests with "create" or "delete"
+uv run pytest -k "stock"  # All tests with "stock" in name
+uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 ```
 
 ## Test Coverage
@@ -103,6 +103,22 @@ pytest -k "create or delete"  # Tests with "create" or "delete"
 - RoR calculation logic
 
 **Note:** Temperature sensor tests are designed to pass whether the sensor is connected or not. When the sensor is unavailable, tests verify that the API gracefully returns error responses with the correct format.
+
+### Application Boundaries (`test_app_factory.py`)
+
+- Exact public route, method, and endpoint manifest
+- `create_app()` local database name and sensor URL overrides
+- Live-roast JSON bootstrap and JavaScript module entry
+
+### Repository Policy (`test_file_size_policy.py`)
+
+- Counts physical lines in tracked, human-authored Python, JavaScript, HTML,
+  CSS, C++, header, and Markdown files
+- Enforces the 1,000-line maximum with path and observed count failures
+- Exempts generated tracker output, generated-notice files, vendored/minified
+  assets, binaries, fonts, licenses, and lock files
+- Requires oversized code to be split by responsibility and oversized
+  documentation to be split by aspect with updated navigation
 
 ## Test Data Management
 
@@ -157,6 +173,7 @@ Common fixtures in `conftest.py`:
 | Fixture | Description |
 |---------|-------------|
 | `client` | Flask test client |
+| `app` | Default application configured for API regression tests |
 | `beans_collection` | Direct MongoDB beans collection access |
 | `roasts_collection` | Direct MongoDB roasts collection access |
 | `test_bean_data` | Sample bean form data |
@@ -208,3 +225,9 @@ uv run python scripts/generate_issues_index.py --check
 Open `docs/issues/overview.html` directly after dashboard changes and verify the
 Next, Board, Directory, Dependencies, detail, filter, theme, desktop, and mobile
 states.
+
+The supported generator script remains
+`.claude/skills/ticket-master/scripts/generate_issues_index.py`; it delegates
+record parsing, validation, filing, Markdown rendering, and orchestration to
+the internal `tracker/` package while preserving the script and import
+compatibility surface.
