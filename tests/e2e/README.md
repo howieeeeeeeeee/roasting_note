@@ -9,7 +9,8 @@ Selenium, Cypress, a production test-control route, or an online database.
 This file is the canonical durable UI regression checklist. Do not copy its
 changing scenario list into ticket skills or ticket records.
 
-For every new or changed visible UI interaction:
+This checklist applies to ticket browser levels `targeted` and `full`. For every
+new or changed visible UI interaction at either level:
 
 1. Record the exact scenario to add or update under the ticket's
    `## Testing Impact`.
@@ -23,9 +24,11 @@ For every new or changed visible UI interaction:
    Settings, or sync behavior.
 5. Update or remove obsolete steps when UI behavior changes or is removed.
 
-Purely visual changes still require a targeted browser check and screenshot;
-they do not require the complete workflow unless they affect a critical or
-cross-screen interaction.
+A small visual-only correction may use browser level `none` with a concrete
+ticket reason; it needs no browser run or checklist change. Use `targeted` with
+a screenshot when the change can hide content, affect responsive layout, or
+alter a shared component. Use `full` only when behavior spans a critical or
+cross-screen workflow.
 
 ## Safety Invariants
 

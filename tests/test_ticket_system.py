@@ -36,6 +36,7 @@ DEFAULT_TICKET_BODY = f"""# Record
 ## Testing Impact
 
 - Change classification: backend-api
+- Browser verification level: none
 - Automated tests to add or update: `tests/test_example.py`
 - Browser E2E scenarios to add or update: None
 - Required commands: `uv run pytest tests/test_example.py`
@@ -319,6 +320,9 @@ def test_ui_testing_impact_requires_browser_scenario(
     body = DEFAULT_TICKET_BODY.replace(
         "Change classification: backend-api",
         "Change classification: ui-interaction",
+    ).replace(
+        "Browser verification level: none",
+        "Browser verification level: targeted",
     )
     write_record(
         issues / "RN-0101-ui-change.md",
@@ -342,6 +346,84 @@ tags: [ui]
     with pytest.raises(
         ValueError,
         match="UI testing classification requires browser scenarios",
+    ):
+        TRACKER.generate(issues)
+
+
+def test_small_ui_visual_fix_can_omit_browser_task(
+    tmp_path: Path,
+) -> None:
+    issues = tmp_path / "docs" / "issues"
+    write_tracker_config(issues)
+    body = DEFAULT_TICKET_BODY.replace(
+        "Change classification: backend-api",
+        "Change classification: ui-visual",
+    ).replace(
+        "No visible UI behavior changes.",
+        "Small copy-only fix preserves layout and interaction contracts.",
+    )
+    write_record(
+        issues / "RN-0101-small-ui-fix.md",
+        """
+id: RN-0101
+title: Correct UI Copy
+type: bug
+status: pending
+priority: low
+created: 2026-07-29
+resolved:
+area: frontend
+parent:
+decisions: []
+blocked_by: []
+tags: [ui]
+""",
+        body,
+    )
+
+    TRACKER.generate(issues)
+
+
+def test_cross_workflow_requires_full_browser_level(
+    tmp_path: Path,
+) -> None:
+    issues = tmp_path / "docs" / "issues"
+    write_tracker_config(issues)
+    body = DEFAULT_TICKET_BODY.replace(
+        "Change classification: backend-api",
+        "Change classification: cross-workflow",
+    ).replace(
+        "Browser verification level: none",
+        "Browser verification level: targeted",
+    ).replace(
+        "Browser E2E scenarios to add or update: None",
+        "Browser E2E scenarios to add or update: Bean to roast workflow",
+    ).replace(
+        "Required browser evidence: None",
+        "Required browser evidence: Run summary and screenshots",
+    )
+    write_record(
+        issues / "RN-0101-cross-workflow.md",
+        """
+id: RN-0101
+title: Change Cross-Screen Workflow
+type: feature
+status: pending
+priority: high
+created: 2026-07-29
+resolved:
+area: frontend
+parent:
+decisions: []
+blocked_by: []
+tags: [ui]
+""",
+        body,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="require full browser verification",
     ):
         TRACKER.generate(issues)
 
@@ -473,7 +555,7 @@ def test_skill_and_templates_enforce_documentation_and_testing() -> None:
     assert "DOCUMENTATION_WORKFLOW.md" in skill
     assert "TESTING_WORKFLOW.md" in skill
     assert "html/INSTRUCTIONS.md" in skill
-    assert "required testing, browser evidence" in skill
+    assert "required testing, applicable browser" in skill
     assert "Database Operations Impact" in skill
     assert re.search(
         r"never\s+perform an applied database mirror",
@@ -486,7 +568,9 @@ def test_skill_and_templates_enforce_documentation_and_testing() -> None:
     assert "git ls-files db_backup" in workflow
     assert "tests/README.md" in testing_workflow
     assert "tests/e2e/README.md" in testing_workflow
-    assert "new or changed visible ui" in testing_workflow.lower()
+    assert "`none`, `targeted`, or `full`" in testing_workflow
+    assert "ask the user" in testing_workflow.lower()
+    assert "small visual fix" in testing_workflow.lower()
     assert "Browser checks supplement" in testing_workflow
     assert "testing_policy: v1" in testing_workflow
     dashboard_guidance = (
@@ -521,6 +605,7 @@ def test_skill_and_templates_enforce_documentation_and_testing() -> None:
     assert TESTING_ACCEPTANCE_TEXT in ticket_template
     for label in (
         "Change classification",
+        "Browser verification level",
         "Automated tests to add or update",
         "Browser E2E scenarios to add or update",
         "Required commands",
@@ -567,6 +652,8 @@ def test_test_inventory_and_ui_checklist_policy_are_current() -> None:
         encoding="utf-8"
     )
     assert "## Maintaining The UI Checklist" in e2e_readme
-    assert "every new or changed visible UI interaction" in e2e_readme
+    assert "new or changed visible UI interaction" in e2e_readme
     assert "observable success state" in e2e_readme
     assert "Update or remove obsolete steps" in e2e_readme
+    assert "small visual-only" in e2e_readme
+    assert "`none`" in e2e_readme

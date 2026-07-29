@@ -11,7 +11,10 @@ refining, or resolving a ticket so the affected RoastLogger docs are recorded
 and updated with the future implementation. Read
 `.claude/skills/ticket-master/TESTING_WORKFLOW.md` for the same ticket
 lifecycle so automated coverage and durable UI browser scenarios are declared
-and verified. Keep changing test lists in `tests/README.md` and
-`tests/e2e/README.md`, not in the skill. For database-impacting tickets, require
-the `## Database Operations Impact` contract and resolution evidence; ticketing
-work must never perform an applied database mirror.
+and verified at proportional levels: `none`, `targeted`, or `full`. Small
+visual-only fixes do not require a full browser task. When the appropriate
+level remains materially unclear, ask the user one concise level-selection
+question with a recommendation. Keep changing test lists in `tests/README.md`
+and `tests/e2e/README.md`, not in the skill. For database-impacting tickets,
+require the `## Database Operations Impact` contract and resolution evidence;
+ticketing work must never perform an applied database mirror.

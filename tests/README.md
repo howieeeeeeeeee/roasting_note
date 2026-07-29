@@ -14,7 +14,7 @@ Run the test suite in these situations:
 
 For documentation-only changes, running the API suite is usually unnecessary.
 UI and CSS changes follow the Testing Impact policy below: visible behavior
-requires a targeted browser scenario even when API coverage is unaffected.
+uses browser verification proportional to its risk and reach.
 
 ## Testing Impact Policy
 
@@ -26,16 +26,18 @@ Every active ticket uses
 `.claude/skills/ticket-master/TESTING_WORKFLOW.md` to record:
 
 - the change classification;
+- browser verification level `none`, `targeted`, or `full`;
 - exact automated tests to add or update;
 - exact browser scenarios to add or update;
 - required commands and evidence; and
 - a concrete reason for any omitted coverage.
 
-New or changed visible UI must update the E2E runbook and execute the targeted
-scenario. Cross-screen workflows and changes to live roasting, sensors,
-inventory deduction, Settings, or sync UI require the complete affected browser
-workflow. Browser checks supplement focused automated tests and
-`uv run pytest`; they do not replace them.
+Small low-risk visual-only fixes may use browser level `none` with a concrete
+reason and do not require a browser task or E2E checklist update. Focused
+layout or interaction changes use `targeted` and update the relevant scenario.
+Cross-screen workflows and behavioral changes to live roasting, sensors,
+inventory deduction, Settings, or sync UI use `full`. Browser checks supplement
+focused automated tests and `uv run pytest`; they do not replace them.
 
 ## Setup
 
@@ -284,8 +286,8 @@ Common fixtures in `conftest.py`:
 2. Import fixtures from conftest.py
 3. Mark any created documents with `test_data: True`
 4. Use fixtures that auto-cleanup, or clean up in test teardown
-5. For visible UI behavior, add or update the durable browser scenario in
-   `tests/e2e/README.md`
+5. For browser level `targeted` or `full`, add or update the durable browser
+   scenario in `tests/e2e/README.md`
 
 Example:
 
@@ -315,8 +317,9 @@ Or better, use the provided fixtures that handle cleanup automatically.
 The tracker has focused tests for metadata validation, epics and child filing,
 human-decision blockers, deterministic generation, stale output detection, and
 the offline dashboard. It also enforces `testing_policy: v1`, complete Testing
-Impact fields, checked testing acceptance on completed policy tickets, and
-browser scenarios/evidence for UI classifications:
+Impact fields, checked testing acceptance on completed policy tickets, valid
+browser levels, proportional omission for small visual fixes, and browser
+scenarios/evidence for interaction and workflow classifications:
 
 ```bash
 uv run pytest tests/test_ticket_system.py

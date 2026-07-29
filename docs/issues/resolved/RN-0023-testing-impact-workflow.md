@@ -57,6 +57,7 @@ coverage.
 ## Testing Impact
 
 - Change classification: backend-api, refactor
+- Browser verification level: none
 - Automated tests to add or update: `tests/test_ticket_system.py`
 - Browser E2E scenarios to add or update: None
 - Required commands: `uv run pytest tests/test_ticket_system.py`; `uv run python scripts/generate_issues_index.py`; `uv run python scripts/generate_issues_index.py --check`; `uv run pytest`

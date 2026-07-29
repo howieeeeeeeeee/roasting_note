@@ -58,8 +58,13 @@ Link between documents instead of duplicating content. The full routing guide is
 - Keep the automated test inventory in `tests/README.md` and the durable UI
   regression checklist in `tests/e2e/README.md`; do not duplicate those
   changing lists in tickets or skills.
-- New or changed visible UI must add or update its browser scenario. Removed UI
-  must remove or revise obsolete scenarios.
+- Record browser verification as `none`, `targeted`, or `full`. Small low-risk
+  visual-only fixes may use `none` with a concrete reason; focused interaction
+  changes use `targeted`; critical or cross-workflow behavior uses `full`.
+- During ticket creation, ask the user one concise level-selection question
+  only when focused reads do not make the appropriate level clear.
+- `targeted` and `full` changes add or update their browser scenario. Removed
+  UI must remove or revise obsolete scenarios.
 - Browser checks supplement focused automated tests and the full pytest suite;
   they do not replace them.
 
@@ -117,5 +122,6 @@ before committing changes to application behavior:
 uv run pytest
 ```
 
-For new or changed visible UI, also update `tests/e2e/README.md`, run the
-declared browser scenario, and record its evidence and cleanup in the ticket.
+For browser level `targeted` or `full`, also update `tests/e2e/README.md`, run
+the declared browser scenario, and record its evidence and cleanup in the
+ticket. Browser level `none` requires a concrete reason but no browser task.

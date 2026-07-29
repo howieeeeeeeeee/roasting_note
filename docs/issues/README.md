@@ -11,7 +11,7 @@ Issue and human-decision tracker for RoastLogger. Product, engineering, design, 
 - [In Progress](./in-progress.md) — 0
 - [Blocked](./blocked.md) — 0
 - [Pending](./pending.md) — 0
-- [Done](./done.md) — 23 (resolved 22, won't-fix 1)
+- [Done](./done.md) — 24 (resolved 23, won't-fix 1)
 - [Human Decisions](./human-decisions.md) — 0 pending, 0 finalized
 
 ## Folder Layout
@@ -57,7 +57,7 @@ A ticket is `blocked` exactly when `blocked_by` is nonempty. A pending decision 
 
 ## Testing Gate
 
-Every active ticket uses `testing_policy: v1` and records exact automated tests, browser scenarios, commands, and evidence under `## Testing Impact`. New or changed visible UI must update `tests/e2e/README.md`. Before resolution, compare the implementation diff with `.claude/skills/ticket-master/TESTING_WORKFLOW.md` and record the required results.
+Every active ticket uses `testing_policy: v1` and records exact automated tests, browser scenarios, commands, and evidence under `## Testing Impact`. Browser level is `none`, `targeted`, or `full`: small visual-only fixes may use `none`, while only `targeted` and `full` update `tests/e2e/README.md`. Before resolution, compare the implementation diff with `.claude/skills/ticket-master/TESTING_WORKFLOW.md` and record the required results.
 
 ## Documentation Gate
 
