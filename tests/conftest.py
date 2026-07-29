@@ -7,7 +7,7 @@ Tests run against the local database only.
 import os
 import sys
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 
@@ -101,8 +101,8 @@ def created_test_bean(beans_collection, test_bean_data):
         'notes': test_bean_data['notes'],
         'unit_price_per_kg': Decimal128('45.00'),
         'archived': False,
-        'created_at': datetime.now(),
-        'updated_at': datetime.now(),
+        'created_at': datetime.now(timezone.utc),
+        'updated_at': datetime.now(timezone.utc),
         **TEST_DATA_MARKER
     }
 
@@ -126,8 +126,8 @@ def created_test_roast(roasts_collection, beans_collection, test_bean_data):
         'supplier': test_bean_data['supplier'],
         'stock_grams': int(test_bean_data['stock_grams']),
         'archived': False,
-        'created_at': datetime.now(),
-        'updated_at': datetime.now(),
+        'created_at': datetime.now(timezone.utc),
+        'updated_at': datetime.now(timezone.utc),
         **TEST_DATA_MARKER
     }
     bean_result = beans_collection.insert_one(bean_doc)
@@ -137,7 +137,7 @@ def created_test_roast(roasts_collection, beans_collection, test_bean_data):
     roast_doc = {
         'title': 'Test Roast',
         'bean_id': bean_id,
-        'roast_date': datetime.now(),
+        'roast_date': datetime.now(timezone.utc),
         'original_weight_grams': 200,
         'roaster': 'Freshroast SR800',
         'temp_measurement_method': 'K-Type Sensor V1',
@@ -145,8 +145,8 @@ def created_test_roast(roasts_collection, beans_collection, test_bean_data):
         'temp_curve': [],
         'reviews': [],
         'archived': False,
-        'created_at': datetime.now(),
-        'updated_at': datetime.now(),
+        'created_at': datetime.now(timezone.utc),
+        'updated_at': datetime.now(timezone.utc),
         **TEST_DATA_MARKER
     }
     roast_result = roasts_collection.insert_one(roast_doc)
@@ -174,8 +174,8 @@ def started_test_roast(roasts_collection, beans_collection, test_bean_data):
         'supplier': test_bean_data['supplier'],
         'stock_grams': int(test_bean_data['stock_grams']),
         'archived': False,
-        'created_at': datetime.now(),
-        'updated_at': datetime.now(),
+        'created_at': datetime.now(timezone.utc),
+        'updated_at': datetime.now(timezone.utc),
         **TEST_DATA_MARKER
     }
     bean_result = beans_collection.insert_one(bean_doc)
@@ -185,8 +185,8 @@ def started_test_roast(roasts_collection, beans_collection, test_bean_data):
     roast_doc = {
         'title': 'Test Started Roast',
         'bean_id': bean_id,
-        'roast_date': datetime.now(),
-        'roast_start_time': datetime.now(),
+        'roast_date': datetime.now(timezone.utc),
+        'roast_start_time': datetime.now(timezone.utc),
         'original_weight_grams': 200,
         'roaster': 'Freshroast SR800',
         'temp_measurement_method': 'K-Type Sensor V1',
@@ -194,8 +194,8 @@ def started_test_roast(roasts_collection, beans_collection, test_bean_data):
         'temp_curve': [],
         'reviews': [],
         'archived': False,
-        'created_at': datetime.now(),
-        'updated_at': datetime.now(),
+        'created_at': datetime.now(timezone.utc),
+        'updated_at': datetime.now(timezone.utc),
         **TEST_DATA_MARKER
     }
     roast_result = roasts_collection.insert_one(roast_doc)
