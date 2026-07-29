@@ -49,6 +49,20 @@ When behavior and appearance both change, update both feature and design docs.
 Link between documents instead of duplicating content. The full routing guide is
 `.claude/skills/ticket-master/DOCUMENTATION_WORKFLOW.md`.
 
+## Testing Impact Is Part Of The Ticket
+
+- Every active ticket uses `testing_policy: v1` and records exact automated
+  tests, browser scenarios, commands, and evidence under `## Testing Impact`.
+- Use `.claude/skills/ticket-master/TESTING_WORKFLOW.md` to classify the change
+  and select the required verification.
+- Keep the automated test inventory in `tests/README.md` and the durable UI
+  regression checklist in `tests/e2e/README.md`; do not duplicate those
+  changing lists in tickets or skills.
+- New or changed visible UI must add or update its browser scenario. Removed UI
+  must remove or revise obsolete scenarios.
+- Browser checks supplement focused automated tests and the full pytest suite;
+  they do not replace them.
+
 ## Ticket Tracker
 
 - Use the `ticket-master` skill for `RN-...` tickets, epics, `HD-...` decisions,
@@ -102,3 +116,6 @@ before committing changes to application behavior:
 ```bash
 uv run pytest
 ```
+
+For new or changed visible UI, also update `tests/e2e/README.md`, run the
+declared browser scenario, and record its evidence and cleanup in the ticket.
