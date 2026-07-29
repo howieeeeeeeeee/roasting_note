@@ -15,16 +15,25 @@ GENERATED_NOTICE = b"Generated from frontmatter by"
 
 def tracked_files() -> list[Path]:
     result = subprocess.run(
-        ["git", "ls-files", "-z"],
+        [
+            "git",
+            "ls-files",
+            "-z",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+        ],
         cwd=ROOT,
         check=True,
         capture_output=True,
     )
-    return [
-        Path(path.decode())
-        for path in result.stdout.split(b"\0")
-        if path
-    ]
+    return sorted(
+        {
+            Path(path.decode())
+            for path in result.stdout.split(b"\0")
+            if path and (ROOT / path.decode()).is_file()
+        }
+    )
 
 
 def is_exempt(path: Path, content: bytes) -> bool:
