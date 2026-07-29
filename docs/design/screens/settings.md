@@ -58,3 +58,11 @@ nodes so endpoint labels cannot inject markup.
 The existing flex-wrap layout allows buttons to wrap at narrow widths. The
 result panel uses `overflow-wrap: anywhere` for long run IDs, paths, and CLI
 commands. No new breakpoint or design token is introduced.
+
+## E2E Safety State
+
+In dedicated E2E mode, the database label includes
+`local (roastlogger_e2e / <run-id>)` and the Online radio is disabled. Sync
+preflight buttons remain visible so the fail-closed RN-0022 contract can be
+verified: a click produces the existing prominent error result and an
+artifact-local intent audit, without initializing or accessing online state.

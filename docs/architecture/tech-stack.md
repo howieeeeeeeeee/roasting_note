@@ -64,6 +64,9 @@ Technologies and dependencies used in RoastLogger.
 | `MONGO_URI_LOCAL` | Local MongoDB connection | Required |
 | `DEFAULT_DB` | Default database mode; invalid values fall back to local | `local` |
 | `DEVICE` | Stable per-machine sync/audit identity; blank is rejected by sync | Required for sync |
+| `E2E_MODE` | Enable fail-closed dedicated browser-test runtime | `false` |
+| `E2E_RUN_ID` | Safe unique marker required when E2E mode is enabled | Empty |
+| `E2E_ARTIFACT_ROOT` | Ignored run evidence and log root | Run-scoped path |
 | `TEMP_SENSOR_URL` | Temperature sensor endpoint | `http://192.168.0.47/temp` |
 | `LOCAL_DB_NAME` | Local MongoDB database name; injectable for isolated runtimes | `roastlogger` |
 | `TIMEZONE` | Operator display/storage timezone | `America/New_York` |
@@ -102,6 +105,10 @@ roasting_note/
 │   ├── beans_*.html       # Bean pages
 │   └── roast_*.html       # Roast pages
 ├── temp_logs/             # Local CSV temperature logs
+├── tests/e2e/             # Dedicated runtime, virtual sensor, cleanup, runbook
+│   ├── manage.py          # Start and run-scoped cleanup commands
+│   ├── virtual_sensor.py  # Deterministic ESP32-compatible scenarios
+│   └── artifacts/         # Ignored browser/log/evidence output
 ├── docs/                  # Documentation
 ├── .agents/skills/        # Repository-local Codex skill discovery
 ├── .claude/skills/        # Repository-local skill instructions and resources
@@ -117,6 +124,11 @@ roasting_note/
 support both `python app.py` and `gunicorn app:app`. Tests and specialized
 local runtimes can call `create_app()` with configuration overrides without
 changing production defaults.
+
+In E2E mode, `roastlogger.database.DatabaseConnections` constructs only the
+loopback local client for database `roastlogger_e2e`; `online_client` and
+`online_db` are `None`. The factory rejects remote local/sensor hosts, unsafe
+run IDs, or any other database name before client initialization.
 
 ---
 

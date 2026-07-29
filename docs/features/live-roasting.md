@@ -62,7 +62,8 @@ The live roasting page is the tablet-first interface used during an active roast
 ### Automatic Logging
 
 - Temperature fetched every 1 second with up to 3 attempts per sync.
-- Logged to local CSV every second (`temp_logs/{roast_id}.csv`).
+- Logged to the configured local log directory every second
+  (`{TEMP_LOG_DIR}/{roast_id}.csv`; normal default `temp_logs/`).
 - Sensor read diagnostics logged locally every sync
   (`temp_logs/{roast_id}_sensor_diagnostics.csv`).
 - Logged to database every second (configurable via `DB_LOG_INTERVAL_SECONDS`).
@@ -70,6 +71,11 @@ The live roasting page is the tablet-first interface used during an active roast
 - Successful `temp_curve` entries include sensor attempt counts and read
   duration. Non-`ok` sensor attempts are also stored in the bounded
   `sensor_diagnostics` array on the roast document.
+
+The E2E runtime redirects both CSV files into its ignored run artifact
+directory. The virtual sensor exercises healthy, slow, rate-limited, timeout,
+offline, malformed, fault, and recovered states without physical hardware.
+See [the Codex in-app-browser runbook](../../tests/e2e/README.md).
 
 ### Browser Module Boundary
 

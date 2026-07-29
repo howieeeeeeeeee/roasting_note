@@ -16,6 +16,11 @@ K-Type thermocouple sensor integration for real-time temperature monitoring.
 TEMP_SENSOR_URL=http://192.168.0.47/temp
 ```
 
+For browser E2E runs, the harness forces a loopback sensor URL and starts the
+deterministic implementation in `tests/e2e/virtual_sensor.py`. It implements
+the same `/temp` and `/diagnostics` contracts; its loopback-only control changes
+scenarios without restarting RoastLogger.
+
 ### Sensor Response Format
 
 ```json
@@ -136,6 +141,22 @@ For detailed analysis, temperatures are also logged locally:
 | ESP32 diagnostics fault | Display `Sensor fault`, include diagnostic error bits |
 | < 2 successful reads on `/api/temp/current` | Return null with retry metadata |
 | DB save fails | Continue display, log error |
+
+## Deterministic E2E Scenarios
+
+| Scenario | Contract |
+| --- | --- |
+| `healthy-ramp` | Repeatable increasing Celsius/Fahrenheit values |
+| `slow-success` | Valid response after a realistic sub-timeout delay |
+| `rate-limited` | Configurable HTTP 429 calls followed by recovery |
+| `timeout` | Response delayed beyond the E2E application timeout |
+| `offline` | Deterministic HTTP 503 response |
+| `malformed` | Invalid JSON response |
+| `fault` | Failed temperature read plus thermocouple fault bits from diagnostics |
+
+Scenario contract and RoastLogger integration tests live in
+`tests/test_virtual_sensor.py`. The browser procedure and expected visible
+states are in [the E2E runbook](../../tests/e2e/README.md).
 
 ## Default Measurement Method
 
