@@ -2,14 +2,14 @@
 id: RN-0022
 title: Add Guarded, Audited Bidirectional Database Sync
 type: improvement
-status: pending
+status: blocked
 priority: high
 created: 2026-07-29
 resolved:
 area: database-sync
 parent:
 decisions: []
-blocked_by: []
+blocked_by: [RN-0018]
 tags:
   - mongodb
   - backup
@@ -446,6 +446,6 @@ file cannot remain tracked merely because a later ignore rule was added.
 
 - `RN-0015` defines the timestamp-aware merge behavior that this ticket must
   preserve.
-- `RN-0018` plans the broader application-module refactor. This ticket may
-  extract focused sync, backup, and audit services independently, but must not
-  broaden into the rest of that refactor.
+- `RN-0018` provides the application factory, blueprint, configuration, and
+  service boundaries used by this ticket. RN-0022 starts only after RN-0018 is
+  resolved.

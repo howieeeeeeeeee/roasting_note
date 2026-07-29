@@ -2,7 +2,7 @@
 id: RN-0018
 title: Refactor Oversized Source Files into Focused Modules
 type: refactor
-status: pending
+status: in_progress
 priority: high
 created: 2026-05-02
 resolved:
