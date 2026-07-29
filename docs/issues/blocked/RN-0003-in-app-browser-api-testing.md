@@ -9,7 +9,7 @@ resolved:
 area: testing
 parent:
 decisions: []
-blocked_by: [RN-0018]
+blocked_by: [RN-0022]
 tags:
   - ui
   - e2e
@@ -32,9 +32,11 @@ sensor board.
 
 ### Dependency
 
-- Blocked by RN-0018. The app factory/configuration boundary, injectable local
-  database name and sensor URL, modular live-roast JavaScript, and route
-  regression baseline must exist before the E2E harness is added.
+- Blocked by RN-0022, which itself follows RN-0018. The E2E harness therefore
+  starts only after the app factory/configuration boundary, injectable local
+  database name and sensor URL, modular live-roast JavaScript, route
+  regression baseline, and guarded fail-closed synchronization contract all
+  exist.
 
 ### Browser-Test Approach
 

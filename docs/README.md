@@ -36,9 +36,11 @@ A personal, mobile-responsive web application for tracking coffee beans, logging
 
 | File | Purpose |
 |------|---------|
-| `app.py` | Main Flask application with all routes |
+| `app.py` | Stable direct-run and `gunicorn app:app` compatibility entry point |
+| `roastlogger/` | Application factory, feature blueprints, configuration, database, and services |
 | `models/roast_helpers.py` | Database helper functions |
 | `static/js/roast-chart.js` | Shared chart component |
+| `static/js/live-roast/` | Live-roast chart, polling/session, and fullscreen modules |
 | `templates/roast_live.html` | Live roasting interface |
 | `AGENTS.md` | Shared AI-agent workflow and documentation contract |
 | `CLAUDE.md` | Claude-specific routing to the shared workflow |
@@ -80,6 +82,12 @@ docs/
 │   └── decision-finalized/# Recorded decisions and outcomes
 └── deployment/            # Deployment guides
 ```
+
+Application code is organized under `roastlogger/`: `create_app()` configures
+database connections and template helpers, registers feature-focused
+blueprints, and delegates lifecycle, sensor/RoR, live-sync, and
+timestamp-aware database-sync behavior to service modules. `app.py` keeps the
+historic development, test-import, and Gunicorn entry-point contract.
 
 ## Keeping Docs in Sync
 

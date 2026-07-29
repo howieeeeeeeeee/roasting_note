@@ -21,9 +21,9 @@ Technical architecture documentation for RoastLogger.
 └────────────────────────────┬────────────────────────────────┘
                              │ HTTP/REST
 ┌────────────────────────────▼────────────────────────────────┐
-│                    Flask Backend (app.py)                    │
+│            Flask Backend (app.py → create_app())             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   Routes    │  │   Helpers   │  │  Temp Sensor Client │ │
+│  │ Blueprints  │  │  Services   │  │ Config + DB Access  │ │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
 └────────────────────────────┬────────────────────────────────┘
                              │ PyMongo
@@ -48,3 +48,10 @@ Technical architecture documentation for RoastLogger.
 2. **Soft Deletion** - Items marked `archived: true` instead of actual deletion
 3. **Stock Management** - Bean stock automatically adjusted when roasts are created/archived
 4. **Shared Chart Module** - Single `roast-chart.js` used across live, detail, and edit pages
+5. **Application Factory** - `roastlogger.create_app(config_overrides=None)`
+   owns configuration, database selection, template helpers, and
+   feature-blueprint registration while `app.py` remains the stable entry
+   point.
+6. **Directed Dependencies** - Route modules parse and serialize HTTP data,
+   then call focused lifecycle, sensor/RoR, live-sync, or database-sync
+   services. Services do not import `app.py` or Flask blueprints.
