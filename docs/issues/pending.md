@@ -4,5 +4,4 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RN-0018 | [REFACTOR] | High | app-architecture | [Refactor Flask App into Smaller Modules](./pending/RN-0018-refactor-app-py.md) | - | - | 2026-05-02 | - |
-| RN-0003 | [TODO] | Medium | testing | [UI/Interface Testing Framework](./pending/RN-0003-ui-interface-testing-framework.md) | - | - | 2026-01-11 | - |
+| RN-0018 | [REFACTOR] | High | app-architecture | [Refactor Oversized Source Files into Focused Modules](./pending/RN-0018-refactor-app-py.md) | - | - | 2026-05-02 | - |

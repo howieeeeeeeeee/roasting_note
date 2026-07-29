@@ -11,6 +11,21 @@ Keep product changes, documentation, tickets, and verification in sync.
    describe the affected behavior.
 5. Preserve unrelated user changes already in the worktree.
 
+## File Size And Modularity
+
+- Human-authored code and documentation must not exceed 1,000 physical lines
+  per file.
+- When code would exceed the limit, split it by responsibility into focused
+  modules and import, include, or register them from a stable entry point.
+- When documentation would exceed the limit, split it into aspect-specific
+  documents under a named directory, retain a concise `README.md` index, and
+  update all affected navigation links.
+- Do not split files into arbitrary numbered chunks. Each resulting file must
+  have one clear subject or responsibility and must also remain within the
+  limit.
+- Generated output, vendored or minified code, binaries, fonts, licenses, and
+  lock files are exempt.
+
 ## Documentation Is Part Of Done
 
 Update durable guidance in the same branch as the change:

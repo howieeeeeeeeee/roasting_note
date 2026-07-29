@@ -2,6 +2,13 @@
 
 Follow [AGENTS.md](./AGENTS.md) as the shared repository policy.
 
+Keep every human-authored code and documentation file at or below 1,000
+physical lines. Split oversized code by responsibility into imported,
+included, or registered modules. Split oversized documentation by aspect under
+a named directory with a concise `README.md` index and updated navigation.
+Apply the exemptions for generated, vendored, minified, binary, font, license,
+and lock files defined in `AGENTS.md`.
+
 For ticket planning, epics, human decisions, blockers, status transitions, or
 next-work questions, read and follow
 `.claude/skills/ticket-master/SKILL.md`. Ticketing updates tracker records but

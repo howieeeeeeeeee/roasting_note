@@ -4,680 +4,983 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>__PROJECT_NAME__ · Issue Workbench</title>
+  <title>__PROJECT_NAME__ · Tickets</title>
   <style>
-    :root {
-      --paper: #f4efe5;
-      --surface: #fffaf0;
-      --surface-2: #ebe2d3;
-      --ink: #29231f;
-      --muted: #75695f;
-      --line: #cfc2b2;
-      --coffee: #754c31;
-      --coffee-2: #4d3021;
-      --accent: #bc6c3c;
-      --ready: #2f7254;
-      --progress: #286681;
-      --blocked: #a23b31;
-      --done: #6f665f;
-      --focus: #1169a8;
-      --radius: 14px;
-      --detail-width: min(520px, 42vw);
-      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    @font-face {
+      font-family: "Courier Prime";
+      src: url(data:font/ttf;base64,__COURIER_PRIME_REGULAR__) format("truetype");
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
     }
-    [data-theme="dark"] {
-      --paper: #171411;
-      --surface: #211c18;
-      --surface-2: #302821;
-      --ink: #f4eadc;
-      --muted: #b9aa9b;
-      --line: #4c4036;
-      --coffee: #d29a70;
-      --coffee-2: #f0c49d;
-      --accent: #ed985f;
-      --ready: #6fc49a;
-      --progress: #6bb6d3;
-      --blocked: #ee8074;
-      --done: #aaa19a;
-      --focus: #78bee9;
+    @font-face {
+      font-family: "Courier Prime";
+      src: url(data:font/ttf;base64,__COURIER_PRIME_BOLD__) format("truetype");
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+    }
+    :root {
+      --paper: #eef1ec;
+      --paper-raised: #f8faf6;
+      --ink: #1e2522;
+      --muted: #606a64;
+      --rule: #bfc8c0;
+      --rule-strong: #8f9b92;
+      --progress: #2d6676;
+      --ready: #3e704d;
+      --decision: #b86822;
+      --blocked: #a64b42;
+      --focus: #175fbb;
+      --radius-card: 16px;
+      --radius-control: 12px;
+      --radius-pill: 999px;
+      --detail-width: clamp(460px, 42vw, 680px);
+      --page-gutter: 48px;
+    }
+    :root[data-theme="dark"] {
+      --paper: #191d1a;
+      --paper-raised: #232824;
+      --ink: #f2f2eb;
+      --muted: #bdc1ba;
+      --rule: #4c514c;
+      --rule-strong: #7c827b;
+      --progress: #d7ddd6;
+      --ready: #d1dbcf;
+      --decision: #e6ddcd;
+      --blocked: #d6aaa4;
+      --focus: #f4f2e8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        --paper: #191d1a;
+        --paper-raised: #232824;
+        --ink: #f2f2eb;
+        --muted: #bdc1ba;
+        --rule: #4c514c;
+        --rule-strong: #7c827b;
+        --progress: #d7ddd6;
+        --ready: #d1dbcf;
+        --decision: #e6ddcd;
+        --blocked: #d6aaa4;
+        --focus: #f4f2e8;
+      }
     }
     * { box-sizing: border-box; }
     html { background: var(--paper); color: var(--ink); }
-    body { margin: 0; min-height: 100vh; }
-    button, input, select { font: inherit; }
-    button, select, input {
-      color: var(--ink);
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 9px;
+    body {
+      margin: 0;
+      min-width: 320px;
+      font-family: "Courier Prime", "American Typewriter", "Courier New", monospace;
+      font-size: 16px;
+      line-height: 1.45;
+      background: var(--paper);
     }
-    button { cursor: pointer; }
-    button:hover { border-color: var(--coffee); }
-    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
-      outline: 3px solid color-mix(in srgb, var(--focus) 45%, transparent);
+    button, input, select { font: inherit; color: inherit; }
+    button, select { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--focus);
       outline-offset: 2px;
     }
-    a { color: var(--coffee); }
-    .shell {
+    a { color: var(--progress); text-underline-offset: 3px; }
+    .shell { width: min(1440px, calc(100% - 96px)); margin: 0 auto; }
+    .masthead {
+      padding: 42px 0 26px;
+      border-bottom: 1px solid var(--rule);
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      min-height: 100vh;
-      transition: grid-template-columns 160ms ease;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
     }
-    body.detail-open .shell {
-      grid-template-columns: minmax(0, 1fr) var(--detail-width);
+    .eyebrow, .label, .record-id, .meta, .stamp-label {
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: .76rem;
+      font-weight: 700;
     }
-    .workspace {
-      min-width: 0;
-      container: workspace / inline-size;
+    .eyebrow { color: var(--decision); margin: 0 0 4px; }
+    h1 { margin: 0; font-size: clamp(1.55rem, 3vw, 2.8rem); line-height: 1.04; letter-spacing: -.04em; }
+    .masthead p { color: var(--muted); margin: 8px 0 0; max-width: 70ch; }
+    .mast-tools { display: flex; gap: 8px; align-items: center; }
+    .tool-button, .nav-button, .chip, .record-link {
+      border: 1px solid var(--rule-strong);
+      background: var(--paper-raised);
+      border-radius: var(--radius-pill);
     }
-    .topbar {
+    .tool-button { padding: 10px 15px; white-space: nowrap; }
+    .theme-toggle {
+      display: inline-grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      line-height: 0;
+    }
+    .theme-toggle svg { display: block; width: 18px; height: 18px; }
+    .nav-wrap {
       position: sticky;
       top: 0;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      padding: 18px clamp(18px, 3vw, 42px);
-      background: color-mix(in srgb, var(--paper) 91%, transparent);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(14px);
+      z-index: 20;
+      background: color-mix(in srgb, var(--paper) 93%, transparent);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--rule);
     }
-    .identity { min-width: 0; }
-    .eyebrow {
-      margin: 0 0 4px;
-      color: var(--accent);
-      font-size: .72rem;
-      font-weight: 800;
-      letter-spacing: .14em;
-      text-transform: uppercase;
+    .nav-row { display: flex; gap: 6px; overflow-x: auto; padding: 12px 0; }
+    .nav-button {
+      padding: 9px 15px;
+      border-color: transparent;
+      background: transparent;
+      white-space: nowrap;
+      color: var(--muted);
     }
-    h1, h2, h3, p { margin-top: 0; }
-    h1 {
-      margin-bottom: 0;
-      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-      font-size: clamp(1.25rem, 2vw, 1.85rem);
-      letter-spacing: -.03em;
+    .nav-button[aria-current="page"] {
+      color: var(--ink);
+      border-color: var(--progress);
+      background: color-mix(in srgb, var(--progress) 11%, var(--paper-raised));
     }
-    .theme-toggle { padding: 9px 12px; white-space: nowrap; }
-    main { padding: 28px clamp(18px, 3vw, 42px) 70px; }
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(120px, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
+    main {
+      padding: 40px 0 96px;
+      container-name: workbench;
+      container-type: inline-size;
     }
-    .metric {
-      padding: 15px 16px;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-    }
-    .metric strong {
-      display: block;
-      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-      font-size: 1.65rem;
-    }
-    .metric span { color: var(--muted); font-size: .78rem; }
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 26px;
-      padding: 10px;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-    }
-    .views { display: flex; flex-wrap: wrap; gap: 6px; }
-    .views button { padding: 9px 13px; background: transparent; }
-    .views button[aria-pressed="true"] {
-      color: var(--surface);
-      background: var(--coffee-2);
-      border-color: var(--coffee-2);
-    }
-    .filters {
-      display: flex;
-      flex: 1 1 420px;
-      justify-content: flex-end;
-      gap: 7px;
-    }
-    .filters input { flex: 1 1 210px; max-width: 380px; }
-    .filters input, .filters select { min-height: 38px; padding: 7px 10px; }
     .view-heading {
       display: flex;
-      align-items: end;
       justify-content: space-between;
       gap: 20px;
-      margin: 0 0 18px;
+      align-items: start;
+      margin-bottom: 34px;
     }
-    .view-heading h2 {
-      margin-bottom: 4px;
-      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-      font-size: clamp(1.45rem, 2vw, 2rem);
-    }
-    .view-heading p { margin-bottom: 0; color: var(--muted); }
-    .count {
-      display: inline-flex;
-      min-width: 30px;
-      min-height: 30px;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 8px;
-      color: var(--muted);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-    }
-    .section { margin-top: 34px; }
+    .view-heading h2, .section-heading h3 { margin: 0; line-height: 1.1; }
+    .view-heading p, .section-heading p { margin: 6px 0 0; color: var(--muted); max-width: 74ch; }
+    .snapshot { color: var(--muted); font-size: .78rem; white-space: nowrap; }
+    .section { margin-top: 46px; }
     .section-heading {
+      border-bottom: 1px solid var(--rule);
+      padding: 0 4px 14px;
+      margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
-      gap: 16px;
-      align-items: center;
-      margin-bottom: 12px;
+      gap: 20px;
+      align-items: end;
     }
-    .section-heading h3 {
-      margin-bottom: 2px;
-      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-      font-size: 1.05rem;
+    .count { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 20px; }
+    .standalone-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 30px 24px;
     }
-    .section-heading p { margin-bottom: 0; color: var(--muted); font-size: .8rem; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
-      gap: 12px;
-    }
-    .standalone-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .record-card {
       position: relative;
-      display: block;
-      width: 100%;
-      min-height: 156px;
-      padding: 16px;
-      text-align: left;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-    }
-    .record-card:hover { border-color: var(--coffee); }
-    .card-key {
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-card);
+      background: var(--paper-raised);
+      padding: 22px;
+      min-width: 0;
       display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: start;
-      margin-bottom: 14px;
+      flex-direction: column;
     }
-    .record-id {
-      color: var(--accent);
-      font-size: .74rem;
-      font-weight: 800;
-      letter-spacing: .05em;
-      text-transform: uppercase;
-    }
-    .record-card h3 {
-      margin-bottom: 12px;
-      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-      font-size: 1rem;
-      line-height: 1.25;
-    }
-    .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: .76rem; }
-    .relationship { margin-top: 13px; color: var(--muted); font-size: .76rem; }
-    .relationship strong { color: var(--ink); }
+    .card-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .card-key { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
+    .record-id { color: var(--muted); }
     .status {
-      display: inline-flex;
-      align-items: center;
-      padding: 4px 7px;
+      padding: 3px 8px;
       border: 1px solid currentColor;
-      border-radius: 999px;
-      font-size: .68rem;
-      font-weight: 800;
+      border-radius: var(--radius-pill);
+      font-size: .7rem;
       text-transform: uppercase;
+      letter-spacing: .06em;
       white-space: nowrap;
     }
+    .status.decision { color: var(--decision); }
+    .status.progress {
+      color: var(--paper-raised);
+      border-color: var(--progress);
+      background: var(--progress);
+    }
+    .status.progress::before { content: "●"; margin-right: 5px; font-size: .56rem; }
     .status.ready { color: var(--ready); }
-    .status.progress { color: var(--progress); }
-    .status.blocked { color: var(--blocked); }
-    .status.done { color: var(--done); }
-    .status.decision { color: var(--accent); }
+    .status.resolved {
+      color: var(--ready);
+      background: color-mix(in srgb, var(--ready) 10%, transparent);
+    }
+    .status.resolved::before { content: "✓"; margin-right: 4px; }
+    .status.blocked, .status.waiting { color: var(--blocked); }
+    .record-title {
+      appearance: none;
+      display: block;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      margin: 14px 0 10px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 1.04rem;
+      line-height: 1.25;
+      width: 100%;
+    }
+    .record-title:hover { color: var(--progress); text-decoration: underline; text-underline-offset: 3px; }
+    .meta { color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
+    .epic-tag {
+      display: inline-flex;
+      align-items: center;
+      color: var(--progress);
+      border: 1px solid color-mix(in srgb, var(--progress) 55%, var(--rule));
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--progress) 7%, var(--paper-raised));
+      padding: 3px 8px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .epic-tag:hover { border-color: var(--progress); background: color-mix(in srgb, var(--progress) 13%, var(--paper-raised)); }
+    .card-blockers { margin-top: 15px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip {
+      display: inline-flex;
+      padding: 5px 9px;
+      font-size: .72rem;
+      text-decoration: none;
+      color: var(--muted);
+    }
+    button.chip:hover { color: var(--ink); border-color: var(--ink); }
+    .impact-wrap { margin-top: auto; padding-top: 18px; }
+    .impact-stamp {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid color-mix(in srgb, var(--decision) 55%, var(--rule));
+      border-radius: var(--radius-control);
+      background: color-mix(in srgb, var(--decision) 7%, var(--paper-raised));
+      color: var(--decision);
+      margin-top: 0;
+      overflow: hidden;
+    }
+    .stamp-cell { padding: 10px 12px; text-align: center; }
+    .stamp-cell + .stamp-cell { border-left: 1px solid color-mix(in srgb, var(--decision) 35%, var(--rule)); }
+    .stamp-value { display: block; font-weight: 700; font-size: 1.2rem; line-height: 1; }
+    .stamp-label { display: block; margin-top: 3px; font-size: .62rem; }
+    .empty {
+      border: 1px dashed var(--rule-strong);
+      border-radius: var(--radius-card);
+      padding: 24px;
+      color: var(--muted);
+      background: color-mix(in srgb, var(--paper-raised) 55%, transparent);
+    }
+    .filter-bar {
+      display: grid;
+      grid-template-columns: minmax(220px, 2fr) repeat(5, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .filter-bar input, .filter-bar select, .focus-select {
+      width: 100%;
+      border: 1px solid var(--rule-strong);
+      background: var(--paper-raised);
+      padding: 11px 13px;
+      border-radius: var(--radius-control);
+    }
+    .directory-status-box {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px 16px;
+      align-items: center;
+      margin: 0;
+      border: 1px solid var(--rule-strong);
+      border-radius: var(--radius-control);
+      background: var(--paper-raised);
+      padding: 9px 13px;
+    }
+    .directory-status-option { display: inline-flex; gap: 7px; align-items: center; white-space: nowrap; }
+    .filter-bar .directory-status-option input { width: auto; margin: 0; border: 0; border-radius: 0; background: transparent; padding: 0; accent-color: var(--progress); }
     .board {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      align-items: start;
+      grid-template-columns: repeat(4, minmax(280px, 1fr));
+      gap: 18px;
+      overflow-x: auto;
+      padding-bottom: 10px;
     }
-    .column {
-      min-width: 0;
-      padding: 12px;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
+    .board-column {
+      min-width: 280px;
+      border: 1px solid var(--rule);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--paper-raised) 58%, transparent);
+      padding: 14px;
     }
-    .column .record-card + .record-card { margin-top: 10px; }
-    .column-title {
+    .column-heading {
       display: flex;
       justify-content: space-between;
-      margin: 2px 3px 12px;
-      color: var(--muted);
-      font-size: .8rem;
-      font-weight: 800;
-      text-transform: uppercase;
+      padding: 3px 4px 15px;
+      font-weight: 700;
     }
-    .epic-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+    .column-stack { display: grid; gap: 14px; }
+    .epic-strip { display: flex; gap: 12px; overflow-x: auto; padding: 0 0 20px; margin-bottom: 22px; }
     .epic-button {
-      flex: 0 0 250px;
-      min-height: 96px;
-      padding: 13px;
+      flex: 0 0 min(360px, 80vw);
+      border: 1px solid var(--rule-strong);
+      background: var(--paper-raised);
+      border-radius: var(--radius-card);
       text-align: left;
-      background: var(--surface);
-      border-radius: var(--radius);
+      padding: 16px;
     }
-    .progress-line {
+    .epic-button[aria-pressed="true"] {
+      border-color: var(--progress);
+      background: color-mix(in srgb, var(--progress) 9%, var(--paper-raised));
+    }
+    .progress-line { display: flex; gap: 3px; margin-top: 12px; height: 6px; }
+    .progress-line span { flex: 1; background: var(--rule); border-radius: var(--radius-pill); }
+    .progress-line .resolved { background: var(--ready); }
+    .progress-line .in_progress { background: var(--progress); }
+    .progress-line .blocked { background: var(--blocked); }
+    .progress-line .pending { background: var(--decision); }
+    .directory { display: grid; gap: 30px; }
+    .directory-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 240px);
+      justify-content: end;
+      gap: 12px;
+      margin: 0 0 28px;
+    }
+    .directory-group-box {
       display: flex;
-      height: 7px;
-      margin-top: 12px;
-      overflow: hidden;
-      background: var(--surface-2);
-      border-radius: 999px;
-    }
-    .progress-line span { display: block; }
-    .progress-line .complete { background: var(--ready); }
-    .progress-line .active { background: var(--progress); }
-    .progress-line .stuck { background: var(--blocked); }
-    .epic-group {
-      margin-bottom: 18px;
-      padding: 14px;
-      background: var(--surface-2);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-    }
-    .epic-group summary { cursor: pointer; list-style: none; }
-    .epic-group summary::-webkit-details-marker { display: none; }
-    .epic-summary { display: flex; justify-content: space-between; gap: 16px; }
-    .epic-children { margin-top: 14px; }
-    .dependency-row {
-      display: grid;
-      grid-template-columns: minmax(190px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr);
-      gap: 10px;
-      padding: 12px 0;
-      border-top: 1px solid var(--line);
-    }
-    .dependency-row:first-child { border-top: 0; }
-    .dependency-title {
-      padding: 0;
-      text-align: left;
-      background: transparent;
-      border: 0;
-    }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .chip {
-      padding: 4px 7px;
-      color: var(--coffee);
-      background: transparent;
-      border-color: var(--line);
-      font-size: .7rem;
-    }
-    .empty {
-      padding: 22px;
-      color: var(--muted);
-      text-align: center;
-      background: var(--surface);
-      border: 1px dashed var(--line);
-      border-radius: var(--radius);
-    }
-    .detail {
-      position: sticky;
-      top: 0;
-      display: none;
-      height: 100vh;
-      overflow: auto;
-      padding: 22px;
-      background: var(--surface);
-      border-left: 1px solid var(--line);
-    }
-    body.detail-open .detail { display: block; }
-    .detail-close {
-      position: sticky;
-      top: 0;
-      float: right;
-      z-index: 2;
-      padding: 7px 10px;
-    }
-    .detail h2 {
-      clear: both;
-      padding-top: 18px;
-      font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-      line-height: 1.15;
-    }
-    .detail-meta {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin: 18px 0;
-    }
-    .meta-box {
-      padding: 10px;
-      background: var(--surface-2);
-      border-radius: 9px;
-      font-size: .78rem;
-    }
-    .meta-box span { color: var(--muted); }
-    .record-body {
-      margin-top: 22px;
-      padding-top: 18px;
-      border-top: 1px solid var(--line);
-    }
-    .record-body pre {
+      flex-wrap: wrap;
+      gap: 7px 14px;
+      align-items: center;
+      min-width: 0;
       margin: 0;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      color: var(--ink);
-      font: .82rem/1.65 ui-monospace, "SFMono-Regular", Consolas, monospace;
+      border: 1px solid var(--rule-strong);
+      border-radius: var(--radius-control);
+      background: var(--paper-raised);
+      padding: 8px 12px;
     }
-    .source-link { display: inline-block; margin-top: 18px; }
-    @container workspace (max-width: 860px) {
-      .board { grid-template-columns: 1fr; }
-      .standalone-grid { grid-template-columns: 1fr; }
-      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .dependency-row { grid-template-columns: 1fr; }
+    .directory-group-option { display: inline-flex; gap: 7px; align-items: center; white-space: nowrap; }
+    .directory-group-option input { margin: 0; accent-color: var(--progress); }
+    .directory-section + .directory-section { margin-top: 56px; }
+    .directory-section > .section-heading { margin-bottom: 28px; }
+    .epic-group { border: 1px solid var(--rule); border-radius: 18px; background: var(--paper-raised); overflow: hidden; }
+    .epic-group + .epic-group { margin-top: 24px; }
+    .epic-group > summary { list-style: none; padding: 24px; cursor: pointer; }
+    .epic-group > summary::-webkit-details-marker { display: none; }
+    .epic-summary { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+    .epic-summary strong::before { content: "▸ "; color: var(--progress); }
+    .epic-group[open] .epic-summary strong::before { content: "▾ "; }
+    .epic-children { display: grid; gap: 18px; padding: 26px 24px 30px 42px; border-top: 1px solid var(--rule); }
+    .dependency-stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1.15fr) 60px minmax(0, 1fr);
+      align-items: start;
+      gap: 16px;
+      margin-top: 30px;
     }
-    @media (max-width: 900px) {
-      body.detail-open .shell { display: block; }
-      .detail {
-        position: fixed;
-        inset: 0;
-        z-index: 30;
-        width: 100%;
-        border-left: 0;
+    .dependency-column h3 { font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .dependency-stack { display: grid; gap: 14px; }
+    .dependency-summary { margin: 10px 0 0; color: var(--muted); font-size: .84rem; }
+    .flow-arrow { align-self: center; color: var(--rule-strong); font-size: 2rem; text-align: center; }
+    .focus-card { outline: 2px solid var(--progress); outline-offset: 4px; }
+    .provenance { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--rule); }
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 49;
+      background: rgba(0, 0, 0, .35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .16s ease;
+    }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .drawer {
+      position: fixed;
+      inset: 0 0 0 auto;
+      z-index: 50;
+      width: min(720px, 92vw);
+      transform: translateX(102%);
+      transition: transform .2s ease;
+      background: var(--paper-raised);
+      border-left: 1px solid var(--rule-strong);
+      border-radius: 0;
+      overflow-y: auto;
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer-header { position: sticky; top: 0; z-index: 2; background: var(--paper-raised); border-bottom: 1px solid var(--rule); padding: 18px 24px; display: flex; justify-content: space-between; gap: 12px; }
+    .drawer-body { padding: 30px clamp(22px, 5vw, 58px) 72px; }
+    .drawer h2 { margin: 8px 0 14px; font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.15; }
+    .drawer-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 26px; }
+    .meta-box { border: 1px solid var(--rule); border-radius: var(--radius-control); padding: 12px; min-width: 0; overflow-wrap: anywhere; }
+    .markdown { border-top: 1px solid var(--rule); padding-top: 24px; overflow-wrap: anywhere; }
+    .markdown h1 { display: none; }
+    .markdown h2 { margin-top: 2rem; font-size: 1.25rem; }
+    .markdown h3 { margin-top: 1.5rem; font-size: 1.08rem; }
+    .markdown table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; font-size: .86rem; }
+    .markdown th, .markdown td { border: 1px solid var(--rule); padding: 6px 8px; text-align: left; vertical-align: top; }
+    .markdown th { background: color-mix(in srgb, var(--rule) 28%, transparent); }
+    .markdown pre { overflow-x: auto; border: 1px solid var(--rule); border-radius: var(--radius-control); padding: 14px; background: var(--paper); }
+    .markdown code { background: color-mix(in srgb, var(--rule) 28%, transparent); border-radius: 4px; padding: 1px 3px; }
+    .markdown pre code { background: transparent; padding: 0; }
+    .close-button { display: inline-grid; place-items: center; border: 1px solid var(--rule-strong); border-radius: var(--radius-pill); background: transparent; width: 38px; height: 38px; padding: 0; line-height: 0; }
+    .close-button svg { display: block; width: 16px; height: 16px; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+    @media (min-width: 1100px) {
+      body.detail-open .shell {
+        width: auto;
+        max-width: 1440px;
+        margin-left: var(--page-gutter);
+        margin-right: calc(var(--detail-width) + var(--page-gutter));
       }
-      .filters { justify-content: stretch; }
-      .filters input { max-width: none; }
+      body.detail-open .masthead {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+      }
+      body.detail-open .mast-tools { justify-content: space-between; }
+      .drawer { width: var(--detail-width); }
+      .drawer-backdrop.open { opacity: 0; pointer-events: none; }
     }
-    @media (max-width: 620px) {
-      .topbar { align-items: start; }
-      .summary { grid-template-columns: 1fr 1fr; }
-      .toolbar, .filters { display: grid; grid-template-columns: 1fr; }
-      .views { display: grid; grid-template-columns: 1fr 1fr; }
-      .views button { width: 100%; }
+    @container workbench (max-width: 980px) {
+      .filter-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .filter-bar input { grid-column: 1 / -1; }
+      .dependency-stage { grid-template-columns: 1fr; }
+      .flow-arrow { transform: rotate(90deg); }
+      .directory-controls { grid-template-columns: 1fr; }
+    }
+    @container workbench (max-width: 720px) {
+      .view-heading, .section-heading { display: block; }
+      .snapshot, .count { display: block; margin-top: 8px; }
+      .filter-bar { grid-template-columns: 1fr 1fr; }
+      .filter-bar input { grid-column: 1 / -1; }
+      .grid { grid-template-columns: 1fr; }
+      .epic-group > summary { padding: 20px; }
+      .epic-children { padding: 22px 20px 26px; }
+    }
+    @media (max-width: 1050px) {
+      .filter-bar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .filter-bar input { grid-column: 1 / -1; }
+      .dependency-stage { grid-template-columns: 1fr; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+    @media (max-width: 700px) {
+      body { background: var(--paper); }
+      .shell { width: min(100% - 32px, 1440px); }
+      .masthead { grid-template-columns: 1fr; padding-top: 18px; }
+      .mast-tools { justify-content: space-between; }
+      .view-heading, .section-heading { display: block; }
+      .snapshot { display: block; margin-top: 8px; }
+      .filter-bar { grid-template-columns: 1fr 1fr; }
+      .filter-bar input { grid-column: 1 / -1; }
+      .directory-controls { grid-template-columns: 1fr; }
+      .drawer { width: 100vw; border-left: 0; border-radius: 0; }
+      .drawer-meta { grid-template-columns: 1fr; }
     }
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
     }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <div class="workspace">
-      <header class="topbar">
-        <div class="identity">
-          <p class="eyebrow">Issue workbench</p>
-          <h1>__PROJECT_NAME__</h1>
-        </div>
-        <button class="theme-toggle" id="theme-toggle" type="button">Toggle theme</button>
-      </header>
-      <main>
-        <section class="summary" id="summary"></section>
-        <section class="toolbar">
-          <nav class="views" aria-label="Dashboard views">
-            <button type="button" data-view="next">Next</button>
-            <button type="button" data-view="board">Board</button>
-            <button type="button" data-view="directory">Directory</button>
-            <button type="button" data-view="dependencies">Dependencies</button>
-          </nav>
-          <div class="filters">
-            <input id="search" type="search" placeholder="Search id, title, area, tag…" aria-label="Search records">
-            <select id="status-filter" aria-label="Filter status"></select>
-            <select id="area-filter" aria-label="Filter area"></select>
-            <select id="priority-filter" aria-label="Filter priority"></select>
-          </div>
-        </section>
-        <div id="app"></div>
-      </main>
+  <header class="shell masthead">
+    <div>
+      <p class="eyebrow">Ticket workbench</p>
+      <h1 id="project-title">__PROJECT_NAME__</h1>
+      <p id="project-description"></p>
     </div>
-    <aside class="detail" id="detail" aria-label="Record details"></aside>
+    <div class="mast-tools">
+      <span class="snapshot" id="summary-line"></span>
+      <button class="tool-button theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme"></button>
+    </div>
+  </header>
+  <div class="nav-wrap">
+    <nav class="shell nav-row" aria-label="Workbench views" id="navigation"></nav>
   </div>
+  <main class="shell" id="app"></main>
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  <aside class="drawer" id="drawer" aria-labelledby="drawer-title" aria-modal="false" role="dialog"></aside>
+  <script type="application/json" id="tracker-data">__TRACKER_DATA__</script>
+  <script>__MARKED_JS__</script>
+  <script>__DOMPURIFY_JS__</script>
   <script>
-    const data = __TRACKER_DATA__;
-    const byId = new Map(data.records.map(record => [record.id, record]));
-    const state = { view: "next", query: "", status: "all", area: "all", priority: "all" };
-    const activeStatuses = new Set(["pending", "in_progress", "blocked"]);
-    const priorityOrder = new Map(data.project.priorities.map((value, index) => [value, index]));
-    const app = document.querySelector("#app");
-    const detail = document.querySelector("#detail");
-
-    const escapeHtml = value => String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-    const label = value => String(value || "").replaceAll("_", " ").replace(/\b\w/g, char => char.toUpperCase());
-    const sortRecords = records => [...records].sort((left, right) =>
-      (priorityOrder.get(left.priority) ?? 99) - (priorityOrder.get(right.priority) ?? 99)
-      || left.id.localeCompare(right.id)
-    );
-    const displayStatus = record => record.kind === "decision"
-      ? record.readiness
-      : record.status === "pending" && record.type !== "epic" ? "ready" : record.status;
-    const tone = record => ({
-      pending: "ready", ready: "ready", in_progress: "progress", blocked: "blocked",
-      resolved: "done", wont_fix: "done", finalized: "done", waiting: "blocked"
-    })[displayStatus(record)] || "decision";
-    const isActiveTicket = record => record.kind === "ticket" && activeStatuses.has(record.status);
-    const matches = record => {
-      const haystack = [
-        record.id, record.title, record.type, record.status, record.area,
-        record.parent, ...(record.tags || []), ...(record.blockedBy || [])
-      ].join(" ").toLowerCase();
-      const status = displayStatus(record);
-      return (!state.query || haystack.includes(state.query))
-        && (state.status === "all" || status === state.status || record.status === state.status)
-        && (state.area === "all" || record.area === state.area)
-        && (state.priority === "all" || record.priority === state.priority);
-    };
-    const chips = ids => ids.length
-      ? `<div class="chips">${ids.map(id => `<button class="chip" type="button" data-record="${escapeHtml(id)}">${escapeHtml(id)}</button>`).join("")}</div>`
-      : `<span class="meta">None</span>`;
-    const progressLine = epic => {
-      const counts = epic.childCounts || {};
-      const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-      if (!total) return `<div class="meta">No child tickets</div>`;
-      const done = (counts.resolved || 0) + (counts.wont_fix || 0);
-      const active = (counts.pending || 0) + (counts.in_progress || 0);
-      const blocked = counts.blocked || 0;
-      return `<div class="progress-line" title="${done}/${total} complete">
-        <span class="complete" style="width:${done / total * 100}%"></span>
-        <span class="active" style="width:${active / total * 100}%"></span>
-        <span class="stuck" style="width:${blocked / total * 100}%"></span>
-      </div><div class="meta">${done}/${total} complete · ${blocked} blocked</div>`;
-    };
-    const card = record => {
-      const epic = record.parent ? byId.get(record.parent) : null;
-      const relationship = record.blockedBy.length
-        ? `<div class="relationship"><strong>Needs</strong> ${escapeHtml(record.blockedBy.join(", "))}</div>`
-        : record.unlocksNow.length
-          ? `<div class="relationship"><strong>Unlocks now</strong> ${escapeHtml(record.unlocksNow.join(", "))}</div>`
-          : "";
-      return `<button class="record-card" type="button" data-record="${escapeHtml(record.id)}">
-        <div class="card-key">
-          <span class="record-id">${escapeHtml(record.id)} · ${escapeHtml(label(record.type))}</span>
-          <span class="status ${tone(record)}">${escapeHtml(label(displayStatus(record)))}</span>
-        </div>
-        <h3>${escapeHtml(record.title)}</h3>
-        <div class="meta">
-          ${record.priority ? `<span>${escapeHtml(label(record.priority))}</span>` : ""}
-          <span>${escapeHtml(record.area)}</span>
-          ${epic ? `<span>Epic ${escapeHtml(epic.id)}</span>` : ""}
-        </div>
-        ${relationship}
-      </button>`;
-    };
-    const heading = (title, subtitle, count) => `<div class="view-heading">
-      <div><h2>${escapeHtml(title)}</h2><p>${escapeHtml(subtitle)}</p></div>
-      <span class="count">${count}</span>
-    </div>`;
-    const section = (title, subtitle, records) => `<section class="section">
-      <div class="section-heading"><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(subtitle)}</p></div><span class="count">${records.length}</span></div>
-      <div class="grid">${records.length ? records.map(card).join("") : `<div class="empty">Nothing here.</div>`}</div>
-    </section>`;
-    const epicStrip = epics => epics.length ? `<section class="section">
-      <div class="section-heading"><div><h3>Epics</h3><p>Active project arcs and child progress.</p></div><span class="count">${epics.length}</span></div>
-      <div class="epic-strip">${epics.map(epic => `<button class="epic-button" type="button" data-record="${escapeHtml(epic.id)}">
-        <span class="record-id">${escapeHtml(epic.id)}</span><br><strong>${escapeHtml(epic.title)}</strong>${progressLine(epic)}
-      </button>`).join("")}</div>
-    </section>` : "";
-
-    function renderNext() {
-      const readyDecisions = sortRecords(data.records.filter(record => record.kind === "decision" && record.readiness === "ready" && matches(record)));
-      const readyWork = sortRecords(data.records.filter(record => record.kind === "ticket" && record.type !== "epic" && record.status === "pending" && matches(record)));
-      const inProgress = sortRecords(data.records.filter(record => record.kind === "ticket" && record.type !== "epic" && record.status === "in_progress" && matches(record)));
-      const blocked = sortRecords(data.records.filter(record => record.kind === "ticket" && record.status === "blocked" && matches(record)));
-      const epics = sortRecords(data.records.filter(record => record.type === "epic" && isActiveTicket(record) && matches(record)));
-      const total = readyDecisions.length + readyWork.length + inProgress.length + blocked.length;
-      app.innerHTML = heading("What needs attention", "Decisions first, then actionable and blocked work.", total)
-        + section("Ready human decisions", "Choices that can be made now.", readyDecisions)
-        + section("Ready work", "Pending tickets with no blockers.", readyWork)
-        + section("In progress", "Work currently underway.", inProgress)
-        + epicStrip(epics)
-        + section("Blocked", "Work waiting on a decision or unfinished ticket.", blocked);
-    }
-
-    function renderBoard() {
-      const epics = sortRecords(data.records.filter(record => record.type === "epic" && isActiveTicket(record) && matches(record)));
-      const tickets = sortRecords(data.records.filter(record => record.kind === "ticket" && record.type !== "epic" && activeStatuses.has(record.status) && matches(record)));
-      const columns = [
-        ["In progress", tickets.filter(record => record.status === "in_progress")],
-        ["Ready", tickets.filter(record => record.status === "pending")],
-        ["Blocked", tickets.filter(record => record.status === "blocked")]
+    (() => {
+      "use strict";
+      const data = JSON.parse(document.getElementById("tracker-data").textContent);
+      const byId = new Map(data.records.map(record => [record.id, record]));
+      const views = [
+        ["next", "Next"],
+        ["board", "Board"],
+        ["directory", "Directory"],
+        ["dependencies", "Dependencies"]
       ];
-      app.innerHTML = heading("Board", "Active tickets grouped by current state.", tickets.length)
-        + epicStrip(epics)
-        + `<section class="section board">${columns.map(([title, records]) => `<div class="column">
-          <div class="column-title"><span>${title}</span><span>${records.length}</span></div>
-          ${records.length ? records.map(card).join("") : `<div class="empty">No tickets.</div>`}
-        </div>`).join("")}</section>`;
-    }
-
-    function renderDirectory() {
-      const selected = sortRecords(data.records.filter(matches));
-      const decisions = selected.filter(record => record.kind === "decision");
-      const epics = sortRecords(data.records.filter(record =>
-        record.type === "epic" && (
-          matches(record)
-          || (record.children || []).some(id => matches(byId.get(id)))
-        )
-      ));
-      const standalone = selected.filter(record => record.kind === "ticket" && !record.parent && record.type !== "epic");
-      const epicContent = epics.map(epic => {
-        const children = sortRecords((epic.children || []).map(id => byId.get(id)).filter(record => record && matches(record)));
-        return `<details class="epic-group" open>
-          <summary><div class="epic-summary"><div><span class="record-id">${escapeHtml(epic.id)} · Epic</span><br><strong>${escapeHtml(epic.title)}</strong></div><span class="status ${tone(epic)}">${escapeHtml(label(displayStatus(epic)))}</span></div>${progressLine(epic)}</summary>
-          <div class="epic-children grid">${children.length ? children.map(card).join("") : `<div class="empty">No matching children.</div>`}</div>
-        </details>`;
-      }).join("");
-      app.innerHTML = heading("Directory", "All epics, tickets, and decisions.", selected.length)
-        + section("Human decisions", "Pending and finalized choices.", decisions)
-        + `<section class="section"><div class="section-heading"><div><h3>Epics</h3><p>Project arcs and child tickets.</p></div><span class="count">${epics.length}</span></div>${epicContent || `<div class="empty">No epics match.</div>`}</section>`
-        + `<section class="section"><div class="section-heading"><div><h3>Standalone</h3><p>Tickets outside an epic.</p></div><span class="count">${standalone.length}</span></div><div class="grid standalone-grid">${standalone.length ? standalone.map(card).join("") : `<div class="empty">No standalone tickets match.</div>`}</div></section>`;
-    }
-
-    function renderDependencies() {
-      const records = sortRecords(data.records.filter(record =>
-        (record.blockedBy.length || record.dependents.length) && matches(record)
-      ));
-      app.innerHTML = heading("Dependencies", "Current blockers and direct downstream records.", records.length)
-        + `<section class="section">${records.length ? records.map(record => `<div class="dependency-row">
-          <button class="dependency-title" type="button" data-record="${escapeHtml(record.id)}"><span class="record-id">${escapeHtml(record.id)}</span><br><strong>${escapeHtml(record.title)}</strong></button>
-          <div><span class="meta">Needs</span>${chips(record.blockedBy)}</div>
-          <div><span class="meta">Directly blocks</span>${chips(record.dependents)}</div>
-        </div>`).join("") : `<div class="empty">No dependency relationships match.</div>`}</section>`;
-    }
-
-    function render() {
-      document.querySelectorAll("[data-view]").forEach(button => {
-        button.setAttribute("aria-pressed", String(button.dataset.view === state.view));
-      });
-      ({ next: renderNext, board: renderBoard, directory: renderDirectory, dependencies: renderDependencies })[state.view]();
-    }
-
-    function openDetail(recordId) {
-      const record = byId.get(recordId);
-      if (!record) return;
-      const epic = record.parent ? byId.get(record.parent) : null;
-      detail.innerHTML = `<button class="detail-close" type="button" aria-label="Close details">Close</button>
-        <span class="record-id">${escapeHtml(record.id)} · ${escapeHtml(label(record.type))}</span>
-        <h2>${escapeHtml(record.title)}</h2>
-        <span class="status ${tone(record)}">${escapeHtml(label(displayStatus(record)))}</span>
-        <div class="detail-meta">
-          <div class="meta-box"><span>Status</span><br>${escapeHtml(label(record.status))}</div>
-          <div class="meta-box"><span>Priority</span><br>${escapeHtml(label(record.priority || "—"))}</div>
-          <div class="meta-box"><span>Area</span><br>${escapeHtml(record.area)}</div>
-          <div class="meta-box"><span>Epic</span><br>${epic ? escapeHtml(epic.id) : "Standalone"}</div>
-        </div>
-        ${record.blockedBy.length ? `<div><strong>Blocked by</strong>${chips(record.blockedBy)}</div>` : ""}
-        ${record.dependents.length ? `<div><strong>Direct dependents</strong>${chips(record.dependents)}</div>` : ""}
-        <div class="record-body"><pre>${escapeHtml(record.markdown)}</pre></div>
-        <a class="source-link" href="${encodeURI(record.sourcePath)}">Open Markdown source</a>`;
-      document.body.classList.add("detail-open");
-      detail.scrollTop = 0;
-    }
-    function closeDetail() {
-      document.body.classList.remove("detail-open");
-      detail.innerHTML = "";
-    }
-    function fillSelect(selector, values, allLabel) {
-      document.querySelector(selector).innerHTML = `<option value="all">${escapeHtml(allLabel)}</option>`
-        + values.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(label(value))}</option>`).join("");
-    }
-
-    document.querySelector("#summary").innerHTML = [
-      [data.summary.activeTickets, "Active tickets"],
-      [data.summary.blockedTickets, "Blocked"],
-      [data.summary.readyDecisions, "Ready decisions"],
-      [data.summary.tickets + data.summary.decisions, "All records"]
-    ].map(([value, name]) => `<div class="metric"><strong>${value}</strong><span>${name}</span></div>`).join("");
-    fillSelect("#status-filter", ["ready", "in_progress", "blocked", "resolved", "wont_fix", "waiting", "finalized"], "All statuses");
-    fillSelect("#area-filter", [...new Set(data.records.map(record => record.area))].sort(), "All areas");
-    fillSelect("#priority-filter", data.project.priorities, "All priorities");
-
-    document.addEventListener("click", event => {
-      const viewButton = event.target.closest("[data-view]");
-      if (viewButton) {
-        state.view = viewButton.dataset.view;
-        render();
-        return;
+      const state = {
+        view: "next",
+        lastView: "next",
+        selected: "",
+        focus: "",
+        query: "",
+        epic: "all",
+        kind: "all",
+        status: "all",
+        // Directory uses canonical persisted statuses. Empty means "All";
+        // otherwise records match any selected value (OR semantics).
+        directoryStatuses: [],
+        area: "all",
+        priority: "all",
+        directoryGroups: ["decisions", "epics", "standalone"],
+        sort: "created-desc"
+      };
+      const app = document.getElementById("app");
+      const navigation = document.getElementById("navigation");
+      const drawer = document.getElementById("drawer");
+      const backdrop = document.getElementById("drawer-backdrop");
+      const compactDrawer = window.matchMedia("(max-width: 1099px)");
+      const priorityOrder = Object.fromEntries(
+        data.project.priorities.map((priority, index) => [priority, index])
+      );
+      const fallbackPriority = data.project.priorities.length;
+      const directoryStatusChoices = ["pending", "in_progress", "blocked", "resolved", "wont_fix", "finalized"];
+      let renderedDrawerId = "";
+      const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      })[char]);
+      const label = value => String(value || "—").replaceAll("_", " ");
+      const isActiveTicket = record => record.kind === "ticket" && ["pending", "in_progress", "blocked"].includes(record.status);
+      const isComplete = record => record.kind === "ticket"
+        ? ["resolved", "wont_fix"].includes(record.status)
+        : record.status === "finalized";
+      const epicOf = record => record.parent ? byId.get(record.parent) : null;
+      const tone = record => {
+        if (record.kind === "decision") return record.readiness === "waiting" ? "blocked" : "decision";
+        return ({ in_progress: "progress", pending: "ready", blocked: "blocked", resolved: "resolved", wont_fix: "blocked" })[record.status] || "";
+      };
+      // "Ready" is a display/readiness label, not a persisted ticket status.
+      // An unblocked, non-epic ticket stored as `pending` is shown as "Ready".
+      const statusText = record => record.kind === "decision"
+        ? record.readiness
+        : record.status === "pending" && record.type !== "epic" ? "ready" : record.status;
+      const recordDate = record => record.completed || record.created || "";
+      const unique = key => [...new Set(data.records.map(record => record[key]).filter(Boolean))].sort();
+      const optionList = (values, selected, allLabel) =>
+        `<option value="all">${escapeHtml(allLabel)}</option>` +
+        values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(label(value))}</option>`).join("");
+      function getThemePreference() {
+        try { return localStorage.getItem("issue-workbench-theme") || ""; }
+        catch (_) { return ""; }
       }
-      const recordButton = event.target.closest("[data-record]");
-      if (recordButton) {
-        openDetail(recordButton.dataset.record);
-        return;
+      function setTheme(theme) {
+        if (theme) document.documentElement.dataset.theme = theme;
+        else delete document.documentElement.dataset.theme;
+        const resolved = theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        const toggle = document.getElementById("theme-toggle");
+        const nextLabel = resolved === "dark" ? "Switch to light mode" : "Switch to dark mode";
+        toggle.innerHTML = resolved === "dark"
+          ? '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>'
+          : '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+        toggle.setAttribute("aria-label", nextLabel);
+        toggle.title = nextLabel;
       }
-      if (event.target.closest(".detail-close")) closeDetail();
-    });
-    document.querySelector("#search").addEventListener("input", event => {
-      state.query = event.target.value.trim().toLowerCase();
-      render();
-    });
-    [["#status-filter", "status"], ["#area-filter", "area"], ["#priority-filter", "priority"]].forEach(([selector, key]) => {
-      document.querySelector(selector).addEventListener("change", event => {
-        state[key] = event.target.value;
-        render();
+      setTheme(getThemePreference());
+      document.getElementById("theme-toggle").addEventListener("click", () => {
+        const current = document.documentElement.dataset.theme ||
+          (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        const next = current === "dark" ? "light" : "dark";
+        try { localStorage.setItem("issue-workbench-theme", next); } catch (_) {}
+        setTheme(next);
       });
-    });
-    document.addEventListener("keydown", event => {
-      if (event.key === "Escape") closeDetail();
-    });
-
-    const root = document.documentElement;
-    const storedTheme = localStorage.getItem("roastlogger-ticket-theme");
-    if (storedTheme) root.dataset.theme = storedTheme;
-    document.querySelector("#theme-toggle").addEventListener("click", () => {
-      const next = root.dataset.theme === "dark" ? "light" : "dark";
-      root.dataset.theme = next;
-      localStorage.setItem("roastlogger-ticket-theme", next);
-    });
-    render();
+      document.getElementById("project-description").textContent = data.project.description;
+      document.getElementById("summary-line").textContent =
+        `${data.summary.activeTickets} active · ${data.summary.blockedTickets} blocked · ${data.summary.readyDecisions} ready decisions`;
+      function renderNavigation() {
+        navigation.innerHTML = views.map(([id, text]) =>
+          `<button class="nav-button" type="button" data-view="${id}"${state.view === id ? ' aria-current="page"' : ""}>${text}</button>`
+        ).join("");
+      }
+      function relationshipChips(ids, prefix = "") {
+        if (!ids.length) return "";
+        return `<div class="chips">${ids.map(id =>
+          `<button class="chip" type="button" data-record="${escapeHtml(id)}">${escapeHtml(prefix + id)}</button>`
+        ).join("")}</div>`;
+      }
+      function progressLine(epic) {
+        const children = (epic.children || []).map(id => byId.get(id));
+        if (!children.length) return "";
+        return `<div class="progress-line" aria-label="${children.length} child tickets">${children.map(child =>
+          `<span class="${escapeHtml(child.status)}" title="${escapeHtml(child.id + ": " + label(child.status))}"></span>`
+        ).join("")}</div>`;
+      }
+      function recordCard(record, className = "", interaction = "record") {
+        const epic = epicOf(record);
+        const epicTag = epic
+          ? `<button class="epic-tag" type="button" data-epic="${escapeHtml(epic.id)}" title="${escapeHtml(epic.title)}">Epic ${escapeHtml(epic.id)}</button>`
+          : "";
+        const blocked = record.blockedBy.length
+          ? `<div class="card-blockers"><span class="label">Needs</span>${relationshipChips(record.blockedBy)}</div>`
+          : "";
+        const impact = record.kind === "decision" && record.status === "pending"
+          ? `<div class="impact-wrap"><div class="impact-stamp" aria-label="${record.unlocksNow.length} immediate unlocks and ${record.downstreamWork} downstream work items">
+               <span class="stamp-cell"><span class="stamp-value">${record.unlocksNow.length}</span><span class="stamp-label">unlocks</span></span>
+               <span class="stamp-cell"><span class="stamp-value">${record.downstreamWork}</span><span class="stamp-label">downstream</span></span>
+             </div></div>`
+          : "";
+        return `<article class="record-card ${className}" data-tone="${tone(record)}">
+          <div class="card-top">
+            <div class="card-key"><span class="record-id">${escapeHtml(record.id)} · ${escapeHtml(label(record.type))}</span>${epicTag}</div>
+            <span class="status ${tone(record)}">${escapeHtml(label(statusText(record)))}</span>
+          </div>
+          <button class="record-title" type="button" data-${interaction}="${escapeHtml(record.id)}">${escapeHtml(record.title)}</button>
+          <div class="meta">${escapeHtml(record.priority ? record.priority + " · " : "")}${escapeHtml(record.area)} · ${escapeHtml(record.created)}</div>
+          ${blocked}${impact}
+        </article>`;
+      }
+      function section(title, note, records, emptyText) {
+        return `<section class="section">
+          <div class="section-heading"><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(note)}</p></div><span class="count">${records.length}</span></div>
+          ${records.length ? `<div class="grid">${records.map(record => recordCard(record)).join("")}</div>` : `<div class="empty">${escapeHtml(emptyText)}</div>`}
+        </section>`;
+      }
+      function impactPriority(decision) {
+        const affected = decision.downstream.map(id => byId.get(id)).filter(item => item.kind === "ticket");
+        return Math.min(
+          fallbackPriority,
+          ...affected.map(item => priorityOrder[item.priority] ?? fallbackPriority)
+        );
+      }
+      function decisionSort(a, b) {
+        return impactPriority(a) - impactPriority(b)
+          || b.unlocksNow.length - a.unlocksNow.length
+          || b.downstreamWork - a.downstreamWork
+          || a.created.localeCompare(b.created)
+          || a.id.localeCompare(b.id);
+      }
+      function viewHeading(title, description) {
+        return `<div class="view-heading"><div><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p></div><span class="snapshot">${escapeHtml(data.sourceDigest)}</span></div>`;
+      }
+      function renderNext() {
+        const ongoing = data.records.filter(record => record.kind === "ticket" && record.status === "in_progress")
+          .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority] || a.created.localeCompare(b.created));
+        const readyDecisions = data.records.filter(record => record.readiness === "ready").sort(decisionSort);
+        const waitingDecisions = data.records.filter(record => record.readiness === "waiting").sort(decisionSort);
+        const readyWork = data.records.filter(record => record.kind === "ticket" && record.status === "pending" && record.type !== "epic")
+          .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority] || a.created.localeCompare(b.created));
+        const epics = data.records.filter(record => record.type === "epic" && isActiveTicket(record));
+        app.innerHTML = viewHeading("Next", "Work and decisions that move the project.")
+          + section("Continue", "Already in progress.", ongoing, "No work in progress.")
+          + section("Decide", "Ready for review.", readyDecisions, "No decisions are ready.")
+          + section("Waiting", "Needs evidence.", waitingDecisions, "No decisions are waiting.")
+          + section("Ready", "Can start.", readyWork, "No tickets are ready.")
+          + `<section class="section"><div class="section-heading"><div><h3>Epics</h3><p>Active project arcs.</p></div><span class="count">${epics.length}</span></div>
+             <div class="grid">${epics.map(epic => `<button class="epic-button" type="button" data-epic="${epic.id}"><span class="record-id">${epic.id}</span><br><strong>${escapeHtml(epic.title)}</strong>${progressLine(epic)}</button>`).join("") || '<div class="empty">No active epics.</div>'}</div></section>`;
+      }
+      function directoryStatusFilter() {
+        return `<fieldset class="directory-status-box">
+          <legend class="visually-hidden">Filter directory by status</legend>
+          <label class="directory-status-option"><input type="checkbox" data-directory-status-all${state.directoryStatuses.length ? "" : " checked"}>All statuses</label>
+          ${directoryStatusChoices.map(value => `<label class="directory-status-option"><input type="checkbox" data-directory-status value="${value}"${state.directoryStatuses.includes(value) ? " checked" : ""}>${escapeHtml(label(value))}</label>`).join("")}
+        </fieldset>`;
+      }
+      function filterBar(multiStatus = false) {
+        const epics = data.records.filter(record => record.type === "epic");
+        return `<div class="filter-bar">
+          <label class="visually-hidden" for="record-search">Search records</label>
+          <input id="record-search" data-filter="query" value="${escapeHtml(state.query)}" placeholder="Search tickets and decisions…">
+          <select data-filter="kind" aria-label="Record kind">${optionList(["ticket", "decision"], state.kind, "All records")}</select>
+          ${multiStatus ? "" : `<select data-filter="status" aria-label="Status">${optionList(["pending", "in_progress", "blocked", "resolved", "wont_fix", "ready", "waiting", "finalized"], state.status, "All statuses")}</select>`}
+          <select data-filter="epic" aria-label="Epic"><option value="all">All epics</option>${epics.map(epic => `<option value="${epic.id}"${state.epic === epic.id ? " selected" : ""}>${escapeHtml(epic.id)}</option>`).join("")}</select>
+          <select data-filter="area" aria-label="Area">${optionList(unique("area"), state.area, "All areas")}</select>
+          <select data-filter="priority" aria-label="Priority">${optionList(data.project.priorities, state.priority, "All priorities")}</select>
+          ${multiStatus ? directoryStatusFilter() : ""}
+        </div>`;
+      }
+      function matches(record, statuses = state.status === "all" ? [] : [state.status]) {
+        const haystack = [record.id, record.title, record.area, record.type, record.status, record.markdown, ...record.tags].join(" ").toLowerCase();
+        const queryMatch = !state.query || haystack.includes(state.query.toLowerCase());
+        const kindMatch = state.kind === "all" || record.kind === state.kind;
+        const displayStatus = statusText(record);
+        // Accept a list so Directory can OR-match multiple canonical statuses;
+        // Board still passes its one selected status through the same predicate.
+        const statusMatch = !statuses.length || statuses.some(value => record.status === value || displayStatus === value);
+        const epicMatch = state.epic === "all" || record.id === state.epic || record.parent === state.epic;
+        const areaMatch = state.area === "all" || record.area === state.area;
+        const priorityMatch = state.priority === "all" || record.priority === state.priority;
+        return queryMatch && kindMatch && statusMatch && epicMatch && areaMatch && priorityMatch;
+      }
+      function epicStrip() {
+        const epics = data.records.filter(record => record.type === "epic" && isActiveTicket(record));
+        return `<div class="epic-strip"><button class="epic-button" type="button" data-epic="all" aria-pressed="${state.epic === "all"}"><strong>All epics</strong><div class="meta">Show everything</div></button>${epics.map(epic =>
+          `<button class="epic-button" type="button" data-epic="${epic.id}" aria-pressed="${state.epic === epic.id}"><span class="record-id">${epic.id}</span><br><strong>${escapeHtml(epic.title)}</strong>${progressLine(epic)}</button>`
+        ).join("")}</div>`;
+      }
+      function renderBoard() {
+        const selected = data.records.filter(record => matches(record));
+        const columns = [
+          ["Decisions", selected.filter(record => record.kind === "decision" && record.status === "pending")],
+          ["In progress", selected.filter(record => record.kind === "ticket" && record.status === "in_progress")],
+          ["Ready", selected.filter(record => record.kind === "ticket" && record.status === "pending" && record.type !== "epic")],
+          ["Blocked", selected.filter(record => record.kind === "ticket" && record.status === "blocked")]
+        ];
+        app.innerHTML = viewHeading("Board", "Active work by status and epic.")
+          + epicStrip() + filterBar()
+          + `<div class="board">${columns.map(([title, records]) => `<section class="board-column"><div class="column-heading"><span>${title}</span><span>${records.length}</span></div><div class="column-stack">${records.map(record => recordCard(record)).join("") || '<div class="empty">No matching records.</div>'}</div></section>`).join("")}</div>`;
+      }
+      function sortRecords(records) {
+        const copy = [...records];
+        const field = state.sort.startsWith("completed") ? recordDate : record => record.created || "";
+        const direction = state.sort.endsWith("asc") ? 1 : -1;
+        return copy.sort((a, b) => direction * field(a).localeCompare(field(b)) || a.id.localeCompare(b.id));
+      }
+      function directorySort() {
+        return `<select class="focus-select" data-filter="sort" aria-label="Sort directory">
+          <option value="created-desc"${state.sort === "created-desc" ? " selected" : ""}>Created: newest</option>
+          <option value="created-asc"${state.sort === "created-asc" ? " selected" : ""}>Created: oldest</option>
+          <option value="completed-desc"${state.sort === "completed-desc" ? " selected" : ""}>Completed: newest</option>
+          <option value="completed-asc"${state.sort === "completed-asc" ? " selected" : ""}>Completed: oldest</option>
+        </select>`;
+      }
+      function directoryGroupSelect() {
+        const choices = [
+          ["decisions", "Human decisions"],
+          ["epics", "Epics"],
+          ["standalone", "Standalone"]
+        ];
+        return `<fieldset class="directory-group-box">
+          <legend class="visually-hidden">Show directory groups</legend>
+          ${choices.map(([value, text]) => `<label class="directory-group-option"><input type="checkbox" data-directory-group value="${value}"${state.directoryGroups.includes(value) ? " checked" : ""}>${text}</label>`).join("")}
+        </fieldset>`;
+      }
+      function directorySection(key, title, note, count, content, emptyText) {
+        if (!state.directoryGroups.includes(key)) return "";
+        if (!count && state.directoryGroups.length > 1) return "";
+        return `<section class="directory-section">
+          <div class="section-heading"><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(note)}</p></div><span class="count">${count}</span></div>
+          ${count ? content : `<div class="empty">${escapeHtml(emptyText)}</div>`}
+        </section>`;
+      }
+      function renderDirectory() {
+        const matchesById = new Set(data.records.filter(record => matches(record, state.directoryStatuses)).map(record => record.id));
+        const decisions = sortRecords(data.records.filter(record =>
+          record.kind === "decision" && matchesById.has(record.id)
+        ));
+        const epics = sortRecords(data.records.filter(record => record.type === "epic" && (
+          matchesById.has(record.id) || (record.children || []).some(id => matchesById.has(id))
+        )));
+        const standalone = sortRecords(data.records.filter(record =>
+          record.kind === "ticket"
+          && record.type !== "epic"
+          && !record.parent
+          && matchesById.has(record.id)
+        ));
+        const epicContent = epics.map(epic => {
+          const children = sortRecords((epic.children || []).map(id => byId.get(id)).filter(child => matchesById.has(child.id)));
+          return `<details class="epic-group" open><summary><div class="epic-summary"><div><span class="record-id">${epic.id} · epic</span><br><strong>${escapeHtml(epic.title)}</strong></div><span class="status ${tone(epic)}">${escapeHtml(label(epic.status))}</span></div>${progressLine(epic)}</summary><div class="epic-children">${children.map(child => recordCard(child)).join("") || '<div class="empty">No child tickets match.</div>'}</div></details>`;
+        }).join("");
+        app.innerHTML = viewHeading("Directory", "All epics, tickets, and decisions.")
+          + filterBar(true)
+          + `<div class="directory-controls">${directoryGroupSelect()}${directorySort()}</div>`
+          + `<div class="directory">
+            ${directorySection("decisions", "Human decisions", "Choices and their readiness.", decisions.length, `<div class="grid">${decisions.map(record => recordCard(record)).join("")}</div>`, "No human decisions match.")}
+            ${directorySection("epics", "Epics", "Project arcs and child tickets.", epics.length, epicContent, "No epics match.")}
+            ${directorySection("standalone", "Standalone", "Tickets outside an epic.", standalone.length, `<div class="grid standalone-grid">${standalone.map(record => recordCard(record)).join("")}</div>`, "No standalone tickets match.")}
+            ${state.directoryGroups.length > 1 && !decisions.length && !epics.length && !standalone.length ? '<div class="empty">No records match these filters.</div>' : ""}
+            ${!state.directoryGroups.length ? '<div class="empty">Select at least one directory group.</div>' : ""}
+          </div>`;
+      }
+      function relationColumn(title, ids, emptyText) {
+        return `<section class="dependency-column"><h3>${escapeHtml(title)}</h3><div class="dependency-stack">${ids.map(id => recordCard(byId.get(id), "", "focus")).join("") || `<div class="empty">${escapeHtml(emptyText)}</div>`}</div></section>`;
+      }
+      function renderDependencies() {
+        const active = data.records.filter(record => !isComplete(record));
+        const dependencyChoices = data.records
+          .filter(record => record.blockedBy.length || record.dependents.length)
+          .sort((a, b) =>
+            b.dependents.length - a.dependents.length
+            || b.downstream.length - a.downstream.length
+            || a.id.localeCompare(b.id)
+          );
+        const fallback = dependencyChoices[0] || active[0];
+        const focus = byId.get(state.focus) || fallback;
+        state.focus = focus ? focus.id : "";
+        if (!focus) {
+          app.innerHTML = viewHeading("Dependencies", "Blockers and downstream effects.") + '<div class="empty">No records.</div>';
+          return;
+        }
+        if (!dependencyChoices.some(record => record.id === focus.id)) {
+          dependencyChoices.unshift(focus);
+        }
+        const transitive = focus.downstream.filter(id => !focus.dependents.includes(id));
+        app.innerHTML = viewHeading("Dependencies", "Blockers and downstream effects.")
+          + `<label class="label" for="focus-record">Focus</label><select class="focus-select" id="focus-record" data-focus-select>${dependencyChoices.map(record => {
+              const relation = record.dependents.length
+                ? `blocks ${record.dependents.length}`
+                : `blocked by ${record.blockedBy.length}`;
+              return `<option value="${record.id}"${record.id === focus.id ? " selected" : ""}>${escapeHtml(record.id + " · " + relation + " · " + record.title)}</option>`;
+            }).join("")}</select>`
+          + `<p class="dependency-summary">${focus.dependents.length} directly blocked · ${focus.downstream.length} downstream · ${focus.blockedBy.length} blockers</p>`
+          + `<div class="dependency-stage">
+              ${relationColumn("Blocked by", focus.blockedBy, "No unresolved blockers.")}
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <section class="dependency-column"><h3>Selected</h3>${recordCard(focus, "focus-card")}${focus.decisions.length ? `<div class="provenance"><span class="label">Decisions</span>${relationshipChips(focus.decisions)}</div>` : ""}</section>
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              ${relationColumn("Directly affects", focus.dependents, "No active record depends on this.")}
+            </div>`
+          + (transitive.length ? `<section class="section"><div class="section-heading"><div><h3>Further downstream</h3><p>Affected later.</p></div><span class="count">${transitive.length}</span></div><div class="grid">${transitive.map(id => recordCard(byId.get(id), "", "focus")).join("")}</div></section>` : "");
+      }
+      function renderView() {
+        renderNavigation();
+        ({ next: renderNext, board: renderBoard, directory: renderDirectory, dependencies: renderDependencies })[state.view]();
+        wireControls();
+        renderDrawer();
+      }
+      function normalizePath(path) {
+        const parts = [];
+        path.split("/").forEach(part => {
+          if (!part || part === ".") return;
+          if (part === "..") parts.pop();
+          else parts.push(part);
+        });
+        return parts.join("/");
+      }
+      function wireMarkdownLinks(container, record) {
+        const sourceDir = record.sourcePath.split("/").slice(0, -1).join("/");
+        container.querySelectorAll("a[href]").forEach(anchor => {
+          const href = anchor.getAttribute("href");
+          if (/^(https?:|mailto:|#)/i.test(href)) {
+            if (/^https?:/i.test(href)) anchor.rel = "noreferrer";
+            return;
+          }
+          const normalized = normalizePath(`${sourceDir}/${href.split("#")[0]}`);
+          const targetId = data.pathIndex[normalized];
+          if (targetId) {
+            anchor.href = `#record/${encodeURIComponent(targetId)}`;
+            anchor.dataset.record = targetId;
+          } else {
+            anchor.href = normalized + (href.includes("#") ? "#" + href.split("#").slice(1).join("#") : "");
+          }
+        });
+      }
+      function renderDrawer() {
+        const record = byId.get(state.selected);
+        document.body.classList.toggle("detail-open", Boolean(record));
+        if (!record) {
+          drawer.classList.remove("open");
+          backdrop.classList.remove("open");
+          drawer.setAttribute("aria-modal", "false");
+          drawer.innerHTML = "";
+          renderedDrawerId = "";
+          return;
+        }
+        const selectionChanged = renderedDrawerId !== record.id;
+        const rendered = DOMPurify.sanitize(marked.parse(record.markdown, { gfm: true }), {
+          USE_PROFILES: { html: true },
+          FORBID_TAGS: ["style", "iframe", "object", "embed"]
+        });
+        const epic = epicOf(record);
+        drawer.innerHTML = `<div class="drawer-header"><div><span class="record-id">${escapeHtml(record.id)} · ${escapeHtml(label(record.type))}</span></div><button class="close-button" type="button" data-close aria-label="Close details"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+          <div class="drawer-body"><span class="status ${tone(record)}">${escapeHtml(label(statusText(record)))}</span><h2 id="drawer-title">${escapeHtml(record.title)}</h2>
+          <div class="drawer-meta">
+            <div class="meta-box"><span class="label">Created</span><br>${escapeHtml(record.created || "—")}</div>
+            <div class="meta-box"><span class="label">Completed</span><br>${escapeHtml(record.completed || "—")}</div>
+            <div class="meta-box"><span class="label">Area / priority</span><br>${escapeHtml(record.area)}${record.priority ? " · " + escapeHtml(record.priority) : ""}</div>
+            <div class="meta-box"><span class="label">Epic</span><br>${epic ? `<button class="epic-tag" type="button" data-epic="${epic.id}" title="${escapeHtml(epic.title)}">Epic ${escapeHtml(epic.id)}</button>` : "Standalone"}</div>
+          </div>
+          ${record.blockedBy.length ? `<div><span class="label">Blocked by</span>${relationshipChips(record.blockedBy)}</div>` : ""}
+          ${record.dependents.length ? `<div><span class="label">Directly affects</span>${relationshipChips(record.dependents)}</div>` : ""}
+          ${record.decisions.length ? `<div><span class="label">Decision provenance</span>${relationshipChips(record.decisions)}</div>` : ""}
+          <p><a href="${escapeHtml(record.sourcePath)}">Source Markdown</a></p>
+          <article class="markdown">${rendered}</article></div>`;
+        wireMarkdownLinks(drawer.querySelector(".markdown"), record);
+        drawer.classList.add("open");
+        backdrop.classList.add("open");
+        drawer.setAttribute("aria-modal", compactDrawer.matches ? "true" : "false");
+        renderedDrawerId = record.id;
+        if (selectionChanged) drawer.querySelector("[data-close]").focus();
+      }
+      function wireControls() {
+        app.querySelectorAll("[data-filter]").forEach(control => {
+          const event = control.tagName === "INPUT" ? "input" : "change";
+          control.addEventListener(event, () => {
+            state[control.dataset.filter] = control.value;
+            renderView();
+            const search = document.getElementById("record-search");
+            if (search && control.tagName === "INPUT") {
+              search.focus();
+              search.setSelectionRange(search.value.length, search.value.length);
+            }
+          });
+        });
+        app.querySelectorAll("[data-directory-group]").forEach(control => {
+          control.addEventListener("change", () => {
+            state.directoryGroups = [...app.querySelectorAll("[data-directory-group]:checked")]
+              .map(item => item.value);
+            renderView();
+          });
+        });
+        const allStatuses = app.querySelector("[data-directory-status-all]");
+        if (allStatuses) {
+          allStatuses.addEventListener("change", () => {
+            state.directoryStatuses = [];
+            renderView();
+          });
+        }
+        app.querySelectorAll("[data-directory-status]").forEach(control => {
+          control.addEventListener("change", () => {
+            state.directoryStatuses = [...app.querySelectorAll("[data-directory-status]:checked")]
+              .map(item => item.value);
+            renderView();
+          });
+        });
+        const focusSelect = app.querySelector("[data-focus-select]");
+        if (focusSelect) focusSelect.addEventListener("change", () => navigate(`dependencies/${focusSelect.value}`));
+      }
+      function navigate(route) {
+        location.hash = route;
+      }
+      function applyRoute() {
+        const route = decodeURIComponent(location.hash.replace(/^#/, "")) || "next";
+        if (route.startsWith("record/")) {
+          state.selected = route.slice(7);
+        } else {
+          state.selected = "";
+          const [view, focus = ""] = route.split("/");
+          if (views.some(([id]) => id === view)) {
+            state.view = view;
+            state.lastView = view;
+            if (view === "dependencies") state.focus = focus;
+          }
+        }
+        renderView();
+      }
+      document.addEventListener("click", event => {
+        const viewButton = event.target.closest("[data-view]");
+        if (viewButton) return navigate(viewButton.dataset.view);
+        const focusButton = event.target.closest("[data-focus]");
+        if (focusButton) return navigate(`dependencies/${focusButton.dataset.focus}`);
+        const recordButton = event.target.closest("[data-record]");
+        if (recordButton) {
+          event.preventDefault();
+          return navigate(`record/${recordButton.dataset.record}`);
+        }
+        const epicButton = event.target.closest("[data-epic]");
+        if (epicButton) {
+          const epicId = epicButton.dataset.epic;
+          // Epic clicks are contextual: Board/Directory filter in place.
+          // Other views open the epic detail drawer; never force Directory.
+          if (!["board", "directory"].includes(state.view)) {
+            return navigate(`record/${epicId}`);
+          }
+          state.epic = epicId;
+          if (state.selected) return navigate(state.lastView);
+          renderView();
+          return;
+        }
+        if (event.target.closest("[data-close]") || event.target === backdrop) {
+          return navigate(state.lastView);
+        }
+      });
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && state.selected) navigate(state.lastView);
+      });
+      window.addEventListener("hashchange", applyRoute);
+      compactDrawer.addEventListener("change", event => {
+        if (drawer.classList.contains("open")) {
+          drawer.setAttribute("aria-modal", event.matches ? "true" : "false");
+        }
+      });
+      applyRoute();
+    })();
   </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-"""Render the self-contained offline RoastLogger issue dashboard."""
+"""Render the self-contained offline issue-tracker dashboard."""
 
 from __future__ import annotations
 
@@ -115,6 +115,11 @@ def build_dashboard_data(
             and by_id[item]["status"] in ACTIVE_TICKET_STATUSES
             for item in downstream
         )
+        record["downstreamDecisions"] = sum(
+            by_id[item]["kind"] == "decision"
+            and by_id[item]["status"] == "pending"
+            for item in downstream
+        )
         record["unlocksNow"] = sorted(
             item
             for item in record["dependents"]
@@ -193,8 +198,14 @@ def build_dashboard_data(
             "readyDecisions": sum(
                 record.get("readiness") == "ready" for record in records
             ),
+            "waitingDecisions": sum(
+                record.get("readiness") == "waiting" for record in records
+            ),
         },
         "records": records,
+        "pathIndex": {
+            record["sourcePath"]: record["id"] for record in records
+        },
         "sourceDigest": hashlib.sha256(
             canonical.encode("utf-8")
         ).hexdigest()[:12],
@@ -217,6 +228,10 @@ def _safe_json(data: dict[str, Any]) -> str:
     )
 
 
+def _asset_text(relative: str) -> str:
+    return (HTML_ROOT / relative).read_text(encoding="utf-8")
+
+
 def render_dashboard(
     config: Any,
     tickets: list[Any],
@@ -227,8 +242,16 @@ def render_dashboard(
     replacements = {
         "__PROJECT_NAME__": html.escape(config.project_name),
         "__TRACKER_DATA__": _safe_json(data),
+        "__COURIER_PRIME_REGULAR__": _asset_text(
+            "fonts/courier-prime-regular.ttf.b64"
+        ).replace("\n", ""),
+        "__COURIER_PRIME_BOLD__": _asset_text(
+            "fonts/courier-prime-bold.ttf.b64"
+        ).replace("\n", ""),
+        "__MARKED_JS__": _asset_text("vendor/marked.umd.js"),
+        "__DOMPURIFY_JS__": _asset_text("vendor/purify.min.js"),
     }
-    template = (HTML_ROOT / "overview.template.html").read_text(encoding="utf-8")
+    template = _asset_text("overview.template.html")
     missing = [
         placeholder
         for placeholder in replacements

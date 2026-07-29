@@ -271,11 +271,22 @@ def test_dashboard_is_offline_safe_and_has_core_views() -> None:
     )
 
     assert "__TRACKER_DATA__" not in rendered
-    assert "data-view=\"next\"" in rendered
-    assert "data-view=\"board\"" in rendered
-    assert "data-view=\"directory\"" in rendered
-    assert "data-view=\"dependencies\"" in rendered
-    assert "Issue workbench" in rendered
+    assert '["next", "Next"]' in rendered
+    assert '["board", "Board"]' in rendered
+    assert '["directory", "Directory"]' in rendered
+    assert '["dependencies", "Dependencies"]' in rendered
+    assert 'data-view="${id}"' in rendered
+    assert "Ticket workbench" in rendered
+    assert "--paper: #eef1ec" in rendered
+    assert "issue-workbench-theme" in rendered
+    assert "data.project.priorities" in rendered
+    assert "DOMPurify.sanitize(marked.parse(" in rendered
+    assert "roastlogger-ticket-theme" not in rendered
+    assert "--coffee" not in rendered
+    assert "__MARKED_JS__" not in rendered
+    assert "__DOMPURIFY_JS__" not in rendered
+    assert "__COURIER_PRIME_REGULAR__" not in rendered
+    assert "__COURIER_PRIME_BOLD__" not in rendered
     assert not re.search(
         r'<(?:script|link)\b[^>]+(?:src|href)=["\']https?://',
         rendered,
@@ -320,6 +331,22 @@ def test_skill_and_templates_enforce_documentation_updates() -> None:
     assert "Do not mark a ticket complete" in skill
     assert "docs/design/" in workflow
     assert "docs/architecture/api-endpoints.md" in workflow
+    dashboard_guidance = (
+        skill_root / "html" / "INSTRUCTIONS.md"
+    ).read_text(encoding="utf-8")
+    assert "Kantian ticket-system reference" in dashboard_guidance
+    assert "Do not restyle the workbench" in dashboard_guidance
+    for relative in (
+        "html/fonts/courier-prime-regular.ttf.b64",
+        "html/fonts/courier-prime-bold.ttf.b64",
+        "html/vendor/marked.umd.js",
+        "html/vendor/purify.min.js",
+        "html/licenses/COURIER_PRIME_OFL.txt",
+        "html/licenses/MARKED_LICENSE.txt",
+        "html/licenses/DOMPURIFY_LICENSE.txt",
+        "html/licenses/DOMPURIFY_LICENSE_MPL.txt",
+    ):
+        assert (skill_root / relative).stat().st_size > 0
     for name in ("TICKET.md", "HUMAN_DECISION.md"):
         bundled = skill_root / "templates" / name
         active = TRACKER.ISSUES_DIR / "templates" / name
