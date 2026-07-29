@@ -71,6 +71,7 @@ def create_app(config_overrides=None):
         template_folder=str(ROOT / "templates"),
     )
     app.config.update(default_config())
+    app.config["REPOSITORY_ROOT"] = str(ROOT)
     if config_overrides:
         app.config.update(config_overrides)
 

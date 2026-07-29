@@ -38,6 +38,7 @@ def default_config() -> dict[str, object]:
             "dev-secret-key-change-in-production",
         ),
         "DEFAULT_DB": _default_db_mode(),
+        "DEVICE": os.environ.get("DEVICE", ""),
         "LOCAL_DB_NAME": os.environ.get("LOCAL_DB_NAME", "roastlogger"),
         "ONLINE_DB_NAME": "roastlogger",
         "MONGO_URI": os.environ.get("MONGO_URI", "mongodb://localhost:27017/"),
