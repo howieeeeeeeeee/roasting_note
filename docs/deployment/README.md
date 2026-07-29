@@ -26,6 +26,7 @@ Set these in Render dashboard:
 | `MONGO_URI` | MongoDB Atlas connection string |
 | `MONGO_URI_LOCAL` | Local MongoDB (not used in production) |
 | `DEFAULT_DB` | `local` by default; switch to online manually when needed |
+| `DEVICE` | Unique stable deployment identity for audited sync preflight |
 | `TZ` | `Asia/Taipei` |
 
 ### Free Tier Limitations
@@ -88,6 +89,26 @@ SECRET_KEY=your-secret-key
 MONGO_URI=mongodb+srv://...
 MONGO_URI_LOCAL=mongodb://localhost:27017/roastlogger
 DEFAULT_DB=local
+DEVICE=your-stable-machine-name
 TEMP_SENSOR_URL=http://192.168.0.47/temp
 TZ=Asia/Taipei
 ```
+
+## Database Synchronization
+
+Do not expose an applied synchronization endpoint from Render. Settings
+preflight is read-only and audited; the old mutation routes fail closed.
+Operators run the guarded CLI from a trusted machine with both endpoints
+configured:
+
+```bash
+uv run python scripts/sync_database.py \
+  --direction online-to-local \
+  --dry-run
+```
+
+Review the sanitized plan before separately authorizing an applied run.
+Applied runs require both exact run-specific tokens and create a complete
+destination backup under ignored `db_backup/`. Only the reviewed audit record
+is eligible for publication. See
+[Database Sync](../features/database-sync.md).

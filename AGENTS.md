@@ -65,6 +65,35 @@ uv run python scripts/generate_issues_index.py
 uv run python scripts/generate_issues_index.py --check
 ```
 
+## Database-Impacting Work
+
+This workflow applies to MongoDB document shapes, persistence behavior,
+database routes or services, migrations, database configuration, and sync:
+
+1. Add a `## Database Operations Impact` section to the ticket. Record affected
+   collections, local and online effects, migration or backfill needs, expected
+   sync direction, whether an applied mirror is part of delivery, and required
+   backup or audit evidence.
+2. Read `docs/features/database-sync.md` before implementation. When configured
+   endpoints are available, run `scripts/sync_database.py --dry-run`; report an
+   unavailable endpoint as an environment limitation unless live evidence is a
+   ticket requirement.
+3. Use mocks, fixtures, or an isolated local database for implementation and
+   automated verification. Never use an applied mirror as a test, startup,
+   cleanup, or implicit ticket step.
+4. An applied mirror requires a separate explicit user request after its
+   preflight is visible and both exact run-specific confirmations. Never infer
+   approval, automate either token, reuse earlier consent, or add a bypass.
+5. After an applied mirror, the operator reviews the result and manually
+   publishes only its audit record. `db_backup/` payloads and manifests remain
+   ignored and untracked.
+6. Before resolution, record dry-run evidence or the applied run ID and audit
+   path, verify the required docs, and confirm
+   `git ls-files db_backup 'db_backup/**'` returns no files.
+
+Ticketing turns may specify and verify this workflow but must never perform an
+applied database sync.
+
 ## Verification
 
 Follow `tests/README.md`. Run focused tests while iterating and the full suite

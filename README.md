@@ -9,6 +9,7 @@ A personal, mobile-responsive web application for home coffee roasters to track 
 - K-Type temperature sensor integration (auto-polling, smart averaging)
 - Roast profiles with temperature curves and key event markers
 - Review system for tasting notes and ratings
+- Guarded, audited local/online database synchronization
 - Mobile-responsive design
 
 ## Quick Start
@@ -34,6 +35,21 @@ uv run python app.py
 ```
 
 Open `http://localhost:5000` in your browser.
+
+## Database Sync Safety
+
+Settings offers audited, read-only previews. Applied synchronization is
+CLI-only, creates a complete destination backup, and requires two exact
+run-specific confirmations:
+
+```bash
+uv run python scripts/sync_database.py \
+  --direction online-to-local \
+  --dry-run
+```
+
+See [Database Sync](docs/features/database-sync.md) before any applied run.
+Never commit `.env` or `db_backup/`.
 
 ## Hardware/Firmware
 

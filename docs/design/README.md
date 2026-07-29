@@ -23,6 +23,7 @@ design/
 │   ├── live-roasting.md       Top-bar layout for the live roast view
 │   ├── label-creator.md       Modal canvas editor for bean labels
 │   ├── sticker-sheet.md       Modal editor for US-4 sticker sheets
+│   ├── settings.md            Settings modal and sync preflight states
 │   ├── roast-detail.md        Read-only roast view
 │   └── bean-inventory.md      Beans list + bean detail
 └── patterns/                  Recurring design systems
@@ -37,6 +38,7 @@ design/
 **"How big should this touch target be?"** → [foundations/spacing-layout.md](./foundations/spacing-layout.md)
 **"How do I make this dark-mode aware?"** → [foundations/dark-mode.md](./foundations/dark-mode.md)
 **"How does the live roast screen work?"** → [screens/live-roasting.md](./screens/live-roasting.md)
+**"How does sync preflight appear in Settings?"** → [screens/settings.md](./screens/settings.md)
 **"How do I add a new label template?"** → [../features/adding-label-templates.md](../features/adding-label-templates.md) (step-by-step) + [patterns/label-templates.md](./patterns/label-templates.md) (design system)
 **"How is US-4 sticker stock laid out?"** → [patterns/sticker-templates.md](./patterns/sticker-templates.md)
 

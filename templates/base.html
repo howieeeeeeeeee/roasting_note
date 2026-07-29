@@ -111,20 +111,25 @@
                 </div>
 
                 <div class="settings-section">
-                    <h3>Sync Data</h3>
-                    <p class="settings-hint">Sync beans and roasts between databases</p>
+                    <h3>Database Sync Preflight</h3>
+                    <p class="settings-hint">
+                        Preview the guarded CLI operation. These actions never
+                        modify either database.
+                    </p>
                     <div class="sync-buttons">
                         <button class="btn btn-secondary" id="syncOnlineToLocalBtn"
                             onclick="syncData('online-to-local')">
                             <span class="material-icons">cloud_download</span>
-                            Online → Local
+                            Preview Online → Local
                         </button>
                         <button class="btn btn-secondary" id="syncLocalToOnlineBtn"
                             onclick="syncData('local-to-online')">
                             <span class="material-icons">cloud_upload</span>
-                            Local → Online
+                            Preview Local → Online
                         </button>
                     </div>
+                    <div id="syncPreflightResult" class="sync-preflight-result"
+                        aria-live="polite" hidden></div>
                 </div>
 
                 <div class="settings-section settings-danger">
@@ -270,33 +275,122 @@
             });
         });
 
-        // Sync Data
-        async function syncData(direction) {
-            const btn = direction === 'online-to-local'
-                ? document.getElementById('syncOnlineToLocalBtn')
-                : document.getElementById('syncLocalToOnlineBtn');
+        let syncPreflightActive = false;
 
-            btn.disabled = true;
-            btn.innerHTML = '<span class="material-icons spinning">sync</span> Syncing...';
+        function setSyncPreflightButtons(disabled) {
+            const onlineButton = document.getElementById('syncOnlineToLocalBtn');
+            const localButton = document.getElementById('syncLocalToOnlineBtn');
+            onlineButton.disabled = disabled;
+            localButton.disabled = disabled;
+            if (disabled) {
+                onlineButton.innerHTML = '<span class="material-icons spinning">sync</span> Preflight running...';
+                localButton.innerHTML = '<span class="material-icons spinning">sync</span> Preflight running...';
+                return;
+            }
+            onlineButton.innerHTML = '<span class="material-icons">cloud_download</span> Preview Online → Local';
+            localButton.innerHTML = '<span class="material-icons">cloud_upload</span> Preview Local → Online';
+        }
+
+        function appendPreflightLine(container, label, value) {
+            const line = document.createElement('p');
+            const title = document.createElement('strong');
+            title.textContent = `${label}: `;
+            line.appendChild(title);
+            line.appendChild(document.createTextNode(value));
+            container.appendChild(line);
+        }
+
+        function renderSyncPreflight(data) {
+            const result = document.getElementById('syncPreflightResult');
+            result.replaceChildren();
+            result.hidden = false;
+            result.className = 'sync-preflight-result';
+
+            if (!data.audit_recorded) {
+                result.classList.add('status-error');
+                appendPreflightLine(
+                    result,
+                    'Audit failure',
+                    data.audit_error?.message || 'The preflight audit record was not persisted.'
+                );
+                return;
+            }
+            if (!data.success || !data.plan) {
+                result.classList.add('status-error');
+                appendPreflightLine(
+                    result,
+                    'Preflight failed',
+                    data.error?.message || 'The sanitized plan is unavailable.'
+                );
+                appendPreflightLine(result, 'Audit record', data.audit_path);
+                return;
+            }
+
+            const plan = data.plan;
+            result.classList.add('status-success');
+            appendPreflightLine(result, 'Run ID', plan.run_id);
+            appendPreflightLine(
+                result,
+                'Source',
+                `${plan.source.role} (${plan.source.host}/${plan.source.database})`
+            );
+            appendPreflightLine(
+                result,
+                'Destination',
+                `${plan.destination.role} (${plan.destination.host}/${plan.destination.database})`
+            );
+            appendPreflightLine(
+                result,
+                'Source counts',
+                JSON.stringify(plan.source_counts)
+            );
+            appendPreflightLine(
+                result,
+                'Destination counts',
+                JSON.stringify(plan.destination_counts)
+            );
+            appendPreflightLine(
+                result,
+                'Backup scope',
+                `${plan.backup.scope}: ${plan.backup.collections.join(', ') || 'empty database'}`
+            );
+            appendPreflightLine(result, 'CLI command', plan.cli_command);
+            appendPreflightLine(result, 'Audit record', data.audit_path);
+        }
+
+        // Audited read-only database sync preflight
+        async function syncData(direction) {
+            if (syncPreflightActive) {
+                return;
+            }
+            syncPreflightActive = true;
+            setSyncPreflightButtons(true);
 
             try {
-                const response = await fetch(`/api/sync/${direction}`, { method: 'POST' });
+                const response = await fetch(
+                    `/api/sync/preflight/${direction}`,
+                    { method: 'POST' }
+                );
                 const data = await response.json();
-
-                if (data.success) {
-                    const beansMsg = `Beans: ${data.beans.added} added, ${data.beans.updated} updated, ${data.beans.skipped} skipped, ${data.beans.conflicts} conflicts`;
-                    const roastsMsg = `Roasts: ${data.roasts.added} added, ${data.roasts.updated} updated, ${data.roasts.skipped} skipped, ${data.roasts.conflicts} conflicts`;
-                    showToast(`Sync complete! ${beansMsg}. ${roastsMsg}.`, 'success');
-                } else {
-                    showToast(`Sync failed: ${data.error}`, 'error');
-                }
+                renderSyncPreflight(data);
+                showToast(
+                    data.success && data.audit_recorded
+                        ? 'Read-only sync preflight recorded'
+                        : 'Sync preflight needs attention',
+                    data.success && data.audit_recorded ? 'success' : 'error'
+                );
             } catch (error) {
-                showToast('Sync failed: Network error', 'error');
+                renderSyncPreflight({
+                    success: false,
+                    audit_recorded: false,
+                    audit_error: {
+                        message: 'Network failure; audit persistence is unknown.'
+                    }
+                });
+                showToast('Sync preflight failed: Network error', 'error');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = direction === 'online-to-local'
-                    ? '<span class="material-icons">cloud_download</span> Online → Local'
-                    : '<span class="material-icons">cloud_upload</span> Local → Online';
+                syncPreflightActive = false;
+                setSyncPreflightButtons(false);
             }
         }
 

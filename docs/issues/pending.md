@@ -4,4 +4,4 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RN-0022 | [IMPROVEMENT] | High | database-sync | [Add Guarded, Audited Bidirectional Database Sync](./pending/RN-0022-guarded-audited-database-sync.md) | - | - | 2026-07-29 | - |
+| RN-0003 | [IMPROVEMENT] | Medium | testing | [In-App Browser and API Workflow Testing](./pending/RN-0003-in-app-browser-api-testing.md) | - | - | 2026-01-11 | - |

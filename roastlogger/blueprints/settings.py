@@ -10,7 +10,7 @@ from flask import Blueprint, current_app, jsonify, request, session
 from roastlogger.config import DEFAULT_TEMP_SENSOR_URL
 from roastlogger.database import get_connections, get_current_db_mode
 from roastlogger.routing import register_unprefixed_routes
-from roastlogger.services.database_sync import sync_collection
+from roastlogger.services.database_sync_ui import run_ui_preflight
 
 
 blueprint = Blueprint("settings", __name__)
@@ -54,39 +54,39 @@ def api_set_sensor_settings():
 
 
 def api_sync_online_to_local():
-    connections = get_connections()
-    try:
-        beans_result = sync_collection(
-            connections.online_db.beans,
-            connections.local_db.beans,
-        )
-        roasts_result = sync_collection(
-            connections.online_db.roasts,
-            connections.local_db.roasts,
-        )
-        return jsonify(
-            {"success": True, "beans": beans_result, "roasts": roasts_result}
-        )
-    except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)}), 500
+    return _sync_route_disabled()
 
 
 def api_sync_local_to_online():
-    connections = get_connections()
-    try:
-        beans_result = sync_collection(
-            connections.local_db.beans,
-            connections.online_db.beans,
-        )
-        roasts_result = sync_collection(
-            connections.local_db.roasts,
-            connections.online_db.roasts,
-        )
-        return jsonify(
-            {"success": True, "beans": beans_result, "roasts": roasts_result}
-        )
-    except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)}), 500
+    return _sync_route_disabled()
+
+
+def _sync_route_disabled():
+    return (
+        jsonify(
+            {
+                "success": False,
+                "error": "Applied database sync is CLI-only",
+                "guidance": (
+                    "Use scripts/sync_database.py for guarded sync, or the "
+                    "Settings preflight action for a read-only plan."
+                ),
+            }
+        ),
+        409,
+    )
+
+
+def api_sync_preflight(direction):
+    result = run_ui_preflight(
+        current_app.config,
+        get_connections(),
+        current_app.config["REPOSITORY_ROOT"],
+        direction,
+    )
+    if not result["audit_recorded"]:
+        return jsonify(result), 500
+    return jsonify(result), 200 if result["success"] else 503
 
 
 def api_clean_test_data():
@@ -170,6 +170,12 @@ register_unprefixed_routes(
             "/api/sync/local-to-online",
             "api_sync_local_to_online",
             api_sync_local_to_online,
+            ["POST"],
+        ),
+        (
+            "/api/sync/preflight/<direction>",
+            "api_sync_preflight",
+            api_sync_preflight,
             ["POST"],
         ),
         (

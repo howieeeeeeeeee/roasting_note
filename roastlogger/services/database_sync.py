@@ -28,7 +28,7 @@ def prepare_synced_document(source_doc):
     return sync_doc
 
 
-def sync_collection(source_col, target_col):
+def sync_collection(source_col, target_col, *, batch_size=None):
     result = {
         "added": 0,
         "updated": 0,
@@ -36,7 +36,10 @@ def sync_collection(source_col, target_col):
         "conflicts": 0,
         "conflict_ids": [],
     }
-    for source_doc in source_col.find({"archived": {"$ne": True}}):
+    source_documents = source_col.find({"archived": {"$ne": True}})
+    if batch_size and hasattr(source_documents, "batch_size"):
+        source_documents = source_documents.batch_size(batch_size)
+    for source_doc in source_documents:
         target_doc = target_col.find_one({"_id": source_doc["_id"]})
         if not target_doc:
             target_col.insert_one(prepare_synced_document(source_doc))

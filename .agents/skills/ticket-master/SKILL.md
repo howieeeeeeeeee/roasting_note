@@ -8,4 +8,6 @@ description: Create, refine, resolve, or select RoastLogger tickets (`RN-...`) a
 Read `.claude/skills/ticket-master/SKILL.md` completely and follow it. Read
 `.claude/skills/ticket-master/DOCUMENTATION_WORKFLOW.md` whenever creating,
 refining, or resolving a ticket so the affected RoastLogger docs are recorded
-and updated with the future implementation.
+and updated with the future implementation. For database-impacting tickets,
+require the `## Database Operations Impact` contract and resolution evidence;
+ticketing work must never perform an applied database mirror.

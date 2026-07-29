@@ -63,6 +63,7 @@ Technologies and dependencies used in RoastLogger.
 | `MONGO_URI` | Online MongoDB connection | Required |
 | `MONGO_URI_LOCAL` | Local MongoDB connection | Required |
 | `DEFAULT_DB` | Default database mode; invalid values fall back to local | `local` |
+| `DEVICE` | Stable per-machine sync/audit identity; blank is rejected by sync | Required for sync |
 | `TEMP_SENSOR_URL` | Temperature sensor endpoint | `http://192.168.0.47/temp` |
 | `LOCAL_DB_NAME` | Local MongoDB database name; injectable for isolated runtimes | `roastlogger` |
 | `TIMEZONE` | Operator display/storage timezone | `America/New_York` |
@@ -80,6 +81,10 @@ roasting_note/
 │   ├── database.py        # Local/online clients and selected collections
 │   ├── blueprints/        # Page, bean, roast, temperature, settings routes
 │   └── services/          # Lifecycle, sensor/RoR, live-sync, database sync
+├── scripts/
+│   └── sync_database.py   # Guarded dry-run/applied database mirror CLI
+├── db_backup/             # Ignored Extended JSON destination backups
+├── docs/audit_history/    # Reviewable append-only database mirror audits
 ├── models/
 │   └── roast_helpers.py   # Database helper functions
 ├── static/
