@@ -2,14 +2,14 @@
 id: RN-0003
 title: In-App Browser and API Workflow Testing
 type: improvement
-status: blocked
+status: pending
 priority: medium
 created: 2026-01-11
 resolved:
 area: testing
 parent:
 decisions: []
-blocked_by: [RN-0022]
+blocked_by: []
 tags:
   - ui
   - e2e
@@ -32,11 +32,10 @@ sensor board.
 
 ### Dependency
 
-- Blocked by RN-0022, which itself follows RN-0018. The E2E harness therefore
-  starts only after the app factory/configuration boundary, injectable local
-  database name and sensor URL, modular live-roast JavaScript, route
-  regression baseline, and guarded fail-closed synchronization contract all
-  exist.
+- RN-0018 and RN-0022 are resolved. The E2E harness starts from the delivered
+  app factory/configuration boundary, injectable local database name and sensor
+  URL, modular live-roast JavaScript, route regression baseline, and guarded
+  fail-closed synchronization contract.
 
 ### Browser-Test Approach
 

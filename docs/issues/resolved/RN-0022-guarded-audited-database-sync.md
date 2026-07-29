@@ -2,10 +2,10 @@
 id: RN-0022
 title: Add Guarded, Audited Bidirectional Database Sync
 type: improvement
-status: in_progress
+status: resolved
 priority: high
 created: 2026-07-29
-resolved:
+resolved: 2026-07-29
 area: database-sync
 parent:
 decisions: []
@@ -322,69 +322,69 @@ file cannot remain tracked merely because a later ignore rule was added.
 
 ## Acceptance Criteria
 
-- [ ] `scripts/sync_database.py` supports both directions, repeatable
+- [x] `scripts/sync_database.py` supports both directions, repeatable
   collection filters, a positive batch size, and dry-run mode.
-- [ ] Missing/blank/unsafe `DEVICE`, same endpoint/database identities, invalid
+- [x] Missing/blank/unsafe `DEVICE`, same endpoint/database identities, invalid
   batch sizes, unavailable endpoints, and unknown requested collections fail
   safely with credential-free messages.
-- [ ] Dry run checks connectivity and prints the complete plan without backup
+- [x] Dry run checks connectivity and prints the complete plan without backup
   writes, audit writes, prompts, or database writes.
-- [ ] Applied runs require exact `BACKUP <run-id>` and
+- [x] Applied runs require exact `BACKUP <run-id>` and
   `APPLY <direction> <run-id>` tokens, with no bypass and no sync write before
   both tokens.
-- [ ] Both directions preserve `RN-0015` timestamp-aware insert, update, skip,
+- [x] Both directions preserve `RN-0015` timestamp-aware insert, update, skip,
   conflict, timestamp, archived-source, and destination-only retention rules.
-- [ ] Resolved collections run sequentially and processing stops on the first
+- [x] Resolved collections run sequentially and processing stops on the first
   failure.
-- [ ] Every applied run backs up the complete destination database before the
+- [x] Every applied run backs up the complete destination database before the
   second confirmation, regardless of collection filters.
-- [ ] Backups stream Extended JSON Lines, preserve tested BSON types, use
+- [x] Backups stream Extended JSON Lines, preserve tested BSON types, use
   atomic partial/final paths, and include restorable manifests with counts,
   byte sizes, and SHA-256 checksums.
-- [ ] Backup paths under `db_backup/database_mirrors/` distinguish
+- [x] Backup paths under `db_backup/database_mirrors/` distinguish
   `local--<DEVICE>` from `online` and are never included in commits.
-- [ ] `.gitignore` contains a repository-root `/db_backup/` rule,
+- [x] `.gitignore` contains a repository-root `/db_backup/` rule,
   `git check-ignore` recognizes representative backup content, and
   `git ls-files db_backup 'db_backup/**'` returns no tracked files.
-- [ ] Successful, backup-failed, partially failed, and
+- [x] Successful, backup-failed, partially failed, and
   cancelled-after-backup applied attempts create one atomic, sanitized audit
   JSON record; CLI dry runs and CLI pre-backup cancellations create no
   applied-attempt record.
-- [ ] Every Settings sync-button click creates one atomic, sanitized
+- [x] Every Settings sync-button click creates one atomic, sanitized
   `sync_button_clicked` UI-intent audit record with trigger, direction, device,
   run ID, time, Git provenance, and successful or failed preflight outcome.
-- [ ] Audit-write failure retains the same sanitized record inside the
+- [x] Audit-write failure retains the same sanitized record inside the
   untracked backup and exits with a visible recovery message.
-- [ ] The CLI never stages, commits, or pushes and prints publication commands
+- [x] The CLI never stages, commits, or pushes and prints publication commands
   scoped to only the new audit record.
-- [ ] The Settings modal buttons run audited read-only preflight, show the
+- [x] The Settings modal buttons run audited read-only preflight, show the
   sanitized plan and CLI handoff, prevent overlapping clicks, and never create
   a backup or database write.
-- [ ] Existing mutating sync routes cannot perform an unguarded database write;
+- [x] Existing mutating sync routes cannot perform an unguarded database write;
   any retained old route fails closed with CLI migration guidance.
-- [ ] `.env.example` includes the required blank `DEVICE` setting, explains
+- [x] `.env.example` includes the required blank `DEVICE` setting, explains
   stable per-machine naming, and shows `howie-macbook-air` only as a comment.
-- [ ] `AGENTS.md` and `CLAUDE.md` define the standard database-ticket workflow:
+- [x] `AGENTS.md` and `CLAUDE.md` define the standard database-ticket workflow:
   read-only dry run by default, isolated automated tests, and separately
   authorized applied mirrors with both run-specific confirmations.
-- [ ] `.claude/skills/ticket-master/SKILL.md`,
+- [x] `.claude/skills/ticket-master/SKILL.md`,
   `.claude/skills/ticket-master/DOCUMENTATION_WORKFLOW.md`, and
   `.agents/skills/ticket-master/SKILL.md` require database-impacting tickets to
   record database operations, backup/audit evidence, and resolution
   verification without performing application work during ticketing.
-- [ ] `docs/issues/templates/TICKET.md` contains a conditional
+- [x] `docs/issues/templates/TICKET.md` contains a conditional
   `## Database Operations Impact` prompt, and tracker tests protect the
   database-workflow guidance and template contract.
-- [ ] Automated tests cover preflight validation, both directions, dry-run
+- [x] Automated tests cover preflight validation, both directions, dry-run
   side effects, both confirmations, timestamp-aware sync parity, complete
   destination backups, BSON round trips, checksums, audit event policy,
   redaction, one-record-per-button-click behavior, overlapping-click
   prevention, UI/API fail-closed behavior, and partial failures.
-- [ ] Focused database-sync tests and `uv run pytest` pass without making an
+- [x] Focused database-sync tests and `uv run pytest` pass without making an
   applied live-database write.
-- [ ] A configured live check, if performed, is read-only via `--dry-run`; an
+- [x] A configured live check, if performed, is read-only via `--dry-run`; an
   applied run requires a separate deliberate human operation.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Documentation Impact
 
@@ -428,6 +428,31 @@ file cannot remain tracked merely because a later ignore rule was added.
   authorizes a run after seeing its preflight and supplies both run-specific
   confirmation tokens. The current authorization explicitly excludes an
   applied run.
+
+## Resolution
+
+- Delivered the guarded services and CLI in `d11e43a`, regression coverage in
+  `0496d9e`, and synchronized operator/design/policy documentation in
+  `13469c3`.
+- Preserved RN-0015 timestamp-aware behavior, added complete canonical Extended
+  JSON destination backups, two exact confirmations, append-only terminal
+  audits, and untracked audit recovery.
+- Changed Settings sync actions to audited read-only preflight and retained the
+  historic mutation routes as fail-closed HTTP `409` adapters.
+- Configured read-only dry runs succeeded for both directions:
+  `online-to-local` run `20260729T072720Z-6ea086e9` and `local-to-online` run
+  `20260729T072742Z-5c829fed`. Neither run created a backup, prompt, audit, or
+  database write.
+- Focused sync/tracker/line-policy verification passed with 53 tests. The
+  required `uv run pytest` completed with 131 tests passing.
+- `git check-ignore` recognizes representative destination-backup content,
+  `git ls-files db_backup 'db_backup/**'` returns no files, and `.env` remains
+  ignored and uncommitted.
+- Updated every unconditional Documentation Impact path. The conditional data
+  model document was not changed because RN-0015 timestamp and document shapes
+  remain unchanged.
+- No applied mirror was requested or performed, so no applied run ID, backup,
+  or applied-attempt audit exists.
 
 ## Open Questions
 
