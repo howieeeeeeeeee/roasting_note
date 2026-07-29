@@ -1,5 +1,9 @@
-"""Regression coverage for the application factory and route boundaries."""
+"""Regression coverage for application and live-page module boundaries."""
 
+import json
+import re
+
+from bson.objectid import ObjectId
 from roastlogger import create_app
 
 
@@ -95,3 +99,37 @@ def test_factory_allows_local_database_and_sensor_overrides():
     connections = app.extensions["roastlogger_databases"]
     assert connections.local_db.name == "roastlogger_factory_test"
     assert app.config["TEMP_SENSOR_URL"] == "http://127.0.0.1:9911/temp"
+
+
+def test_live_roast_uses_one_json_bootstrap_and_module_entry():
+    app = create_app({"TESTING": True})
+    roast_id = ObjectId()
+    roast = {
+        "_id": roast_id,
+        "title": "Module Boundary",
+        "lifecycle_state": "draft",
+        "roast_start_time": None,
+        "key_timings": [],
+        "temp_curve": [],
+    }
+    with app.test_request_context():
+        rendered = app.jinja_env.get_template("roast_live.html").render(
+            roast=roast,
+            beans=[],
+        )
+
+    match = re.search(
+        r'<script type="application/json" id="live-roast-config">'
+        r"(.*?)</script>",
+        rendered,
+    )
+    assert match
+    assert rendered.count('id="live-roast-config"') == 1
+    assert 'type="module"' in rendered
+    assert "js/live-roast/index.js" in rendered
+    assert json.loads(match.group(1)) == {
+        "roastId": str(roast_id),
+        "roastStarted": False,
+        "roastEnded": False,
+        "roastStartTime": None,
+    }
