@@ -8,6 +8,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | RN-0022 | [IMPROVEMENT] | High | database-sync | [Add Guarded, Audited Bidirectional Database Sync](./resolved/RN-0022-guarded-audited-database-sync.md) | - | - | 2026-07-29 | 2026-07-29 |
 | RN-0018 | [REFACTOR] | High | app-architecture | [Refactor Oversized Source Files into Focused Modules](./resolved/RN-0018-refactor-app-py.md) | - | - | 2026-05-02 | 2026-07-29 |
+| RN-0003 | [IMPROVEMENT] | Medium | testing | [In-App Browser and API Workflow Testing](./resolved/RN-0003-in-app-browser-api-testing.md) | - | - | 2026-01-11 | 2026-07-29 |
 | RN-0020 | [BUG] | Low | label-creator | [Sticker modal image list — remove unused scrollbar and dead space](./resolved/RN-0020-sticker-modal-image-list-layout.md) | - | - | 2026-05-04 | 2026-05-04 |
 | RN-0019 | [BUG] | Medium | live-roasting | [Show Roast Times in Operator Timezone (Not Raw UTC Clock)](./resolved/RN-0019-roast-datetime-local-display.md) | - | - | 2026-05-02 | 2026-05-03 |
 | RN-0017 | [FEATURE] | Medium | live-roasting | [Manually Set Draft Roast to Completed](./resolved/RN-0017-manual-draft-complete.md) | - | - | 2026-05-02 | 2026-05-02 |

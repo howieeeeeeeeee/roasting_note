@@ -2,10 +2,10 @@
 id: RN-0003
 title: In-App Browser and API Workflow Testing
 type: improvement
-status: in_progress
+status: resolved
 priority: medium
 created: 2026-01-11
-resolved:
+resolved: 2026-07-29
 area: testing
 parent:
 decisions: []
@@ -150,16 +150,16 @@ sensor board.
 
 ## Acceptance Criteria
 
-- [ ] The documented E2E start command launches RoastLogger against only `roastlogger_e2e`, assigns a unique run ID, and points it at the loopback virtual sensor.
-- [ ] Browser-created beans and roasts receive `test_data: true` plus the current `test_run_id`, and updates retain both markers.
-- [ ] E2E mode cannot select, initialize, or synchronize with the online database.
-- [ ] Run-scoped cleanup refuses non-E2E databases and removes only the selected run's roasts, beans, temperature CSVs, and diagnostic CSVs.
-- [ ] The virtual sensor implements `/temp`, `/diagnostics`, and every deterministic scenario defined above, including HTTP 429 followed by recovery.
-- [ ] The in-app-browser runbook completes the bean and live-roast workflows, verifies chart/control/sensor states, captures diagnostic evidence, and finishes with safe cleanup.
-- [ ] The route manifest and expanded API tests cover the listed route gaps, validation/failure contracts, E2E safeguards, cleanup, and sensor integration.
-- [ ] The existing API suite and all new focused tests pass with `uv run pytest`.
-- [ ] No Playwright, Selenium, Cypress, production test-control route, or CI browser dependency is added.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] The documented E2E start command launches RoastLogger against only `roastlogger_e2e`, assigns a unique run ID, and points it at the loopback virtual sensor.
+- [x] Browser-created beans and roasts receive `test_data: true` plus the current `test_run_id`, and updates retain both markers.
+- [x] E2E mode cannot select, initialize, or synchronize with the online database.
+- [x] Run-scoped cleanup refuses non-E2E databases and removes only the selected run's roasts, beans, temperature CSVs, and diagnostic CSVs.
+- [x] The virtual sensor implements `/temp`, `/diagnostics`, and every deterministic scenario defined above, including HTTP 429 followed by recovery.
+- [x] The in-app-browser runbook completes the bean and live-roast workflows, verifies chart/control/sensor states, captures diagnostic evidence, and finishes with safe cleanup.
+- [x] The route manifest and expanded API tests cover the listed route gaps, validation/failure contracts, E2E safeguards, cleanup, and sensor integration.
+- [x] The existing API suite and all new focused tests pass with `uv run pytest`.
+- [x] No Playwright, Selenium, Cypress, production test-control route, or CI browser dependency is added.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Documentation Impact
 
@@ -167,10 +167,10 @@ sensor board.
 - `tests/e2e/README.md` (new)
 - `docs/architecture/data-models.md`
 - `docs/architecture/tech-stack.md`
+- `docs/architecture/api-endpoints.md`
+- `docs/design/screens/settings.md`
 - `docs/features/temperature-sensor.md`
 - `docs/features/live-roasting.md`
-- Conditional: `docs/architecture/api-endpoints.md` if satisfying an exposed
-  contract requires changing a production route.
 - Conditional: `docs/design/screens/live-roasting.md` only if browser
   verification exposes and implementation changes a visible interaction.
 
@@ -198,6 +198,28 @@ sensor board.
   database, run-scoped markers/cleanup, and virtual-sensor scenarios are
   decided.
 
+## Resolution
+
+- Added a fail-closed E2E runtime that validates the exact
+  `roastlogger_e2e` database, run ID, loopback MongoDB URI, and loopback
+  virtual-sensor URL before database initialization. E2E database
+  connections construct only the local client.
+- Added automatic run markers, ignored run artifacts, deterministic virtual
+  sensor scenarios, and cleanup that targets only the selected run's records
+  and temperature/diagnostic CSVs.
+- Completed Codex in-app-browser run `codex-20260729-rn0003`. The run verified
+  Settings safety and audited preflight failure, bean create/edit, roast
+  setup/start, non-overlapping live polling, fan/power and milestone events,
+  rate limiting, stale and fault states, healthy recovery, roast completion,
+  15.0% weight loss, and a single 200 g stock deduction.
+- Run-scoped cleanup deleted 1 roast, 1 bean, and 2 CSV files, then verified
+  zero matching roasts and beans remained.
+- Focused E2E/API checks passed (39 tests). The required full suite passed:
+  `147 passed`.
+- Confirmed `.env`, `db_backup/`, `tests/e2e/artifacts/`,
+  `tests/e2e/runtime/`, temperature data, and browser evidence are not
+  tracked.
+
 ## Related Files
 
 - `tests/conftest.py`
@@ -207,6 +229,13 @@ sensor board.
 - `tests/test_roasts_api.py`
 - `tests/test_temperature_api.py`
 - `tests/test_sync_api.py`
+- `tests/test_api_contracts.py`
+- `tests/test_e2e_runtime.py`
+- `tests/test_virtual_sensor.py`
+- `tests/e2e/manage.py`
+- `tests/e2e/virtual_sensor.py`
+- `tests/e2e/cleanup.py`
+- `tests/e2e/README.md`
 - `app.py`
 - `templates/roast_live.html`
 - `templates/beans_form.html`
@@ -216,5 +245,7 @@ sensor board.
 - `static/js/roast-chart.js`
 - `docs/architecture/data-models.md`
 - `docs/architecture/tech-stack.md`
+- `docs/architecture/api-endpoints.md`
+- `docs/design/screens/settings.md`
 - `docs/features/temperature-sensor.md`
 - `docs/features/live-roasting.md`
