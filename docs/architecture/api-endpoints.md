@@ -115,8 +115,9 @@ can distinguish fresh, retrying, stale, offline, and faulted sensor states.
 | `/api/settings/db` | POST | Switch database mode |
 | `/api/settings/sensor` | GET | Get current sensor URL |
 | `/api/settings/sensor` | POST | Set sensor URL |
-| `/api/sync/online-to-local` | POST | Sync online DB to local |
-| `/api/sync/local-to-online` | POST | Sync local DB to online |
+| `/api/sync/preflight/<direction>` | POST | Audited, read-only sync preflight for a supported direction |
+| `/api/sync/online-to-local` | POST | Fail-closed legacy route; returns CLI migration guidance |
+| `/api/sync/local-to-online` | POST | Fail-closed legacy route; returns CLI migration guidance |
 | `/api/db/clean-test-data` | POST | Delete test data (`test_data: True`) from local DB |
 | `/api/db/clean-local` | POST | Delete ALL data from local DB |
 
@@ -129,31 +130,35 @@ can distinguish fresh, retrying, stale, offline, and faulted sensor states.
 }
 ```
 
-### Sync Response
+### Sync Preflight Response
 
 ```json
 {
   "success": true,
-  "beans": {
-    "added": 5,
-    "updated": 2,
-    "skipped": 1,
-    "conflicts": 0,
-    "conflict_ids": []
-  },
-  "roasts": {
-    "added": 10,
-    "updated": 3,
-    "skipped": 2,
-    "conflicts": 1,
-    "conflict_ids": ["6653f2a4e5a8f6c75159a111"]
+  "run_id": "20260729T130000Z-1234abcd",
+  "audit_recorded": true,
+  "audit_path": "docs/audit_history/database_mirrors/2026/07/...",
+  "plan": {
+    "direction": "online-to-local",
+    "source": {"role": "online", "host": "cluster.example", "database": "roastlogger"},
+    "destination": {"role": "local", "host": "localhost:27017", "database": "roastlogger"},
+    "source_counts": {"beans": 5, "roasts": 10},
+    "destination_counts": {"beans": 4, "roasts": 9},
+    "backup": {"scope": "complete_destination_database"},
+    "cli_command": "uv run python scripts/sync_database.py --direction online-to-local"
   }
 }
 ```
 
-Existing target documents are only replaced when both source and target have
-valid `updated_at` values and the source document is newer. Missing or invalid
-timestamps are returned as conflicts and are not overwritten.
+This route reads connectivity, collection metadata, and counts; it never writes
+to either database or creates a backup. It writes one terminal UI-intent audit
+record for every request, including failed preflights. An audit persistence
+failure returns HTTP `500` with `audit_recorded: false`; a safely recorded
+preflight failure returns HTTP `503`.
+
+The two historic sync routes return HTTP `409`, perform no database or
+filesystem operation, and direct the caller to the guarded CLI documented in
+[Database Sync](../features/database-sync.md).
 
 ### Clean Test Data Response
 

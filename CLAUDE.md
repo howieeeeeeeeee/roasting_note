@@ -20,6 +20,14 @@ For any scoped product change, use
 feature, design, architecture, hardware, deployment, testing, and navigation
 docs that must change in the same branch.
 
+For database-impacting work, follow the guarded workflow in `AGENTS.md`:
+document database operations in the ticket, read
+`docs/features/database-sync.md`, use read-only dry runs and isolated automated
+tests, and treat an applied mirror as a separate user-authorized operation that
+requires both exact run-specific confirmation tokens. Never perform an applied
+mirror during a ticketing turn. Publish only its reviewed audit record; never
+stage `db_backup/`.
+
 Generated issue views are read-only. Refresh and validate them with:
 
 ```bash

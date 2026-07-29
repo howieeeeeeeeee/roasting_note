@@ -329,8 +329,16 @@ def test_skill_and_templates_enforce_documentation_updates() -> None:
     assert "DOCUMENTATION_WORKFLOW.md" in skill
     assert "html/INSTRUCTIONS.md" in skill
     assert "Do not mark a ticket complete" in skill
+    assert "Database Operations Impact" in skill
+    assert re.search(
+        r"never\s+perform an applied database mirror",
+        skill,
+    )
     assert "docs/design/" in workflow
     assert "docs/architecture/api-endpoints.md" in workflow
+    assert "docs/features/database-sync.md" in workflow
+    assert "both exact run-specific tokens" in workflow
+    assert "git ls-files db_backup" in workflow
     dashboard_guidance = (
         skill_root / "html" / "INSTRUCTIONS.md"
     ).read_text(encoding="utf-8")
@@ -353,3 +361,27 @@ def test_skill_and_templates_enforce_documentation_updates() -> None:
         assert bundled.read_text(encoding="utf-8") == active.read_text(
             encoding="utf-8"
         )
+    ticket_template = (
+        TRACKER.ISSUES_DIR / "templates" / "TICKET.md"
+    ).read_text(encoding="utf-8")
+    assert "## Database Operations Impact" in ticket_template
+    assert "Required backup/audit evidence for resolution" in ticket_template
+
+
+def test_repository_guidance_defaults_database_work_to_dry_run() -> None:
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    claude = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+    wrapper = (
+        ROOT / ".agents" / "skills" / "ticket-master" / "SKILL.md"
+    ).read_text(encoding="utf-8")
+
+    for guidance in (agents, claude):
+        assert "docs/features/database-sync.md" in guidance
+        assert "applied mirror" in guidance
+        assert "run-specific confirmation" in guidance
+        assert "db_backup/" in guidance
+    assert "Database Operations Impact" in wrapper
+    assert re.search(
+        r"never\s+perform an applied database mirror",
+        wrapper,
+    )

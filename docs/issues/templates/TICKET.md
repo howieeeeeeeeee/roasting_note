@@ -37,6 +37,19 @@ One or two sentences describing the user-facing outcome and why it matters now.
 - `docs/features/example.md`
 - Conditional: `docs/architecture/api-endpoints.md` if an API route changes.
 
+## Database Operations Impact
+
+Complete this section when the ticket changes a MongoDB document shape,
+persistence behavior, database route/service, migration/backfill, database
+configuration, or synchronization behavior. Otherwise replace the prompts with
+`None` only after focused repository reads confirm no live operation is needed.
+
+- Collections and local/online effects:
+- Migration or backfill:
+- Expected sync direction:
+- Is an applied mirror part of delivery:
+- Required backup/audit evidence for resolution:
+
 ## Open Questions
 
 - None.

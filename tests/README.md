@@ -50,6 +50,10 @@ uv run pytest tests/test_roasts_api.py
 uv run pytest tests/test_reviews_api.py
 uv run pytest tests/test_temperature_api.py
 uv run pytest tests/test_ticket_system.py
+uv run pytest tests/test_database_sync.py
+uv run pytest tests/test_database_backup.py
+uv run pytest tests/test_database_sync_cli.py
+uv run pytest tests/test_database_sync_routes.py
 ```
 
 Run specific test class or method:
@@ -120,6 +124,26 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 - Requires oversized code to be split by responsibility and oversized
   documentation to be split by aspect with updated navigation
 
+### Guarded Database Sync
+
+- `test_sync_api.py` preserves RN-0015 timestamp-aware merge behavior.
+- `test_database_sync.py` covers validation, sanitized preflight, both
+  directions, sequential execution, and stop-on-failure behavior.
+- `test_database_backup.py` verifies complete destination coverage, canonical
+  Extended JSON BSON round trips, encoded collection names, byte counts,
+  checksums, and incomplete backup handling.
+- `test_database_sync_cli.py` covers dry-run side effects, both exact
+  confirmations, cancellation policy, applied audit records, and untracked
+  audit recovery.
+- `test_database_sync_routes.py` verifies Settings audit-per-click behavior,
+  read-only plans, sanitized failures, overlap prevention, and fail-closed
+  historic routes.
+
+These tests use in-memory fakes and temporary filesystem roots. They never run
+an applied local/online mirror. Any configured live verification for sync must
+use `--dry-run`; an applied run requires a separate explicit user request and
+both run-specific confirmation tokens.
+
 ## Test Data Management
 
 ### Identification
@@ -162,9 +186,11 @@ print(f"Deleted {results['beans_deleted']} beans, {results['roasts_deleted']} ro
 
 ## Database Safety
 
-- Tests **only** run against the local database
+- Existing API regression fixtures run only against the local database.
+- Guarded-sync tests use in-memory fakes and temporary backup/audit roots.
 - The `DEFAULT_DB` environment variable is set to `local` in conftest.py
-- Never run tests against production/online database
+- Never run tests against the production/online database.
+- Never use an applied mirror as test setup, verification, or cleanup.
 
 ## Fixtures
 

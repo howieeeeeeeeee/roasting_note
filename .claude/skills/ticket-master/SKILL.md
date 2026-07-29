@@ -25,6 +25,8 @@ a person and make downstream blockers explicit.
   acceptance, or verification. Keep other unknowns as Open Questions.
 - Regenerate and validate the tracker after every record change.
 - Do not hand-edit generated Markdown views or `docs/issues/overview.html`.
+- Ticketing turns define and verify database-operation requirements but never
+  perform an applied database mirror.
 
 ## Core Flow
 
@@ -34,11 +36,13 @@ a person and make downstream blockers explicit.
    the minimum product/docs context needed for accurate requirements.
 3. Read `DOCUMENTATION_WORKFLOW.md` completely and identify every document the
    future implementation must update.
-4. Ask only missing questions that change record shape.
-5. Update records and propagate blockers across tickets and decisions.
-6. Run the generator, fix every validation error, and review the generated
+4. For database-impacting work, add and evaluate the required
+   `## Database Operations Impact` section.
+5. Ask only missing questions that change record shape.
+6. Update records and propagate blockers across tickets and decisions.
+7. Run the generator, fix every validation error, and review the generated
    Markdown views and dashboard.
-7. Hand off changed ids, current paths, blockers, documentation impact, and the
+8. Hand off changed ids, current paths, blockers, documentation impact, and the
    next action.
 
 ## Record Model
@@ -135,12 +139,17 @@ status. Use stable ids, rather than hard-coded paths, when relating records.
    - dependencies and human decisions;
    - priority, type, area, and external effects; and
    - documentation impact using `DOCUMENTATION_WORKFLOW.md`.
-4. Pick the next top-level id, or the next child suffix under an epic. Use a
+4. When database behavior may change, include `## Database Operations Impact`
+   with collections, local and online effects, migration/backfill needs, sync
+   direction, whether an applied mirror is delivery scope, and required
+   backup/audit evidence. Use `None` only after focused repository reads show
+   no live database operation is needed.
+5. Pick the next top-level id, or the next child suffix under an epic. Use a
    short lowercase kebab filename.
-5. Write explicit `parent`, `decisions`, and `blocked_by` fields.
-6. Include `## Documentation Impact` and a documentation acceptance checkbox.
-7. Update the parent epic roadmap when applicable.
-8. Run the generator and fix every error.
+6. Write explicit `parent`, `decisions`, and `blocked_by` fields.
+7. Include `## Documentation Impact` and a documentation acceptance checkbox.
+8. Update the parent epic roadmap when applicable.
+9. Run the generator and fix every error.
 
 Create an epic only for a meaningful multi-ticket outcome. Do not create empty
 epics or speculative child stubs.
@@ -179,10 +188,14 @@ epics or speculative child stubs.
    affected docs were updated in the same branch.
 3. Update `## Documentation Impact` if implementation changed the expected doc
    set.
-4. Add concise `## Resolution` notes, including verification and docs updated.
-5. Set status to `resolved` or `wont_fix` and fill `resolved`.
-6. Remove this id from downstream blockers and recompute their statuses.
-7. Run the generator and review every moved record and generated view.
+4. For database-impacting work, verify the resolution records either dry-run
+   evidence or the applied run ID and audit path, plus confirmation that no
+   `db_backup/` file is tracked. An applied mirror is never performed by this
+   skill.
+5. Add concise `## Resolution` notes, including verification and docs updated.
+6. Set status to `resolved` or `wont_fix` and fill `resolved`.
+7. Remove this id from downstream blockers and recompute their statuses.
+8. Run the generator and review every moved record and generated view.
 
 Do not mark a ticket complete while required documentation is missing.
 
@@ -225,6 +238,12 @@ routing table. In summary:
 
 When a change spans behavior and appearance, require both feature and design
 documentation and link between them instead of duplicating prose.
+
+For database-impacting tickets, require the database operations section and
+route it through the guarded workflow in `DOCUMENTATION_WORKFLOW.md`. Applied
+mirrors require separate user authorization after preflight and both
+run-specific confirmations; ticket maintenance never supplies those
+confirmations.
 
 ## Handoff
 

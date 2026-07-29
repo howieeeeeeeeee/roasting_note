@@ -12,6 +12,7 @@ A personal, mobile-responsive web application for tracking coffee beans, logging
 | [Hardware](./hardware/) | Temperature sensor setup (ESP32/K-Type) |
 | [Issues](./issues/) | Tickets, epics, human decisions, blockers, and dashboard |
 | [Deployment](./deployment/) | Render deployment guide |
+| [Audit History](./audit_history/database_mirrors/) | Sanitized database mirror and Settings preflight evidence |
 
 ## Project Overview
 
@@ -21,7 +22,7 @@ A personal, mobile-responsive web application for tracking coffee beans, logging
 - Log detailed roast profiles with real-time temperature monitoring
 - Record key timing events (Yellowing, First Crack, Second Crack)
 - Review and rate roasted coffee batches
-- Sync data between local and online databases
+- Preview or apply guarded, audited sync between local and online databases
 
 ## Tech Stack
 
@@ -64,6 +65,7 @@ docs/
 │   ├── live-roasting.md   # Live roasting interface
 │   ├── bean-label-creator.md
 │   ├── sticker-sheet.md   # US-4 PDF sticker sheet creator
+│   ├── database-sync.md   # Guarded CLI and audited Settings preflight
 │   ├── temperature-sensor.md
 │   └── chart-visualization.md
 ├── hardware/              # Hardware docs
@@ -80,6 +82,7 @@ docs/
 │   ├── wont_fix/          # Intentionally closed work
 │   ├── decision-pending/  # Human choices awaiting evidence or a decision
 │   └── decision-finalized/# Recorded decisions and outcomes
+├── audit_history/         # Sanitized operational audit records and contracts
 └── deployment/            # Deployment guides
 ```
 
@@ -88,6 +91,8 @@ database connections and template helpers, registers feature-focused
 blueprints, and delegates lifecycle, sensor/RoR, live-sync, and
 timestamp-aware database-sync behavior to service modules. `app.py` keeps the
 historic development, test-import, and Gunicorn entry-point contract.
+Applied database sync is isolated in `scripts/sync_database.py`; Settings only
+requests audited, read-only preflight plans.
 
 ## Keeping Docs in Sync
 
