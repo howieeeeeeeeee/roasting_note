@@ -2,7 +2,9 @@
 
 Read this file whenever creating, refining, or resolving a ticket. Use it to
 record the documentation impact before implementation and to verify the actual
-documentation changes before resolution.
+documentation changes before resolution. Read `TESTING_WORKFLOW.md` alongside
+it so verification and durable UI regression coverage are recorded separately
+instead of being hidden inside documentation notes.
 
 ## Start Here
 

@@ -36,14 +36,16 @@ a person and make downstream blockers explicit.
    the minimum product/docs context needed for accurate requirements.
 3. Read `DOCUMENTATION_WORKFLOW.md` completely and identify every document the
    future implementation must update.
-4. For database-impacting work, add and evaluate the required
+4. Read `TESTING_WORKFLOW.md` completely and identify focused automated tests,
+   durable browser scenarios, commands, and evidence the implementation needs.
+5. For database-impacting work, add and evaluate the required
    `## Database Operations Impact` section.
-5. Ask only missing questions that change record shape.
-6. Update records and propagate blockers across tickets and decisions.
-7. Run the generator, fix every validation error, and review the generated
+6. Ask only missing questions that change record shape.
+7. Update records and propagate blockers across tickets and decisions.
+8. Run the generator, fix every validation error, and review the generated
    Markdown views and dashboard.
-8. Hand off changed ids, current paths, blockers, documentation impact, and the
-   next action.
+9. Hand off changed ids, current paths, blockers, documentation impact, testing
+   impact, and the next action.
 
 ## Record Model
 
@@ -138,7 +140,8 @@ status. Use stable ids, rather than hard-coded paths, when relating records.
    - verification and acceptance;
    - dependencies and human decisions;
    - priority, type, area, and external effects; and
-   - documentation impact using `DOCUMENTATION_WORKFLOW.md`.
+   - documentation impact using `DOCUMENTATION_WORKFLOW.md`; and
+   - testing impact using `TESTING_WORKFLOW.md`.
 4. When database behavior may change, include `## Database Operations Impact`
    with collections, local and online effects, migration/backfill needs, sync
    direction, whether an applied mirror is delivery scope, and required
@@ -147,9 +150,12 @@ status. Use stable ids, rather than hard-coded paths, when relating records.
 5. Pick the next top-level id, or the next child suffix under an epic. Use a
    short lowercase kebab filename.
 6. Write explicit `parent`, `decisions`, and `blocked_by` fields.
-7. Include `## Documentation Impact` and a documentation acceptance checkbox.
-8. Update the parent epic roadmap when applicable.
-9. Run the generator and fix every error.
+7. Include `testing_policy: v1`, `## Testing Impact`, and the testing acceptance
+   checkbox. New or changed visible UI must name the exact scenario to add or
+   update in `tests/e2e/README.md`.
+8. Include `## Documentation Impact` and a documentation acceptance checkbox.
+9. Update the parent epic roadmap when applicable.
+10. Run the generator and fix every error.
 
 Create an epic only for a meaningful multi-ticket outcome. Do not create empty
 epics or speculative child stubs.
@@ -184,20 +190,26 @@ epics or speculative child stubs.
 ## Resolve A Ticket
 
 1. Verify every acceptance criterion.
-2. Read the implementation diff and `DOCUMENTATION_WORKFLOW.md`; confirm all
+2. Read the implementation diff and `TESTING_WORKFLOW.md`; confirm every
+   declared automated test and browser scenario was added, updated, and run.
+3. Confirm durable new or changed UI interactions are synchronized with
+   `tests/e2e/README.md` and record browser evidence and cleanup.
+4. Read the implementation diff and `DOCUMENTATION_WORKFLOW.md`; confirm all
    affected docs were updated in the same branch.
-3. Update `## Documentation Impact` if implementation changed the expected doc
-   set.
-4. For database-impacting work, verify the resolution records either dry-run
+5. Update `## Testing Impact` and `## Documentation Impact` if implementation
+   changed either expected set.
+6. For database-impacting work, verify the resolution records either dry-run
    evidence or the applied run ID and audit path, plus confirmation that no
    `db_backup/` file is tracked. An applied mirror is never performed by this
    skill.
-5. Add concise `## Resolution` notes, including verification and docs updated.
-6. Set status to `resolved` or `wont_fix` and fill `resolved`.
-7. Remove this id from downstream blockers and recompute their statuses.
-8. Run the generator and review every moved record and generated view.
+7. Add concise `## Resolution` notes, including verification, browser evidence
+   when applicable, and docs updated.
+8. Set status to `resolved` or `wont_fix` and fill `resolved`.
+9. Remove this id from downstream blockers and recompute their statuses.
+10. Run the generator and review every moved record and generated view.
 
-Do not mark a ticket complete while required documentation is missing.
+Do not mark a ticket complete while required testing, browser evidence, or
+documentation is missing.
 
 ## Choose The Next Work
 
@@ -239,6 +251,20 @@ routing table. In summary:
 When a change spans behavior and appearance, require both feature and design
 documentation and link between them instead of duplicating prose.
 
+## RoastLogger Testing Gate
+
+Read `TESTING_WORKFLOW.md` completely for classification and resolution rules.
+Keep the automated catalog in `tests/README.md` and the durable UI regression
+checklist in `tests/e2e/README.md`; do not duplicate either changing list in
+this skill. Every new or refined active ticket uses `testing_policy: v1` and
+records exact automated tests, browser scenarios, commands, and evidence under
+`## Testing Impact`.
+
+New or changed visible UI must update the browser checklist. Browser coverage
+supplements focused automated coverage and the full pytest suite. Resolution
+records the declared commands and, when applicable, browser run ID, evidence,
+console/network findings, and scoped cleanup.
+
 For database-impacting tickets, require the database operations section and
 route it through the guarded workflow in `DOCUMENTATION_WORKFLOW.md`. Applied
 mirrors require separate user authorization after preflight and both
@@ -252,5 +278,5 @@ Report:
 - created or updated ids and current paths;
 - remaining decisions and Open Questions;
 - actionable versus blocked work with blocker ids;
-- verification and documentation targets; and
+- testing and documentation targets; and
 - the next separate implementation or human-review action.

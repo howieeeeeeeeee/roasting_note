@@ -316,6 +316,7 @@ def render_readme(tickets, decisions, config: TrackerConfig) -> str:
             f"| `parent` | `{config.ticket_prefix}-XXXX` or blank | Parent epic for child tickets. |",
             f"| `decisions` | List of `{config.decision_prefix}-XXXX` ids | Durable decision provenance. |",
             f"| `blocked_by` | List of unresolved `{config.decision_prefix}-XXXX` or `{config.ticket_prefix}-...` ids | Current blockers; nonempty exactly when status is blocked. |",
+            "| `testing_policy` | `v1` for active tickets | Requires complete Testing Impact and resolution evidence. |",
             "| `area` / `tags` | Slug / YAML list | Discovery metadata. |",
             "",
             "Use `docs/issues/templates/TICKET.md` for work and "
@@ -339,6 +340,15 @@ def render_readme(tickets, decisions, config: TrackerConfig) -> str:
             "Finalizing a decision or resolving a ticket removes only that id "
             "from downstream blockers. A blocked ticket becomes pending only "
             "after no blockers remain.",
+            "",
+            "## Testing Gate",
+            "",
+            "Every active ticket uses `testing_policy: v1` and records exact "
+            "automated tests, browser scenarios, commands, and evidence under "
+            "`## Testing Impact`. New or changed visible UI must update "
+            "`tests/e2e/README.md`. Before resolution, compare the "
+            "implementation diff with `.claude/skills/ticket-master/"
+            "TESTING_WORKFLOW.md` and record the required results.",
             "",
             "## Documentation Gate",
             "",

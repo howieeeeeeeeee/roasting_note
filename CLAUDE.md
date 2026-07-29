@@ -20,6 +20,12 @@ For any scoped product change, use
 feature, design, architecture, hardware, deployment, testing, and navigation
 docs that must change in the same branch.
 
+Use `.claude/skills/ticket-master/TESTING_WORKFLOW.md` to record focused
+automated tests and durable browser scenarios under the ticket's
+`## Testing Impact`. New or changed visible UI must update
+`tests/e2e/README.md`; keep the changing test catalogs in `tests/`, not in
+skills or tickets.
+
 For database-impacting work, follow the guarded workflow in `AGENTS.md`:
 document database operations in the ticket, read
 `docs/features/database-sync.md`, use read-only dry runs and isolated automated

@@ -23,11 +23,55 @@ SPEC.loader.exec_module(TRACKER)
 
 import render_dashboard as DASHBOARD  # noqa: E402
 
+TESTING_ACCEPTANCE_TEXT = (
+    "Testing Impact reviewed against the implementation diff; "
+    "declared automated and browser coverage is complete."
+)
+DEFAULT_TICKET_BODY = f"""# Record
 
-def write_record(path: Path, frontmatter: str, body: str = "# Record\n") -> None:
+## Acceptance Criteria
+
+- [ ] {TESTING_ACCEPTANCE_TEXT}
+
+## Testing Impact
+
+- Change classification: backend-api
+- Automated tests to add or update: `tests/test_example.py`
+- Browser E2E scenarios to add or update: None
+- Required commands: `uv run pytest tests/test_example.py`
+- Required browser evidence: None
+- Not applicable reason: No visible UI behavior changes.
+"""
+
+
+def write_record(
+    path: Path,
+    frontmatter: str,
+    body: str | None = None,
+    *,
+    include_testing_policy: bool = True,
+) -> None:
+    metadata = frontmatter.strip()
+    is_decision = "type: human-decision" in metadata
+    if (
+        include_testing_policy
+        and not is_decision
+        and "testing_policy:" not in metadata
+    ):
+        metadata += "\ntesting_policy: v1"
+    if body is None:
+        body = "# Record\n" if is_decision else DEFAULT_TICKET_BODY
+        if not is_decision and (
+            "status: resolved" in metadata
+            or "status: wont_fix" in metadata
+        ):
+            body = body.replace(
+                f"- [ ] {TESTING_ACCEPTANCE_TEXT}",
+                f"- [x] {TESTING_ACCEPTANCE_TEXT}",
+            )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        f"---\n{frontmatter.strip()}\n---\n\n{body}",
+        f"---\n{metadata}\n---\n\n{body}",
         encoding="utf-8",
     )
 
@@ -236,6 +280,103 @@ tags: []
         TRACKER.generate(issues)
 
 
+def test_generator_requires_testing_policy_for_active_ticket(
+    tmp_path: Path,
+) -> None:
+    issues = tmp_path / "docs" / "issues"
+    write_tracker_config(issues)
+    write_record(
+        issues / "RN-0101-missing-testing-policy.md",
+        """
+id: RN-0101
+title: Missing Testing Policy
+type: improvement
+status: pending
+priority: medium
+created: 2026-07-29
+resolved:
+area: testing
+parent:
+decisions: []
+blocked_by: []
+tags: []
+""",
+        include_testing_policy=False,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"active ticket requires testing_policy: v1",
+    ):
+        TRACKER.generate(issues)
+
+
+def test_ui_testing_impact_requires_browser_scenario(
+    tmp_path: Path,
+) -> None:
+    issues = tmp_path / "docs" / "issues"
+    write_tracker_config(issues)
+    body = DEFAULT_TICKET_BODY.replace(
+        "Change classification: backend-api",
+        "Change classification: ui-interaction",
+    )
+    write_record(
+        issues / "RN-0101-ui-change.md",
+        """
+id: RN-0101
+title: Add UI Interaction
+type: feature
+status: pending
+priority: medium
+created: 2026-07-29
+resolved:
+area: frontend
+parent:
+decisions: []
+blocked_by: []
+tags: [ui]
+""",
+        body,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="UI testing classification requires browser scenarios",
+    ):
+        TRACKER.generate(issues)
+
+
+def test_completed_policy_ticket_requires_checked_testing_impact(
+    tmp_path: Path,
+) -> None:
+    issues = tmp_path / "docs" / "issues"
+    write_tracker_config(issues)
+    write_record(
+        issues / "RN-0101-complete.md",
+        """
+id: RN-0101
+title: Complete Ticket
+type: improvement
+status: resolved
+priority: medium
+created: 2026-07-29
+resolved: 2026-07-29
+area: testing
+parent:
+decisions: []
+blocked_by: []
+tags: []
+""",
+        DEFAULT_TICKET_BODY,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="completed ticket requires checked Testing Impact",
+    ):
+        TRACKER.generate(issues)
+
+
 def test_generation_is_deterministic_and_check_detects_staleness(
     tmp_path: Path,
 ) -> None:
@@ -320,15 +461,19 @@ def test_dashboard_script_parses_as_javascript(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
 
 
-def test_skill_and_templates_enforce_documentation_updates() -> None:
+def test_skill_and_templates_enforce_documentation_and_testing() -> None:
     skill_root = ROOT / ".claude" / "skills" / "ticket-master"
     skill = (skill_root / "SKILL.md").read_text(encoding="utf-8")
     workflow = (skill_root / "DOCUMENTATION_WORKFLOW.md").read_text(
         encoding="utf-8"
     )
+    testing_workflow = (skill_root / "TESTING_WORKFLOW.md").read_text(
+        encoding="utf-8"
+    )
     assert "DOCUMENTATION_WORKFLOW.md" in skill
+    assert "TESTING_WORKFLOW.md" in skill
     assert "html/INSTRUCTIONS.md" in skill
-    assert "Do not mark a ticket complete" in skill
+    assert "required testing, browser evidence" in skill
     assert "Database Operations Impact" in skill
     assert re.search(
         r"never\s+perform an applied database mirror",
@@ -339,6 +484,11 @@ def test_skill_and_templates_enforce_documentation_updates() -> None:
     assert "docs/features/database-sync.md" in workflow
     assert "both exact run-specific tokens" in workflow
     assert "git ls-files db_backup" in workflow
+    assert "tests/README.md" in testing_workflow
+    assert "tests/e2e/README.md" in testing_workflow
+    assert "new or changed visible ui" in testing_workflow.lower()
+    assert "Browser checks supplement" in testing_workflow
+    assert "testing_policy: v1" in testing_workflow
     dashboard_guidance = (
         skill_root / "html" / "INSTRUCTIONS.md"
     ).read_text(encoding="utf-8")
@@ -366,6 +516,18 @@ def test_skill_and_templates_enforce_documentation_updates() -> None:
     ).read_text(encoding="utf-8")
     assert "## Database Operations Impact" in ticket_template
     assert "Required backup/audit evidence for resolution" in ticket_template
+    assert "testing_policy: v1" in ticket_template
+    assert "## Testing Impact" in ticket_template
+    assert TESTING_ACCEPTANCE_TEXT in ticket_template
+    for label in (
+        "Change classification",
+        "Automated tests to add or update",
+        "Browser E2E scenarios to add or update",
+        "Required commands",
+        "Required browser evidence",
+        "Not applicable reason",
+    ):
+        assert f"- {label}:" in ticket_template
 
 
 def test_repository_guidance_defaults_database_work_to_dry_run() -> None:
@@ -380,8 +542,31 @@ def test_repository_guidance_defaults_database_work_to_dry_run() -> None:
         assert "applied mirror" in guidance
         assert "run-specific confirmation" in guidance
         assert "db_backup/" in guidance
+        assert "TESTING_WORKFLOW.md" in guidance
+        assert "tests/e2e/README.md" in guidance
     assert "Database Operations Impact" in wrapper
+    assert "TESTING_WORKFLOW.md" in wrapper
+    assert "tests/e2e/README.md" in wrapper
     assert re.search(
         r"never\s+perform an applied database mirror",
         wrapper,
     )
+
+
+def test_test_inventory_and_ui_checklist_policy_are_current() -> None:
+    testing_readme = (ROOT / "tests" / "README.md").read_text(
+        encoding="utf-8"
+    )
+    test_modules = sorted(
+        path.name for path in (ROOT / "tests").glob("test_*.py")
+    )
+    missing = [name for name in test_modules if name not in testing_readme]
+    assert missing == []
+
+    e2e_readme = (ROOT / "tests" / "e2e" / "README.md").read_text(
+        encoding="utf-8"
+    )
+    assert "## Maintaining The UI Checklist" in e2e_readme
+    assert "every new or changed visible UI interaction" in e2e_readme
+    assert "observable success state" in e2e_readme
+    assert "Update or remove obsolete steps" in e2e_readme

@@ -4,6 +4,29 @@ This runbook exercises the real RoastLogger UI with a dedicated local database
 and deterministic virtual temperature sensor. It does not use Playwright,
 Selenium, Cypress, a production test-control route, or an online database.
 
+## Maintaining The UI Checklist
+
+This file is the canonical durable UI regression checklist. Do not copy its
+changing scenario list into ticket skills or ticket records.
+
+For every new or changed visible UI interaction:
+
+1. Record the exact scenario to add or update under the ticket's
+   `## Testing Impact`.
+2. Add the user entry point, action, observable success state, important
+   failure state, and required screenshot or log evidence to the relevant
+   workflow below. Add a focused subsection when no current workflow fits.
+3. Add automated API or contract coverage where practical. Browser checks
+   supplement automated tests; they do not replace them.
+4. Run the targeted scenario during implementation. Run the complete affected
+   workflow for cross-screen changes and critical live roast, sensor, stock,
+   Settings, or sync behavior.
+5. Update or remove obsolete steps when UI behavior changes or is removed.
+
+Purely visual changes still require a targeted browser check and screenshot;
+they do not require the complete workflow unless they affect a critical or
+cross-screen interaction.
+
 ## Safety Invariants
 
 - E2E mode requires `LOCAL_DB_NAME=roastlogger_e2e`.

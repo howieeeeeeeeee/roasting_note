@@ -10,6 +10,7 @@ area:
 parent:
 decisions: []
 blocked_by: []
+testing_policy: v1
 tags: []
 ---
 
@@ -30,7 +31,21 @@ One or two sentences describing the user-facing outcome and why it matters now.
 ## Acceptance Criteria
 
 - [ ] Criterion written as a verifiable outcome.
+- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
 - [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+
+## Testing Impact
+
+Use `.claude/skills/ticket-master/TESTING_WORKFLOW.md`. Fill every field with
+exact paths, scenarios, commands, and evidence. Use `None` only with a concrete
+Not applicable reason.
+
+- Change classification:
+- Automated tests to add or update:
+- Browser E2E scenarios to add or update:
+- Required commands:
+- Required browser evidence:
+- Not applicable reason:
 
 ## Documentation Impact
 

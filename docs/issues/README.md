@@ -11,7 +11,7 @@ Issue and human-decision tracker for RoastLogger. Product, engineering, design, 
 - [In Progress](./in-progress.md) — 0
 - [Blocked](./blocked.md) — 0
 - [Pending](./pending.md) — 0
-- [Done](./done.md) — 22 (resolved 21, won't-fix 1)
+- [Done](./done.md) — 23 (resolved 22, won't-fix 1)
 - [Human Decisions](./human-decisions.md) — 0 pending, 0 finalized
 
 ## Folder Layout
@@ -35,6 +35,7 @@ Issue and human-decision tracker for RoastLogger. Product, engineering, design, 
 | `parent` | `RN-XXXX` or blank | Parent epic for child tickets. |
 | `decisions` | List of `HD-XXXX` ids | Durable decision provenance. |
 | `blocked_by` | List of unresolved `HD-XXXX` or `RN-...` ids | Current blockers; nonempty exactly when status is blocked. |
+| `testing_policy` | `v1` for active tickets | Requires complete Testing Impact and resolution evidence. |
 | `area` / `tags` | Slug / YAML list | Discovery metadata. |
 
 Use `docs/issues/templates/TICKET.md` for work and `docs/issues/templates/HUMAN_DECISION.md` for human choices.
@@ -53,6 +54,10 @@ Use `docs/issues/templates/TICKET.md` for work and `docs/issues/templates/HUMAN_
 ## Block Logic
 
 A ticket is `blocked` exactly when `blocked_by` is nonempty. A pending decision is ready exactly when `blocked_by` is empty. Finalizing a decision or resolving a ticket removes only that id from downstream blockers. A blocked ticket becomes pending only after no blockers remain.
+
+## Testing Gate
+
+Every active ticket uses `testing_policy: v1` and records exact automated tests, browser scenarios, commands, and evidence under `## Testing Impact`. New or changed visible UI must update `tests/e2e/README.md`. Before resolution, compare the implementation diff with `.claude/skills/ticket-master/TESTING_WORKFLOW.md` and record the required results.
 
 ## Documentation Gate
 

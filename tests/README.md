@@ -12,7 +12,30 @@ Run the test suite in these situations:
 4. **When explicitly requested** — running specific tests or the full suite on demand.
 5. **After ticket-system changes** — run the tracker tests and stale-generation check after changing its schema, templates, generator, dashboard, or skill.
 
-For pure UI / CSS / documentation changes, running the API test suite is usually unnecessary — but it is always safe.
+For documentation-only changes, running the API suite is usually unnecessary.
+UI and CSS changes follow the Testing Impact policy below: visible behavior
+requires a targeted browser scenario even when API coverage is unaffected.
+
+## Testing Impact Policy
+
+`tests/README.md` is the canonical automated test inventory. The durable UI
+regression checklist lives in `tests/e2e/README.md`; do not copy either
+changing list into ticket-master instructions or individual tickets.
+
+Every active ticket uses
+`.claude/skills/ticket-master/TESTING_WORKFLOW.md` to record:
+
+- the change classification;
+- exact automated tests to add or update;
+- exact browser scenarios to add or update;
+- required commands and evidence; and
+- a concrete reason for any omitted coverage.
+
+New or changed visible UI must update the E2E runbook and execute the targeted
+scenario. Cross-screen workflows and changes to live roasting, sensors,
+inventory deduction, Settings, or sync UI require the complete affected browser
+workflow. Browser checks supplement focused automated tests and
+`uv run pytest`; they do not replace them.
 
 ## Setup
 
@@ -72,6 +95,27 @@ Run tests matching a pattern:
 uv run pytest -k "stock"  # All tests with "stock" in name
 uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 ```
+
+## Automated Test Module Inventory
+
+| Module | Primary coverage |
+| --- | --- |
+| `test_api_contracts.py` | Labels, preferences, Settings, rendered pages, identifiers, and payload failures |
+| `test_app_factory.py` | Route manifest, configuration boundaries, and live-roast module entry |
+| `test_beans_api.py` | Bean CRUD, stock, labels, pricing, and validation |
+| `test_database_backup.py` | Complete backups, BSON round trips, and incomplete-backup safety |
+| `test_database_sync.py` | Sync validation, read-only preflight, direction, and conflicts |
+| `test_database_sync_cli.py` | Confirmations, cancellation, backups, and audit behavior |
+| `test_database_sync_routes.py` | Audited Settings preflight, overlap prevention, and fail-closed routes |
+| `test_datetime_formatting.py` | UTC and operator-timezone formatting |
+| `test_e2e_runtime.py` | Isolated database, run markers, cleanup, and online exclusion |
+| `test_file_size_policy.py` | Tracked-file 1,000-line policy |
+| `test_reviews_api.py` | Review CRUD and validation |
+| `test_roasts_api.py` | Roast lifecycle, events, temperature, stock, and weight loss |
+| `test_sync_api.py` | Timestamp-aware document synchronization |
+| `test_temperature_api.py` | Temperature endpoints, timeouts, settings, and RoR |
+| `test_ticket_system.py` | Tracker validation, policy, generation, and dashboard |
+| `test_virtual_sensor.py` | Deterministic sensor scenarios and recovery |
 
 ## Test Coverage
 
@@ -240,6 +284,8 @@ Common fixtures in `conftest.py`:
 2. Import fixtures from conftest.py
 3. Mark any created documents with `test_data: True`
 4. Use fixtures that auto-cleanup, or clean up in test teardown
+5. For visible UI behavior, add or update the durable browser scenario in
+   `tests/e2e/README.md`
 
 Example:
 
@@ -268,7 +314,9 @@ Or better, use the provided fixtures that handle cleanup automatically.
 
 The tracker has focused tests for metadata validation, epics and child filing,
 human-decision blockers, deterministic generation, stale output detection, and
-the offline dashboard:
+the offline dashboard. It also enforces `testing_policy: v1`, complete Testing
+Impact fields, checked testing acceptance on completed policy tickets, and
+browser scenarios/evidence for UI classifications:
 
 ```bash
 uv run pytest tests/test_ticket_system.py

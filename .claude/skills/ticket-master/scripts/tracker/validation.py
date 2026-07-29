@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 from .records import (
+    ACTIVE_TICKET_STATUSES,
     COMPLETED_TICKET_STATUSES,
     DECISION_STATUSES,
     TICKET_STATUSES,
@@ -14,6 +15,26 @@ from .records import (
     Ticket,
     TrackerConfig,
     record_map,
+)
+
+TESTING_POLICY_VERSION = "v1"
+TESTING_IMPACT_FIELDS = (
+    "Change classification",
+    "Automated tests to add or update",
+    "Browser E2E scenarios to add or update",
+    "Required commands",
+    "Required browser evidence",
+    "Not applicable reason",
+)
+UI_TEST_CLASSIFICATIONS = (
+    "ui-visual",
+    "ui-interaction",
+    "cross-workflow",
+    "release",
+)
+TESTING_ACCEPTANCE_TEXT = (
+    "Testing Impact reviewed against the implementation diff; "
+    "declared automated and browser coverage is complete."
 )
 
 
@@ -54,6 +75,117 @@ def _valid_date(value: str) -> bool:
     return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", value))
 
 
+def _markdown_section(text: str, heading: str) -> str | None:
+    match = re.search(
+        rf"^## {re.escape(heading)}\s*$",
+        text,
+        flags=re.MULTILINE,
+    )
+    if not match:
+        return None
+    remainder = text[match.end() :]
+    next_heading = re.search(r"^## ", remainder, flags=re.MULTILINE)
+    return remainder[: next_heading.start()] if next_heading else remainder
+
+
+def _testing_field(section: str, label: str) -> str | None:
+    match = re.search(
+        rf"^- {re.escape(label)}:\s*(.*?)\s*$",
+        section,
+        flags=re.MULTILINE,
+    )
+    return match.group(1).strip() if match else None
+
+
+def _is_not_applicable(value: str | None) -> bool:
+    normalized = (value or "").strip().lower().rstrip(".")
+    return normalized in {"none", "n/a", "not applicable"}
+
+
+def _is_placeholder(value: str | None) -> bool:
+    normalized = (value or "").strip().lower().rstrip(".")
+    return normalized in {"", "tbd", "todo", "placeholder"}
+
+
+def _validate_testing_impact(ticket: Ticket) -> list[str]:
+    errors = []
+    policy = str(ticket.metadata.get("testing_policy", "") or "")
+    if ticket.status in ACTIVE_TICKET_STATUSES and (
+        policy != TESTING_POLICY_VERSION
+    ):
+        errors.append(
+            f"{ticket.id}: active ticket requires "
+            f"testing_policy: {TESTING_POLICY_VERSION}"
+        )
+    if policy and policy != TESTING_POLICY_VERSION:
+        errors.append(f"{ticket.id}: unsupported testing_policy {policy!r}")
+    if policy != TESTING_POLICY_VERSION:
+        return errors
+
+    text = ticket.path.read_text(encoding="utf-8")
+    section = _markdown_section(text, "Testing Impact")
+    if section is None:
+        errors.append(f"{ticket.id}: testing policy requires Testing Impact")
+        return errors
+
+    values = {
+        label: _testing_field(section, label)
+        for label in TESTING_IMPACT_FIELDS
+    }
+    for label, value in values.items():
+        if _is_placeholder(value):
+            errors.append(
+                f"{ticket.id}: Testing Impact field {label!r} is required"
+            )
+
+    checkbox = re.search(
+        rf"^- \[([ xX])\] {re.escape(TESTING_ACCEPTANCE_TEXT)}$",
+        text,
+        flags=re.MULTILINE,
+    )
+    if not checkbox:
+        errors.append(
+            f"{ticket.id}: testing policy requires its acceptance checkbox"
+        )
+    elif (
+        ticket.status in COMPLETED_TICKET_STATUSES
+        and checkbox.group(1).lower() != "x"
+    ):
+        errors.append(
+            f"{ticket.id}: completed ticket requires checked Testing Impact"
+        )
+
+    classification = (values["Change classification"] or "").lower()
+    requires_browser = any(
+        item in classification for item in UI_TEST_CLASSIFICATIONS
+    )
+    browser_scenarios = values["Browser E2E scenarios to add or update"]
+    browser_evidence = values["Required browser evidence"]
+    if requires_browser and (
+        _is_not_applicable(browser_scenarios)
+        or _is_not_applicable(browser_evidence)
+    ):
+        errors.append(
+            f"{ticket.id}: UI testing classification requires browser "
+            "scenarios and evidence"
+        )
+
+    coverage_fields = (
+        values["Automated tests to add or update"],
+        browser_scenarios,
+        browser_evidence,
+    )
+    if any(_is_not_applicable(value) for value in coverage_fields) and (
+        _is_not_applicable(values["Not applicable reason"])
+        or _is_placeholder(values["Not applicable reason"])
+    ):
+        errors.append(
+            f"{ticket.id}: omitted testing coverage requires a concrete "
+            "Not applicable reason"
+        )
+    return errors
+
+
 def validate_metadata(tickets, decisions, config: TrackerConfig) -> None:
     errors = []
     records = [*tickets, *decisions]
@@ -66,6 +198,7 @@ def validate_metadata(tickets, decisions, config: TrackerConfig) -> None:
     by_id = record_map(tickets, decisions)
 
     for ticket in tickets:
+        errors.extend(_validate_testing_impact(ticket))
         ticket_pattern = (
             rf"{re.escape(config.ticket_prefix)}-\d{{4}}(?:-\d{{2}})?"
         )
