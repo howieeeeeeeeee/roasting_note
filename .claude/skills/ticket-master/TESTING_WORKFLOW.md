@@ -26,15 +26,37 @@ Use one or more of these classifications under `## Testing Impact`:
 | `documentation-only` | No tests unless behavior or policy also changes; record the reason |
 | `backend-api` | Focused automated regression tests and `uv run pytest` |
 | `database-sync` | Focused safety tests, full pytest, and applicable guarded dry-run evidence |
-| `ui-visual` | Targeted browser visual check, screenshot evidence, and automated coverage where practical |
-| `ui-interaction` | Automated contract coverage, an updated browser checklist scenario, targeted browser execution, and full pytest |
+| `ui-visual` | Browser level `none` for a small cosmetic fix or `targeted` when visual risk merits a focused check; automated coverage where practical |
+| `ui-interaction` | Automated contract coverage, browser level `targeted`, an updated checklist scenario, and full pytest |
 | `cross-workflow` | Automated coverage plus the complete affected browser workflow |
-| `refactor` | Structural/route regression coverage, full pytest, and an affected-workflow browser smoke test when visible behavior is involved |
+| `refactor` | Structural/route regression coverage, full pytest, and browser level based on the visible reach of the refactor |
 | `release` | Full pytest and the complete browser workflow when UI behavior changed since the previous release evidence |
 
+## Choose The Browser Verification Level
+
+Record exactly one level in the ticket:
+
+| Level | Use when | Required record |
+| --- | --- | --- |
+| `none` | No visible UI changes, or a small low-risk visual-only correction such as copy, color, icon, or spacing that preserves layout and interaction contracts | Set browser scenarios and evidence to `None` and give a concrete Not applicable reason |
+| `targeted` | One screen, component, responsive state, or interaction changes without altering an end-to-end workflow | Name and run the focused scenario; record its screenshot or log evidence and cleanup |
+| `full` | A change spans screens or stages, alters a critical workflow, or supplies release-level regression evidence | Run the complete affected workflow and record the run ID, evidence, console/network findings, and cleanup |
+
+Do not turn a small visual fix into a full browser task by default. Use
+`targeted` instead of `none` when the visual change can hide content, affect
+responsive layout, alter a shared component, or otherwise has meaningful
+regression risk.
+
 Treat live roasting, sensor states, inventory deduction, Settings, and database
-sync UI as critical cross-workflow surfaces. Changes to those surfaces require
-the complete affected browser workflow.
+sync UI as critical surfaces when their behavior or interaction changes. Those
+changes use `full`; a cosmetic-only correction on the same screen may still use
+`none` or `targeted` according to its actual reach.
+
+When focused repository reads do not make the correct level clear, ask the user
+one concise question during ticket creation: whether to use `none`, `targeted`,
+or `full`, with a recommended level and one-sentence reason. Ask only when the
+choice materially changes effort or evidence; do not ask when the classification
+is clear.
 
 ## Write Or Refine The Ticket
 
@@ -44,6 +66,7 @@ New active tickets use `testing_policy: v1` and include:
 ## Testing Impact
 
 - Change classification:
+- Browser verification level:
 - Automated tests to add or update:
 - Browser E2E scenarios to add or update:
 - Required commands:
@@ -52,9 +75,10 @@ New active tickets use `testing_policy: v1` and include:
 ```
 
 Fill every field with exact paths, scenario names, commands, and evidence.
-Use `None` only with a concrete Not applicable reason.
+Use exactly `none`, `targeted`, or `full` for the browser level. Use `None` for
+omitted coverage only with a concrete Not applicable reason.
 
-For new or changed visible UI:
+For `targeted` or `full` browser verification:
 
 1. Name the exact subsection or scenario to add or update in
    `tests/e2e/README.md`.
@@ -64,6 +88,10 @@ For new or changed visible UI:
    focused automated tests; they do not replace them.
 4. Update or remove obsolete checklist steps when UI behavior changes or is
    removed.
+
+For level `none`, do not add a browser task or checklist scenario. Record why
+the change is visual-only and low risk. Documentation and applicable focused
+automated checks remain required.
 
 Add this acceptance criterion:
 
@@ -80,11 +108,11 @@ Before resolution:
    changed.
 3. Confirm `tests/README.md` still describes new automated coverage and update
    it when the inventory, commands, fixtures, or policy changed.
-4. Confirm every durable new or changed UI interaction is represented in
-   `tests/e2e/README.md`.
+4. For `targeted` or `full`, confirm every durable new or changed UI
+   interaction is represented in `tests/e2e/README.md`.
 5. Run the declared focused commands and `uv run pytest`.
-6. Run every declared browser scenario and record the run ID, assertions,
-   evidence paths, console/network findings, and cleanup result.
+6. Run every declared `targeted` or `full` browser scenario and record its
+   required evidence and cleanup result.
 7. Check the Testing Impact acceptance criterion and include concise evidence
    in `## Resolution`.
 

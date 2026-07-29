@@ -6,6 +6,7 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RN-0024 | [IMPROVEMENT] | Medium | testing | [Make UI Browser Testing Proportional](./resolved/RN-0024-proportional-ui-browser-testing.md) | - | - | 2026-07-29 | 2026-07-29 |
 | RN-0023 | [IMPROVEMENT] | Medium | testing | [Enforce Ticket Testing Impact](./resolved/RN-0023-testing-impact-workflow.md) | - | - | 2026-07-29 | 2026-07-29 |
 | RN-0022 | [IMPROVEMENT] | High | database-sync | [Add Guarded, Audited Bidirectional Database Sync](./resolved/RN-0022-guarded-audited-database-sync.md) | - | - | 2026-07-29 | 2026-07-29 |
 | RN-0018 | [REFACTOR] | High | app-architecture | [Refactor Oversized Source Files into Focused Modules](./resolved/RN-0018-refactor-app-py.md) | - | - | 2026-05-02 | 2026-07-29 |

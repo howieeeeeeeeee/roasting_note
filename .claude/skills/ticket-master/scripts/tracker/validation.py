@@ -20,18 +20,20 @@ from .records import (
 TESTING_POLICY_VERSION = "v1"
 TESTING_IMPACT_FIELDS = (
     "Change classification",
+    "Browser verification level",
     "Automated tests to add or update",
     "Browser E2E scenarios to add or update",
     "Required commands",
     "Required browser evidence",
     "Not applicable reason",
 )
-UI_TEST_CLASSIFICATIONS = (
-    "ui-visual",
+BROWSER_LEVELS = ("none", "targeted", "full")
+BROWSER_REQUIRED_CLASSIFICATIONS = (
     "ui-interaction",
     "cross-workflow",
     "release",
 )
+FULL_BROWSER_CLASSIFICATIONS = ("cross-workflow", "release")
 TESTING_ACCEPTANCE_TEXT = (
     "Testing Impact reviewed against the implementation diff; "
     "declared automated and browser coverage is complete."
@@ -156,12 +158,38 @@ def _validate_testing_impact(ticket: Ticket) -> list[str]:
         )
 
     classification = (values["Change classification"] or "").lower()
+    browser_level = (values["Browser verification level"] or "").lower()
+    if (
+        not _is_placeholder(browser_level)
+        and browser_level not in BROWSER_LEVELS
+    ):
+        errors.append(
+            f"{ticket.id}: Browser verification level must be one of "
+            f"{', '.join(BROWSER_LEVELS)}"
+        )
     requires_browser = any(
-        item in classification for item in UI_TEST_CLASSIFICATIONS
+        item in classification
+        for item in BROWSER_REQUIRED_CLASSIFICATIONS
+    )
+    requires_full_browser = any(
+        item in classification for item in FULL_BROWSER_CLASSIFICATIONS
     )
     browser_scenarios = values["Browser E2E scenarios to add or update"]
     browser_evidence = values["Required browser evidence"]
-    if requires_browser and (
+    if requires_browser and browser_level == "none":
+        errors.append(
+            f"{ticket.id}: UI testing classification requires targeted or "
+            "full browser verification"
+        )
+    if requires_full_browser and browser_level != "full":
+        errors.append(
+            f"{ticket.id}: cross-workflow and release classifications "
+            "require full browser verification"
+        )
+    requires_browser_scenario = (
+        browser_level in {"targeted", "full"} or requires_browser
+    )
+    if requires_browser_scenario and (
         _is_not_applicable(browser_scenarios)
         or _is_not_applicable(browser_evidence)
     ):

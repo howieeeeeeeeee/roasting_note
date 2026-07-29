@@ -23,6 +23,9 @@ a person and make downstream blockers explicit.
 - Preserve ids and history. Status transitions change paths, not ids.
 - Ask only about choices that materially change scope, dependencies,
   acceptance, or verification. Keep other unknowns as Open Questions.
+- When UI browser coverage remains materially ambiguous after focused reads,
+  ask one concise question choosing `none`, `targeted`, or `full`, state the
+  recommended level and why, and do not ask when the level is clear.
 - Regenerate and validate the tracker after every record change.
 - Do not hand-edit generated Markdown views or `docs/issues/overview.html`.
 - Ticketing turns define and verify database-operation requirements but never
@@ -151,8 +154,10 @@ status. Use stable ids, rather than hard-coded paths, when relating records.
    short lowercase kebab filename.
 6. Write explicit `parent`, `decisions`, and `blocked_by` fields.
 7. Include `testing_policy: v1`, `## Testing Impact`, and the testing acceptance
-   checkbox. New or changed visible UI must name the exact scenario to add or
-   update in `tests/e2e/README.md`.
+   checkbox. Record browser level `none`, `targeted`, or `full` using
+   `TESTING_WORKFLOW.md`. Small low-risk visual fixes may use `none`; changed
+   interactions use `targeted`; critical or cross-workflow behavior uses
+   `full`.
 8. Include `## Documentation Impact` and a documentation acceptance checkbox.
 9. Update the parent epic roadmap when applicable.
 10. Run the generator and fix every error.
@@ -191,9 +196,11 @@ epics or speculative child stubs.
 
 1. Verify every acceptance criterion.
 2. Read the implementation diff and `TESTING_WORKFLOW.md`; confirm every
-   declared automated test and browser scenario was added, updated, and run.
-3. Confirm durable new or changed UI interactions are synchronized with
-   `tests/e2e/README.md` and record browser evidence and cleanup.
+   declared automated test and applicable browser scenario was added, updated,
+   and run.
+3. For browser level `targeted` or `full`, confirm durable new or changed UI
+   interactions are synchronized with `tests/e2e/README.md` and record the
+   required evidence and cleanup.
 4. Read the implementation diff and `DOCUMENTATION_WORKFLOW.md`; confirm all
    affected docs were updated in the same branch.
 5. Update `## Testing Impact` and `## Documentation Impact` if implementation
@@ -208,8 +215,8 @@ epics or speculative child stubs.
 9. Remove this id from downstream blockers and recompute their statuses.
 10. Run the generator and review every moved record and generated view.
 
-Do not mark a ticket complete while required testing, browser evidence, or
-documentation is missing.
+Do not mark a ticket complete while required testing, applicable browser
+evidence, or documentation is missing.
 
 ## Choose The Next Work
 
@@ -260,10 +267,13 @@ this skill. Every new or refined active ticket uses `testing_policy: v1` and
 records exact automated tests, browser scenarios, commands, and evidence under
 `## Testing Impact`.
 
-New or changed visible UI must update the browser checklist. Browser coverage
-supplements focused automated coverage and the full pytest suite. Resolution
-records the declared commands and, when applicable, browser run ID, evidence,
-console/network findings, and scoped cleanup.
+Browser coverage is proportional: `none` for small low-risk visual-only fixes,
+`targeted` for focused interaction or layout changes, and `full` for critical
+or cross-workflow behavior. Only `targeted` and `full` update and run the
+browser checklist. Browser coverage supplements focused automated coverage and
+the full pytest suite. Resolution records the declared commands and, when
+applicable, browser run ID, evidence, console/network findings, and scoped
+cleanup.
 
 For database-impacting tickets, require the database operations section and
 route it through the guarded workflow in `DOCUMENTATION_WORKFLOW.md`. Applied

@@ -22,9 +22,12 @@ docs that must change in the same branch.
 
 Use `.claude/skills/ticket-master/TESTING_WORKFLOW.md` to record focused
 automated tests and durable browser scenarios under the ticket's
-`## Testing Impact`. New or changed visible UI must update
-`tests/e2e/README.md`; keep the changing test catalogs in `tests/`, not in
-skills or tickets.
+`## Testing Impact`. Use proportional browser levels: `none` for small
+low-risk visual-only fixes, `targeted` for focused interaction or layout
+changes, and `full` for critical or cross-workflow behavior. Ask one concise
+question when the level is materially unclear. Only `targeted` and `full`
+update `tests/e2e/README.md`; keep the changing test catalogs in `tests/`, not
+in skills or tickets.
 
 For database-impacting work, follow the guarded workflow in `AGENTS.md`:
 document database operations in the ticket, read

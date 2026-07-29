@@ -345,9 +345,11 @@ def render_readme(tickets, decisions, config: TrackerConfig) -> str:
             "",
             "Every active ticket uses `testing_policy: v1` and records exact "
             "automated tests, browser scenarios, commands, and evidence under "
-            "`## Testing Impact`. New or changed visible UI must update "
-            "`tests/e2e/README.md`. Before resolution, compare the "
-            "implementation diff with `.claude/skills/ticket-master/"
+            "`## Testing Impact`. Browser level is `none`, `targeted`, or "
+            "`full`: small visual-only fixes may use `none`, while only "
+            "`targeted` and `full` update `tests/e2e/README.md`. Before "
+            "resolution, compare the implementation diff with "
+            "`.claude/skills/ticket-master/"
             "TESTING_WORKFLOW.md` and record the required results.",
             "",
             "## Documentation Gate",

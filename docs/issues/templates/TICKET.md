@@ -37,10 +37,12 @@ One or two sentences describing the user-facing outcome and why it matters now.
 ## Testing Impact
 
 Use `.claude/skills/ticket-master/TESTING_WORKFLOW.md`. Fill every field with
-exact paths, scenarios, commands, and evidence. Use `None` only with a concrete
-Not applicable reason.
+exact paths, scenarios, commands, and evidence. Choose browser level `none`,
+`targeted`, or `full`. Use `None` for omitted coverage only with a concrete Not
+applicable reason.
 
 - Change classification:
+- Browser verification level:
 - Automated tests to add or update:
 - Browser E2E scenarios to add or update:
 - Required commands:
