@@ -2,7 +2,7 @@
 id: RN-0003
 title: In-App Browser and API Workflow Testing
 type: improvement
-status: pending
+status: in_progress
 priority: medium
 created: 2026-01-11
 resolved:
@@ -173,6 +173,24 @@ sensor board.
   contract requires changing a production route.
 - Conditional: `docs/design/screens/live-roasting.md` only if browser
   verification exposes and implementation changes a visible interaction.
+
+## Database Operations Impact
+
+- Collections and local/online effects: E2E browser beans and roasts are
+  isolated in local database `roastlogger_e2e`. E2E startup, runtime, and
+  cleanup must not initialize or access the online client.
+- Migration or backfill: none. E2E documents add only `test_data: true` and
+  the run-scoped `test_run_id`; no production document migration is needed.
+- Expected sync direction: none. Both legacy sync routes and audited preflight
+  must fail closed in E2E mode without constructing or touching an online
+  connection.
+- Applied mirror in delivery: no. RN-0022 configured dry runs succeeded in
+  both directions immediately before this ticket; no applied operation was
+  requested or performed.
+- Required backup/audit evidence: no backup or applied audit is applicable.
+  Resolution requires isolated automated and browser evidence, scoped cleanup
+  verification, full pytest, and confirmation that neither `db_backup/` nor
+  E2E/browser artifacts are tracked.
 
 ## Open Questions
 
