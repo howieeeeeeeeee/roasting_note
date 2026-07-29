@@ -6,6 +6,8 @@ __pycache__/
 # temp logs
 temp_logs/
 /db_backup/
+/tests/e2e/artifacts/
+/tests/e2e/runtime/
 
 # C extensions
 *.so

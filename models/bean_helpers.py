@@ -26,7 +26,7 @@ def normalize_short_flavor_notes(value):
     return notes
 
 
-def create_bean(beans_collection, bean_data):
+def create_bean(beans_collection, bean_data, markers=None):
     """
     Create a new bean document
 
@@ -52,6 +52,7 @@ def create_bean(beans_collection, bean_data):
         'created_at': datetime.now(),
         'updated_at': datetime.now()
     }
+    bean_doc.update(markers or {})
 
     # Handle date
     if bean_data.get('purchase_date'):

@@ -9,6 +9,7 @@ from flask import Blueprint, current_app, jsonify, redirect, request, url_for
 
 from models.bean_helpers import create_bean, update_bean
 from roastlogger.database import get_beans_collection
+from roastlogger.e2e import document_markers
 from roastlogger.routing import register_unprefixed_routes
 from roastlogger.time_utils import get_current_time_with_tz
 
@@ -17,7 +18,11 @@ blueprint = Blueprint("beans", __name__)
 
 
 def api_beans_add():
-    create_bean(get_beans_collection(), request.form.to_dict())
+    create_bean(
+        get_beans_collection(),
+        request.form.to_dict(),
+        markers=document_markers(),
+    )
     return redirect(url_for("beans_list"))
 
 

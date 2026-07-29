@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from bson.errors import InvalidId
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, jsonify, request
 
 from roastlogger.blueprints import beans, pages, roasts, settings, temperature
 from roastlogger.config import default_config
@@ -15,6 +16,7 @@ from roastlogger.database import (
     get_roasts_collection,
     init_database,
 )
+from roastlogger.e2e import configure_e2e_runtime
 from roastlogger.time_utils import (
     format_date_in_timezone,
     format_seconds,
@@ -63,6 +65,16 @@ def _register_template_helpers(app):
     app.add_template_filter(format_seconds, "format_seconds")
 
 
+def _register_error_handlers(app):
+    @app.errorhandler(InvalidId)
+    def invalid_identifier(_error):
+        if request.path.startswith("/api/"):
+            return jsonify(
+                {"success": False, "error": "Invalid identifier"}
+            ), 400
+        return "Invalid identifier", 400
+
+
 def create_app(config_overrides=None):
     load_dotenv()
     app = Flask(
@@ -72,12 +84,15 @@ def create_app(config_overrides=None):
     )
     app.config.update(default_config())
     app.config["REPOSITORY_ROOT"] = str(ROOT)
+    app.config["TEMP_LOG_DIR"] = str(ROOT / "temp_logs")
     if config_overrides:
         app.config.update(config_overrides)
+    configure_e2e_runtime(app.config, ROOT)
 
     _configure_logging()
     init_database(app)
     _register_template_helpers(app)
+    _register_error_handlers(app)
     for feature_blueprint in (
         pages.blueprint,
         beans.blueprint,

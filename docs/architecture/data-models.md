@@ -26,6 +26,23 @@ Application-created bean and roast documents include both `created_at` and
   naive datetimes as UTC and converts them to `TIMEZONE`; duration and elapsed
   calculations continue to use the stored instants.
 
+## E2E Run Markers
+
+The dedicated `roastlogger_e2e` database uses the same bean and roast shapes
+plus two mandatory top-level fields on every document created by an E2E
+browser session:
+
+```json
+{
+  "test_data": true,
+  "test_run_id": "codex-20260729-a"
+}
+```
+
+All update paths retain both markers. They are runtime-isolation metadata, not
+a production migration. Run-scoped cleanup matches both fields, removes roasts
+before beans, and never selects production `roastlogger`.
+
 ## `beans` Collection
 
 Stores information about each type of green coffee bean in inventory.
@@ -67,6 +84,8 @@ Stores information about each type of green coffee bean in inventory.
 | `color` | String | No | "#6B8E6F" | Hex color for visual identification |
 | `archived` | Boolean | No | false | Soft delete flag |
 | `label` | Object | No | - | Label creator data (see below) |
+| `test_data` | Boolean | E2E only | - | Always `true` for dedicated E2E records |
+| `test_run_id` | String | E2E only | - | Run-scoped cleanup and evidence identifier |
 
 ### Embedded: `label` Object
 

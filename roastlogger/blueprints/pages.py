@@ -9,6 +9,7 @@ from flask import Blueprint, Response, redirect, render_template, request, url_f
 
 from models.roast_helpers import create_draft_roast
 from roastlogger.database import get_beans_collection, get_roasts_collection
+from roastlogger.e2e import document_markers
 from roastlogger.routing import register_unprefixed_routes
 from roastlogger.services.lifecycle import annotate_roast_lifecycle
 
@@ -133,7 +134,10 @@ def beans_edit_form(bean_id):
 
 
 def roast_new():
-    roast_id = create_draft_roast(get_roasts_collection())
+    roast_id = create_draft_roast(
+        get_roasts_collection(),
+        markers=document_markers(),
+    )
     return redirect(url_for("roast_live", roast_id=roast_id))
 
 

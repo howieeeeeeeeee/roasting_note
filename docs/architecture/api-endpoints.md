@@ -16,6 +16,10 @@ All REST API routes for RoastLogger.
 | `/roast/detail/<roast_id>` | GET | Roast detail page |
 | `/roast/edit/<roast_id>` | GET | Edit roast form |
 
+Invalid BSON ObjectId path values return HTTP `400`. API paths return
+`{"success": false, "error": "Invalid identifier"}`; rendered-page paths
+return the same message as plain text.
+
 ---
 
 ## Bean API Routes
@@ -129,6 +133,14 @@ can distinguish fresh, retrying, stale, offline, and faulted sensor states.
   "default": "local"
 }
 ```
+
+Dedicated E2E mode adds `e2e_mode: true`, `local_database:
+"roastlogger_e2e"`, and `test_run_id`. It forces `mode: "local"`; attempts to
+select online mode return HTTP `409`. Both global cleanup routes also return
+HTTP `409` in E2E mode and direct the operator to run-scoped harness cleanup.
+
+E2E sync preflight is audited into ignored run artifacts but returns HTTP
+`503` without endpoint access. Historic sync POST routes return HTTP `409`.
 
 ### Sync Preflight Response
 

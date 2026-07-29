@@ -54,6 +54,9 @@ uv run pytest tests/test_database_sync.py
 uv run pytest tests/test_database_backup.py
 uv run pytest tests/test_database_sync_cli.py
 uv run pytest tests/test_database_sync_routes.py
+uv run pytest tests/test_e2e_runtime.py
+uv run pytest tests/test_virtual_sensor.py
+uv run pytest tests/test_api_contracts.py
 ```
 
 Run specific test class or method:
@@ -143,6 +146,30 @@ These tests use in-memory fakes and temporary filesystem roots. They never run
 an applied local/online mirror. Any configured live verification for sync must
 use `--dry-run`; an applied run requires a separate explicit user request and
 both run-specific confirmation tokens.
+
+### Dedicated Browser E2E Harness
+
+- `test_e2e_runtime.py` proves only the local `roastlogger_e2e` client is
+  constructed, unsafe configuration is rejected, browser-created records are
+  run-marked, updates retain markers, sync/global cleanup fail closed, and
+  cleanup is run-scoped.
+- `test_virtual_sensor.py` contract-tests all deterministic scenarios and
+  representative retry/fault/recovery behavior through RoastLogger APIs.
+- `test_api_contracts.py` covers label assets/preferences, database settings,
+  rendered pages, malformed identifiers, missing records, and payload errors.
+- `tests/e2e/README.md` is the Codex in-app-browser runbook.
+
+Start and cleanup commands:
+
+```bash
+uv run python -m tests.e2e.manage start --run-id <unique-run-id>
+uv run python -m tests.e2e.manage cleanup --run-id <unique-run-id>
+```
+
+Start runs in the foreground and binds the app and virtual sensor only to
+loopback. Artifacts, runtime state, and E2E logs are ignored. Cleanup refuses
+any database except `roastlogger_e2e`, deletes selected-run roasts before
+beans, removes only their two CSV forms, and verifies zero matching records.
 
 ## Test Data Management
 

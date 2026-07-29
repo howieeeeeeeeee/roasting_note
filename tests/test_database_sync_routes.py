@@ -124,7 +124,7 @@ def test_audit_write_failure_is_prominent_and_returns_server_error(
     monkeypatch.setattr(
         settings_routes,
         "run_ui_preflight",
-        lambda *args: {
+        lambda *args, **kwargs: {
             "success": False,
             "run_id": "20260729T140000Z-auditbad",
             "plan": None,

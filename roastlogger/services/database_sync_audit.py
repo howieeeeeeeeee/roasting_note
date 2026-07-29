@@ -19,13 +19,16 @@ def utc_text(value=None) -> str:
 
 def git_provenance(root: Path) -> dict:
     def read(*args):
-        result = subprocess.run(
-            ["git", *args],
-            cwd=root,
-            capture_output=True,
-            check=False,
-            text=True,
-        )
+        try:
+            result = subprocess.run(
+                ["git", *args],
+                cwd=root,
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+        except OSError:
+            return None
         return result.stdout.strip() if result.returncode == 0 else None
 
     status = read("status", "--porcelain")
