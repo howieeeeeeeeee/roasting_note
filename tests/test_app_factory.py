@@ -72,6 +72,11 @@ EXPECTED_ROUTES = {
         "POST",
         "api_sync_local_to_online",
     ),
+    (
+        "/api/sync/preflight/<direction>",
+        "POST",
+        "api_sync_preflight",
+    ),
     ("/api/db/clean-test-data", "POST", "api_clean_test_data"),
     ("/api/db/clean-local", "POST", "api_clean_local_db"),
 }
