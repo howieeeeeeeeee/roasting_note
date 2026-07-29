@@ -12,7 +12,7 @@ def get_current_time_with_tz():
     return datetime.now(local_tz)
 
 
-def create_draft_roast(roasts_collection):
+def create_draft_roast(roasts_collection, markers=None):
     """
     Create a new draft roast document
 
@@ -39,6 +39,7 @@ def create_draft_roast(roasts_collection):
         'created_at': current_time_utc,
         'updated_at': current_time_utc
     }
+    roast_doc.update(markers or {})
 
     result = roasts_collection.insert_one(roast_doc)
     return result.inserted_id

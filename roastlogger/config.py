@@ -26,6 +26,15 @@ TEMP_SENSOR_STALE_SECONDS = 5
 MAX_SENSOR_DIAGNOSTICS = 300
 
 
+def _environment_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 def _default_db_mode() -> str:
     mode = os.environ.get("DEFAULT_DB", "local").strip().lower() or "local"
     return mode if mode in {"local", "online"} else "local"
@@ -39,6 +48,9 @@ def default_config() -> dict[str, object]:
         ),
         "DEFAULT_DB": _default_db_mode(),
         "DEVICE": os.environ.get("DEVICE", ""),
+        "E2E_MODE": _environment_flag("E2E_MODE"),
+        "E2E_RUN_ID": os.environ.get("E2E_RUN_ID", ""),
+        "E2E_ARTIFACT_ROOT": os.environ.get("E2E_ARTIFACT_ROOT", ""),
         "LOCAL_DB_NAME": os.environ.get("LOCAL_DB_NAME", "roastlogger"),
         "ONLINE_DB_NAME": "roastlogger",
         "MONGO_URI": os.environ.get("MONGO_URI", "mongodb://localhost:27017/"),

@@ -241,7 +241,10 @@
             try {
                 const response = await fetch('/api/settings/db');
                 const data = await response.json();
-                document.getElementById('currentDbMode').textContent = data.mode;
+                document.getElementById('currentDbMode').textContent = data.e2e_mode
+                    ? `${data.mode} (${data.local_database} / ${data.test_run_id})`
+                    : data.mode;
+                document.getElementById('dbModeOnline').disabled = data.e2e_mode;
                 if (data.mode === 'local') {
                     document.getElementById('dbModeLocal').checked = true;
                 } else {

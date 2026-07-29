@@ -17,17 +17,34 @@ blueprint = Blueprint("settings", __name__)
 
 
 def api_get_db_settings():
-    return jsonify(
-        {
-            "mode": get_current_db_mode(),
-            "default": current_app.config["DEFAULT_DB"],
-        }
-    )
+    result = {
+        "mode": get_current_db_mode(),
+        "default": current_app.config["DEFAULT_DB"],
+        "e2e_mode": bool(current_app.config.get("E2E_MODE")),
+    }
+    if result["e2e_mode"]:
+        result.update(
+            {
+                "local_database": current_app.config["LOCAL_DB_NAME"],
+                "test_run_id": current_app.config["E2E_RUN_ID"],
+            }
+        )
+    return jsonify(result)
 
 
 def api_set_db_settings():
     data = request.get_json() or {}
     mode = data.get("mode", "local")
+    if current_app.config.get("E2E_MODE") and mode != "local":
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "E2E mode is locked to the local E2E database",
+                }
+            ),
+            409,
+        )
     if mode not in ["local", "online"]:
         return jsonify({"success": False, "error": "Invalid mode"}), 400
     session["db_mode"] = mode
@@ -62,11 +79,16 @@ def api_sync_local_to_online():
 
 
 def _sync_route_disabled():
+    e2e_mode = current_app.config.get("E2E_MODE")
     return (
         jsonify(
             {
                 "success": False,
-                "error": "Applied database sync is CLI-only",
+                "error": (
+                    "Database sync is disabled in E2E mode"
+                    if e2e_mode
+                    else "Applied database sync is CLI-only"
+                ),
                 "guidance": (
                     "Use scripts/sync_database.py for guarded sync, or the "
                     "Settings preflight action for a read-only plan."
@@ -78,11 +100,22 @@ def _sync_route_disabled():
 
 
 def api_sync_preflight(direction):
+    e2e_mode = current_app.config.get("E2E_MODE")
+    root = (
+        current_app.config["E2E_ARTIFACT_ROOT"]
+        if e2e_mode
+        else current_app.config["REPOSITORY_ROOT"]
+    )
     result = run_ui_preflight(
         current_app.config,
         get_connections(),
-        current_app.config["REPOSITORY_ROOT"],
+        root,
         direction,
+        blocked_error=(
+            "Database sync preflight is disabled in E2E mode"
+            if e2e_mode
+            else None
+        ),
     )
     if not result["audit_recorded"]:
         return jsonify(result), 500
@@ -90,6 +123,8 @@ def api_sync_preflight(direction):
 
 
 def api_clean_test_data():
+    if current_app.config.get("E2E_MODE"):
+        return _e2e_cleanup_disabled()
     local_db = get_connections().local_db
     try:
         beans_deleted = local_db.beans.delete_many(
@@ -99,7 +134,7 @@ def api_clean_test_data():
             {"test_data": True}
         ).deleted_count
         temp_logs_deleted = 0
-        temp_logs_dir = os.path.join(os.getcwd(), "temp_logs")
+        temp_logs_dir = current_app.config["TEMP_LOG_DIR"]
         if os.path.exists(temp_logs_dir):
             for filename in os.listdir(temp_logs_dir):
                 if not filename.endswith(".csv"):
@@ -128,6 +163,8 @@ def api_clean_test_data():
 
 
 def api_clean_local_db():
+    if current_app.config.get("E2E_MODE"):
+        return _e2e_cleanup_disabled()
     local_db = get_connections().local_db
     try:
         beans_deleted = local_db.beans.delete_many({}).deleted_count
@@ -141,6 +178,18 @@ def api_clean_local_db():
         )
     except Exception as exc:
         return jsonify({"success": False, "error": str(exc)}), 500
+
+
+def _e2e_cleanup_disabled():
+    return (
+        jsonify(
+            {
+                "success": False,
+                "error": "Use run-scoped E2E cleanup for this test runtime",
+            }
+        ),
+        409,
+    )
 
 
 register_unprefixed_routes(

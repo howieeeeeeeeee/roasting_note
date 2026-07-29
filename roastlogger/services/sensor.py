@@ -260,7 +260,7 @@ def build_sensor_diagnostic_event(
 
 def log_sensor_diagnostics_csv(roast_id, diagnostic_event):
     try:
-        logs_dir = os.path.join(os.getcwd(), "temp_logs")
+        logs_dir = current_app.config["TEMP_LOG_DIR"]
         os.makedirs(logs_dir, exist_ok=True)
         log_file = os.path.join(logs_dir, f"{roast_id}_sensor_diagnostics.csv")
         file_exists = os.path.exists(log_file)

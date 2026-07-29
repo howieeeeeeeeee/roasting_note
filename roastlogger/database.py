@@ -10,15 +10,22 @@ from pymongo import MongoClient
 
 @dataclass
 class DatabaseConnections:
-    online_client: MongoClient
+    online_client: MongoClient | None
     local_client: MongoClient
-    online_db: object
+    online_db: object | None
     local_db: object
 
     @classmethod
     def from_config(cls, config) -> "DatabaseConnections":
-        online_client = MongoClient(config["MONGO_URI"])
         local_client = MongoClient(config["MONGO_URI_LOCAL"])
+        if config.get("E2E_MODE"):
+            return cls(
+                online_client=None,
+                local_client=local_client,
+                online_db=None,
+                local_db=local_client[config["LOCAL_DB_NAME"]],
+            )
+        online_client = MongoClient(config["MONGO_URI"])
         return cls(
             online_client=online_client,
             local_client=local_client,
@@ -38,6 +45,8 @@ def get_connections() -> DatabaseConnections:
 
 
 def get_current_db_mode() -> str:
+    if current_app.config.get("E2E_MODE"):
+        return "local"
     mode = session.get("db_mode", current_app.config["DEFAULT_DB"])
     return mode if mode in {"local", "online"} else "local"
 

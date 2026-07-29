@@ -11,6 +11,7 @@ from roastlogger.services.database_sync_audit import (
 )
 from roastlogger.services.database_sync_plan import (
     SyncRuntime,
+    SyncSafetyError,
     build_preflight,
     endpoint_descriptor,
     new_run_id,
@@ -55,6 +56,7 @@ def run_ui_preflight(
     *,
     preflight=build_preflight,
     audit_writer=write_ui_intent_audit,
+    blocked_error=None,
 ):
     root = Path(root)
     run_id = new_run_id()
@@ -62,27 +64,30 @@ def run_ui_preflight(
     runtime = None
     plan = None
     failure = None
-    try:
-        runtime = SyncRuntime.from_mapping(values, direction=direction)
-        source_client = (
-            connections.online_client
-            if runtime.source_role == "online"
-            else connections.local_client
-        )
-        destination_client = (
-            connections.online_client
-            if runtime.destination_role == "online"
-            else connections.local_client
-        )
-        plan = preflight(
-            runtime,
-            source_client,
-            destination_client,
-            root,
-            run_id=run_id,
-        )
-    except Exception as error:
-        failure = sanitize_failure(error)
+    if blocked_error:
+        failure = sanitize_failure(SyncSafetyError(blocked_error))
+    else:
+        try:
+            runtime = SyncRuntime.from_mapping(values, direction=direction)
+            source_client = (
+                connections.online_client
+                if runtime.source_role == "online"
+                else connections.local_client
+            )
+            destination_client = (
+                connections.online_client
+                if runtime.destination_role == "online"
+                else connections.local_client
+            )
+            plan = preflight(
+                runtime,
+                source_client,
+                destination_client,
+                root,
+                run_id=run_id,
+            )
+        except Exception as error:
+            failure = sanitize_failure(error)
 
     if runtime:
         source = runtime.source_descriptor

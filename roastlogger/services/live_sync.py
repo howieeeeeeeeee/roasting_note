@@ -26,7 +26,7 @@ def _state_for(roast_id):
 
 
 def _log_temperature_csv(roast_id, client_time, temperature, ror):
-    logs_dir = os.path.join(os.getcwd(), "temp_logs")
+    logs_dir = current_app.config["TEMP_LOG_DIR"]
     os.makedirs(logs_dir, exist_ok=True)
     log_file = os.path.join(logs_dir, f"{roast_id}.csv")
     file_exists = os.path.exists(log_file)

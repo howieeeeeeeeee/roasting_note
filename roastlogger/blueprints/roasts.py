@@ -16,6 +16,7 @@ from flask import (
 
 from models.roast_helpers import create_draft_roast, update_roast
 from roastlogger.database import get_beans_collection, get_roasts_collection
+from roastlogger.e2e import document_markers
 from roastlogger.routing import register_unprefixed_routes
 from roastlogger.services import live_sync, sensor
 from roastlogger.services.roast_lifecycle import (
@@ -31,7 +32,10 @@ blueprint = Blueprint("roasts", __name__)
 
 
 def api_roast_create():
-    roast_id = create_draft_roast(get_roasts_collection())
+    roast_id = create_draft_roast(
+        get_roasts_collection(),
+        markers=document_markers(),
+    )
     return jsonify({"new_roast_id": str(roast_id)})
 
 
@@ -166,7 +170,7 @@ def api_roast_add_event(roast_id):
 
 def api_roast_log_temp_local(roast_id):
     data = request.get_json()
-    logs_dir = os.path.join(os.getcwd(), "temp_logs")
+    logs_dir = current_app.config["TEMP_LOG_DIR"]
     os.makedirs(logs_dir, exist_ok=True)
     log_file = os.path.join(logs_dir, f"{roast_id}.csv")
     file_exists = os.path.exists(log_file)
