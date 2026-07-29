@@ -6,6 +6,7 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RN-0018 | [REFACTOR] | High | app-architecture | [Refactor Oversized Source Files into Focused Modules](./resolved/RN-0018-refactor-app-py.md) | - | - | 2026-05-02 | 2026-07-29 |
 | RN-0020 | [BUG] | Low | label-creator | [Sticker modal image list — remove unused scrollbar and dead space](./resolved/RN-0020-sticker-modal-image-list-layout.md) | - | - | 2026-05-04 | 2026-05-04 |
 | RN-0019 | [BUG] | Medium | live-roasting | [Show Roast Times in Operator Timezone (Not Raw UTC Clock)](./resolved/RN-0019-roast-datetime-local-display.md) | - | - | 2026-05-02 | 2026-05-03 |
 | RN-0017 | [FEATURE] | Medium | live-roasting | [Manually Set Draft Roast to Completed](./resolved/RN-0017-manual-draft-complete.md) | - | - | 2026-05-02 | 2026-05-02 |

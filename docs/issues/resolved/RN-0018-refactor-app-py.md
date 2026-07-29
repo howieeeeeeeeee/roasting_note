@@ -2,10 +2,10 @@
 id: RN-0018
 title: Refactor Oversized Source Files into Focused Modules
 type: refactor
-status: in_progress
+status: resolved
 priority: high
 created: 2026-05-02
-resolved:
+resolved: 2026-07-29
 area: app-architecture
 parent:
 decisions: []
@@ -118,16 +118,16 @@ human-authored file that has crossed the limit.
 
 ## Acceptance Criteria
 
-- [ ] `app.py`, `templates/roast_live.html`, and the ticket generator are each at or below 1,000 physical lines, and every extracted human-authored file also satisfies the limit.
-- [ ] `app.py` remains the direct-run and `gunicorn app:app` compatibility entry point and creates the application through `create_app(config_overrides=None)`.
-- [ ] Existing page routes and API endpoints continue to use the same URLs, HTTP methods, redirects, templates, status codes, and JSON response shapes.
-- [ ] Configuration/database access, route blueprints, roast services, sensor/RoR services, and synchronization services follow the dependency direction described above without circular imports or global-app imports from services.
-- [ ] The live-roast page uses one safely encoded bootstrap object and focused JavaScript modules while preserving charting, polling, controls, sensor states, responsive behavior, and fullscreen behavior.
-- [ ] The ticket generator keeps its CLI/import compatibility, validation, filing, and deterministic generated output after its internal modules are extracted.
-- [ ] An automated repository check rejects oversized human-authored code and documentation and applies only the documented exemptions.
-- [ ] Focused route, service, live-page, and tracker regression coverage protects each extraction boundary, and `uv run pytest` passes.
-- [ ] No database schema changes, new dependencies, visual changes, or user-facing behaviour changes are included.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] `app.py`, `templates/roast_live.html`, and the ticket generator are each at or below 1,000 physical lines, and every extracted human-authored file also satisfies the limit.
+- [x] `app.py` remains the direct-run and `gunicorn app:app` compatibility entry point and creates the application through `create_app(config_overrides=None)`.
+- [x] Existing page routes and API endpoints continue to use the same URLs, HTTP methods, redirects, templates, status codes, and JSON response shapes.
+- [x] Configuration/database access, route blueprints, roast services, sensor/RoR services, and synchronization services follow the dependency direction described above without circular imports or global-app imports from services.
+- [x] The live-roast page uses one safely encoded bootstrap object and focused JavaScript modules while preserving charting, polling, controls, sensor states, responsive behavior, and fullscreen behavior.
+- [x] The ticket generator keeps its CLI/import compatibility, validation, filing, and deterministic generated output after its internal modules are extracted.
+- [x] An automated repository check rejects oversized human-authored code and documentation and applies only the documented exemptions.
+- [x] Focused route, service, live-page, and tracker regression coverage protects each extraction boundary, and `uv run pytest` passes.
+- [x] No database schema changes, new dependencies, visual changes, or user-facing behaviour changes are included.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Documentation Impact
 
@@ -142,6 +142,28 @@ human-authored file that has crossed the limit.
   generator command, import surface, or file references change.
 - Conditional: `docs/design/screens/live-roasting.md` if preserving the
   existing interaction requires any selector, layout, or interaction change.
+
+## Resolution
+
+- Added `roastlogger.create_app(config_overrides=None)` with focused
+  configuration/database boundaries, feature blueprints, and lifecycle,
+  sensor/RoR, live-sync, and timestamp-aware synchronization services while
+  retaining `app.py` as the direct-run, test-import, and `gunicorn app:app`
+  entry point.
+- Replaced the live-roast inline implementation with one JSON bootstrap and
+  focused chart, session/polling, fullscreen, and entry modules without
+  changing existing DOM identifiers or visible behavior.
+- Split the ticket generator into record, validation, filing, rendering, and
+  orchestration modules while preserving its CLI and import surface.
+- Added exact route-manifest, factory/configuration, live-bootstrap, and
+  tracked-file line-limit regression coverage. Final verification:
+  `uv run pytest` (105 passed), JavaScript `node --check` for every live-roast
+  module, and `uv run python scripts/generate_issues_index.py --check`.
+- Updated `AGENTS.md`, `CLAUDE.md`, `docs/README.md`,
+  `docs/architecture/README.md`, `docs/architecture/tech-stack.md`,
+  `docs/features/live-roasting.md`, and `tests/README.md`. The conditional
+  design document was not activated because selectors, layout, interactions,
+  and appearance did not change.
 
 ## Open Questions
 

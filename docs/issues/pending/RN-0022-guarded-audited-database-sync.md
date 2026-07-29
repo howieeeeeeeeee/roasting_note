@@ -2,14 +2,14 @@
 id: RN-0022
 title: Add Guarded, Audited Bidirectional Database Sync
 type: improvement
-status: blocked
+status: pending
 priority: high
 created: 2026-07-29
 resolved:
 area: database-sync
 parent:
 decisions: []
-blocked_by: [RN-0018]
+blocked_by: []
 tags:
   - mongodb
   - backup
