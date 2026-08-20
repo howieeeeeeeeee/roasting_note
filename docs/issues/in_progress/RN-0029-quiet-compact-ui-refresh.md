@@ -2,7 +2,7 @@
 id: RN-0029
 title: Deliver Quiet Compact UI Refresh
 type: epic
-status: pending
+status: in_progress
 priority: high
 created: 2026-08-20
 resolved:

@@ -2,7 +2,7 @@
 id: RN-0029-01
 title: Establish Quiet Compact UI Foundations
 type: improvement
-status: pending
+status: in_progress
 priority: high
 created: 2026-08-20
 resolved:

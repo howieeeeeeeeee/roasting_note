@@ -8,9 +8,9 @@ Issue and human-decision tracker for RoastLogger. Product, engineering, design, 
 ## Status Overviews
 
 - [Visual Overview](./overview.html) — self-contained offline dashboard
-- [In Progress](./in-progress.md) — 0
+- [In Progress](./in-progress.md) — 2
 - [Blocked](./blocked.md) — 3
-- [Pending](./pending.md) — 2
+- [Pending](./pending.md) — 0
 - [Done](./done.md) — 28 (resolved 27, won't-fix 1)
 - [Human Decisions](./human-decisions.md) — 0 pending, 0 finalized
 
