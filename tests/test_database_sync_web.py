@@ -12,7 +12,6 @@ from roastlogger.services.database_sync_plan import SyncRuntime, build_preflight
 from roastlogger.services.database_sync_web import (
     PreviewRegistry,
     WebSyncConflict,
-    WebSyncError,
     WebSyncRecoveryRequired,
     WebSyncService,
 )
@@ -129,10 +128,12 @@ def test_backup_resume_and_apply_preserve_both_directions(
     register_plan(service, runtime, source, destination, tmp_path, run_id)
     destination_collection = destination["roastlogger"]["beans"]
 
-    backed_up = service.backup(run_id, direction, f"BACKUP {run_id}")
+    backed_up = service.backup(run_id, direction)
 
     assert backed_up["stage"] == "awaiting_apply"
     assert backed_up["backup"]["status"] == "complete"
+    assert backed_up["apply_ready"] is True
+    assert backed_up["forecast"]["aggregate"]["will_change"] == 1
     assert destination_collection.write_count == 0
     state_files = list(tmp_path.rglob("*__browser-state.json"))
     assert len(state_files) == 1
@@ -149,11 +150,7 @@ def test_backup_resume_and_apply_preserve_both_directions(
     assert active["restored"] is True
     assert active["run_id"] == run_id
 
-    applied = restarted.apply(
-        run_id,
-        direction,
-        f"APPLY {direction} {run_id}",
-    )
+    applied = restarted.apply(run_id, direction)
 
     assert applied["status"] == "success"
     assert applied["sync"]["aggregate"]["added"] == 1
@@ -175,21 +172,26 @@ def test_pre_backup_capability_does_not_survive_process_restart(tmp_path):
     )
 
     with pytest.raises(WebSyncConflict, match="fresh preview"):
-        restarted.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+        restarted.backup(run_id, runtime.direction)
 
     assert not (tmp_path / "db_backup").exists()
     assert not (tmp_path / "docs").exists()
 
 
-def test_wrong_backup_token_consumes_preview_without_activity(tmp_path):
+def test_forecast_drift_consumes_preview_without_activity(tmp_path):
     service, _, runtime, source, destination, _ = make_context(tmp_path)
     run_id = "20260820T122000Z-44444444"
     register_plan(service, runtime, source, destination, tmp_path, run_id)
+    source["roastlogger"]["beans"].documents["new-source"] = {
+        "_id": "new-source",
+        "archived": False,
+        "updated_at": datetime(2026, 8, 20, 13, 0, tzinfo=timezone.utc),
+    }
 
-    with pytest.raises(Exception, match="fresh preview"):
-        service.backup(run_id, runtime.direction, "wrong")
+    with pytest.raises(WebSyncConflict, match="data changed"):
+        service.backup(run_id, runtime.direction)
     with pytest.raises(WebSyncConflict, match="fresh preview"):
-        service.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+        service.backup(run_id, runtime.direction)
 
     assert not (tmp_path / "db_backup").exists()
     assert not (tmp_path / "docs").exists()
@@ -203,9 +205,9 @@ def test_second_preview_loses_active_claim_and_requires_fresh_preview(tmp_path):
     register_plan(service, runtime, source, destination, tmp_path, first_id)
     register_plan(service, runtime, source, destination, tmp_path, second_id)
 
-    service.backup(first_id, runtime.direction, f"BACKUP {first_id}")
+    service.backup(first_id, runtime.direction)
     with pytest.raises(WebSyncConflict, match=first_id):
-        service.backup(second_id, runtime.direction, f"BACKUP {second_id}")
+        service.backup(second_id, runtime.direction)
     assert service.active()["run_id"] == first_id
 
     cancelled = service.cancel(first_id, runtime.direction)
@@ -214,48 +216,41 @@ def test_second_preview_loses_active_claim_and_requires_fresh_preview(tmp_path):
         service.backup(
             second_id,
             runtime.direction,
-            f"BACKUP {second_id}",
         )
 
 
-def test_concurrent_wrong_and_correct_backup_attempts_are_one_use(tmp_path):
+def test_concurrent_backup_attempts_are_one_use(tmp_path):
     service, previews, runtime, source, destination, _ = make_context(tmp_path)
     run_id = "20260820T123500Z-eeeeeeee"
     register_plan(service, runtime, source, destination, tmp_path, run_id)
     original_take = previews.take
-    wrong_took_preview = threading.Event()
-    correct_finished_take = threading.Event()
+    first_took_preview = threading.Event()
+    second_finished_take = threading.Event()
 
     def coordinated_take(candidate, direction):
-        if threading.current_thread().name == "wrong-backup":
+        if threading.current_thread().name == "first-backup":
             plan = original_take(candidate, direction)
-            wrong_took_preview.set()
-            assert correct_finished_take.wait(timeout=5)
+            first_took_preview.set()
+            assert second_finished_take.wait(timeout=5)
             return plan
-        assert wrong_took_preview.wait(timeout=5)
+        assert first_took_preview.wait(timeout=5)
         try:
             return original_take(candidate, direction)
         finally:
-            correct_finished_take.set()
+            second_finished_take.set()
 
     previews.take = coordinated_take
     outcomes = []
 
-    def backup(confirmation):
+    def backup():
         try:
-            outcomes.append(
-                service.backup(run_id, runtime.direction, confirmation)
-            )
+            outcomes.append(service.backup(run_id, runtime.direction))
         except Exception as error:
             outcomes.append(error)
 
     threads = [
-        threading.Thread(target=backup, args=("wrong",), name="wrong-backup"),
-        threading.Thread(
-            target=backup,
-            args=(f"BACKUP {run_id}",),
-            name="correct-backup",
-        ),
+        threading.Thread(target=backup, name="first-backup"),
+        threading.Thread(target=backup, name="second-backup"),
     ]
     for thread in threads:
         thread.start()
@@ -264,25 +259,30 @@ def test_concurrent_wrong_and_correct_backup_attempts_are_one_use(tmp_path):
 
     assert len(outcomes) == 2
     assert sum(isinstance(item, WebSyncConflict) for item in outcomes) == 1
-    assert sum(
-        isinstance(item, WebSyncError)
-        and "confirmation did not match" in str(item)
-        for item in outcomes
-    ) == 1
-    assert not (tmp_path / "db_backup").exists()
+    assert sum(isinstance(item, dict) for item in outcomes) == 1
+    assert service.active()["run_id"] == run_id
+    assert (tmp_path / "db_backup").exists()
     assert not (tmp_path / "docs").exists()
 
 
-def test_wrong_apply_token_leaves_verified_run_available_to_cancel(tmp_path):
+def test_forecast_drift_leaves_verified_run_available_to_cancel(tmp_path):
     service, _, runtime, source, destination, _ = make_context(tmp_path)
     run_id = "20260820T124000Z-77777777"
     register_plan(service, runtime, source, destination, tmp_path, run_id)
-    service.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+    service.backup(run_id, runtime.direction)
+    source["roastlogger"]["beans"].documents["new-source"] = {
+        "_id": "new-source",
+        "archived": False,
+        "updated_at": datetime(2026, 8, 20, 13, 0, tzinfo=timezone.utc),
+    }
 
-    with pytest.raises(Exception, match="apply confirmation"):
-        service.apply(run_id, runtime.direction, "wrong")
+    with pytest.raises(WebSyncConflict, match="data changed"):
+        service.apply(run_id, runtime.direction)
 
-    assert service.active()["run_id"] == run_id
+    active = service.active()
+    assert active["run_id"] == run_id
+    assert active["apply_ready"] is False
+    assert "preview again" in active["forecast_error"]
     terminal = service.cancel(run_id, runtime.direction)
     assert terminal["status"] == "cancelled_after_backup"
     assert destination["roastlogger"]["beans"].write_count == 0
@@ -296,16 +296,12 @@ def test_corrupt_backup_blocks_apply_and_preserves_active_claim(tmp_path):
     service, _, runtime, source, destination, _ = make_context(tmp_path)
     run_id = "20260820T125000Z-88888888"
     register_plan(service, runtime, source, destination, tmp_path, run_id)
-    backed_up = service.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+    backed_up = service.backup(run_id, runtime.direction)
     manifest = tmp_path / backed_up["backup"]["path"] / "manifest.json"
     manifest.write_text("{}\n", encoding="utf-8")
 
     with pytest.raises(WebSyncRecoveryRequired, match="verification failed"):
-        service.apply(
-            run_id,
-            runtime.direction,
-            f"APPLY {runtime.direction} {run_id}",
-        )
+        service.apply(run_id, runtime.direction)
 
     assert destination["roastlogger"]["beans"].write_count == 0
     claim = json.loads(
@@ -347,7 +343,7 @@ def test_restart_rejects_endpoint_drift_before_apply(
     )
     run_id = "20260820T125200Z-abcdef12"
     register_plan(service, runtime, source, destination, tmp_path, run_id)
-    service.backup(run_id, direction, f"BACKUP {run_id}")
+    service.backup(run_id, direction)
     changed_values = {**VALUES, setting: changed_uri}
     restarted = WebSyncService(
         changed_values,
@@ -358,7 +354,7 @@ def test_restart_rejects_endpoint_drift_before_apply(
     )
 
     with pytest.raises(WebSyncRecoveryRequired, match="configuration"):
-        restarted.apply(run_id, direction, f"APPLY {direction} {run_id}")
+        restarted.apply(run_id, direction)
 
     assert destination["roastlogger"]["beans"].write_count == 0
 
@@ -367,7 +363,7 @@ def test_interrupted_terminal_transition_requires_manual_recovery(tmp_path):
     service, _, runtime, source, destination, _ = make_context(tmp_path)
     run_id = "20260820T125500Z-dddddddd"
     register_plan(service, runtime, source, destination, tmp_path, run_id)
-    service.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+    service.backup(run_id, runtime.direction)
     state = service.store.read_active()
     service.store.begin_transition(state, "apply")
 
@@ -388,7 +384,7 @@ def test_backup_failure_writes_terminal_audit_and_releases_claim(tmp_path):
     run_id = "20260820T130000Z-99999999"
     register_plan(service, runtime, source, destination, tmp_path, run_id)
 
-    result = service.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+    result = service.backup(run_id, runtime.direction)
 
     assert result["status"] == "backup_failed"
     assert result["success"] is False
@@ -422,24 +418,16 @@ def test_partial_sync_failure_is_terminal_and_cannot_replay(tmp_path):
     )
     run_id = "20260820T131000Z-aaaaaaaa"
     register_plan(service, runtime, source, destination, tmp_path, run_id)
-    service.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+    service.backup(run_id, runtime.direction)
 
-    result = service.apply(
-        run_id,
-        runtime.direction,
-        f"APPLY {runtime.direction} {run_id}",
-    )
+    result = service.apply(run_id, runtime.direction)
 
     assert result["status"] == "partial_sync_failed"
     assert result["sync"]["failed_collection"] == "roasts"
     assert result["sync"]["collections"] == completed
     assert service.active() is None
     with pytest.raises(WebSyncConflict, match="not active"):
-        service.apply(
-            run_id,
-            runtime.direction,
-            f"APPLY {runtime.direction} {run_id}",
-        )
+        service.apply(run_id, runtime.direction)
 
 
 def _gated_first_backup_verification(service, barrier):
@@ -485,7 +473,7 @@ def test_simultaneous_apply_requests_execute_once_and_write_one_audit(tmp_path):
     )
     run_id = "20260820T132000Z-bbbbbbbb"
     register_plan(first, runtime, source, destination, tmp_path, run_id)
-    first.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+    first.backup(run_id, runtime.direction)
     second = WebSyncService(
         VALUES,
         connections,
@@ -502,11 +490,7 @@ def test_simultaneous_apply_requests_execute_once_and_write_one_audit(tmp_path):
     def apply(service):
         try:
             outcomes.append(
-                service.apply(
-                    run_id,
-                    runtime.direction,
-                    f"APPLY {runtime.direction} {run_id}",
-                )
+                service.apply(run_id, runtime.direction)
             )
         except Exception as error:
             outcomes.append(error)
@@ -544,7 +528,7 @@ def test_simultaneous_apply_and_cancel_have_one_terminal_owner(tmp_path):
         tmp_path,
         run_id,
     )
-    apply_service.backup(run_id, runtime.direction, f"BACKUP {run_id}")
+    apply_service.backup(run_id, runtime.direction)
     cancel_service = WebSyncService(
         VALUES,
         connections,
@@ -561,11 +545,7 @@ def test_simultaneous_apply_and_cancel_have_one_terminal_owner(tmp_path):
     def apply():
         try:
             outcomes.append(
-                apply_service.apply(
-                    run_id,
-                    runtime.direction,
-                    f"APPLY {runtime.direction} {run_id}",
-                )
+                apply_service.apply(run_id, runtime.direction)
             )
         except Exception as error:
             outcomes.append(error)

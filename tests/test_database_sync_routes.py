@@ -85,9 +85,11 @@ def test_each_settings_preflight_click_writes_one_terminal_audit(tmp_path):
         "complete_destination_database"
     )
     assert first.json["apply_eligible"] is True
-    assert first.json["backup_confirmation"] == (
-        f"BACKUP {first.json['run_id']}"
-    )
+    assert "backup_confirmation" not in first.json
+    assert first.json["plan"]["forecast"]["aggregate"]["will_change"] == 0
+    assert first.json["plan"]["forecast"]["aggregate"][
+        "will_stay_unchanged"
+    ] == 0
     assert first.json["run_id"] != second.json["run_id"]
     records = list((tmp_path / "docs").rglob("*.json"))
     assert len(records) == 2
@@ -170,7 +172,7 @@ def test_settings_markup_prevents_overlapping_preflight_requests():
     assert "localButton.disabled = disabled" in script
 
 
-def test_loopback_json_same_origin_flow_requires_both_exact_tokens(tmp_path):
+def test_loopback_json_same_origin_flow_uses_two_guarded_click_phases(tmp_path):
     app, connections = make_app(tmp_path)
     source = connections.online_db["beans"]
     source.documents["source-bean"] = {
@@ -185,32 +187,29 @@ def test_loopback_json_same_origin_flow_requires_both_exact_tokens(tmp_path):
 
     backup = client.post(
         f"/api/sync/runs/{run_id}/backup",
-        json={
-            "direction": direction,
-            "confirmation": f"BACKUP {run_id}",
-        },
+        json={"direction": direction},
         headers={"Origin": "http://localhost"},
     )
 
     assert backup.status_code == 200
     assert backup.json["stage"] == "awaiting_apply"
+    assert backup.json["apply_ready"] is True
+    assert "apply_confirmation" not in backup.json
+    assert backup.json["forecast"]["aggregate"]["will_change"] == 1
     assert connections.local_db["beans"].write_count == 0
     active = client.get("/api/sync/runs/active")
     assert active.json["active"]["run_id"] == run_id
 
-    wrong = client.post(
+    legacy_payload = client.post(
         f"/api/sync/runs/{run_id}/apply",
-        json={"direction": direction, "confirmation": "wrong"},
+        json={"direction": direction, "confirmation": "legacy"},
     )
-    assert wrong.status_code == 400
+    assert legacy_payload.status_code == 400
     assert connections.local_db["beans"].write_count == 0
 
     applied = client.post(
         f"/api/sync/runs/{run_id}/apply",
-        json={
-            "direction": direction,
-            "confirmation": f"APPLY {direction} {run_id}",
-        },
+        json={"direction": direction},
     )
     assert applied.status_code == 200
     assert applied.json["status"] == "success"
@@ -229,7 +228,6 @@ def test_phase_guards_fail_before_state_backup_or_database_access(tmp_path):
     route = f"/api/sync/runs/{run_id}/backup"
     payload = {
         "direction": "online-to-local",
-        "confirmation": f"BACKUP {run_id}",
     }
 
     remote = client.post(
@@ -298,29 +296,28 @@ def test_nonloopback_preflight_stays_audited_and_preview_only(tmp_path):
     assert Path(tmp_path, response.json["audit_path"]).is_file()
 
 
-def test_wrong_first_token_requires_fresh_preview_without_state(tmp_path):
+def test_legacy_confirmation_payload_is_rejected_without_consuming_preview(
+    tmp_path,
+):
     app, _ = make_app(tmp_path)
     client = app.test_client()
     preflight = client.post("/api/sync/preflight/local-to-online")
     run_id = preflight.json["run_id"]
     route = f"/api/sync/runs/{run_id}/backup"
 
-    wrong = client.post(
+    rejected = client.post(
         route,
-        json={"direction": "local-to-online", "confirmation": "wrong"},
+        json={"direction": "local-to-online", "confirmation": "legacy"},
     )
     retry = client.post(
         route,
-        json={
-            "direction": "local-to-online",
-            "confirmation": f"BACKUP {run_id}",
-        },
+        json={"direction": "local-to-online"},
     )
 
-    assert wrong.status_code == 400
-    assert retry.status_code == 409
-    assert "fresh preview" in retry.json["error"]
-    assert not (tmp_path / "db_backup").exists()
+    assert rejected.status_code == 400
+    assert retry.status_code == 200
+    assert retry.json["stage"] == "awaiting_apply"
+    assert (tmp_path / "db_backup").exists()
 
 
 @pytest.mark.parametrize("corruption", ["claim", "state", "config"])
@@ -331,10 +328,7 @@ def test_recovery_failures_keep_settings_sync_blocked(tmp_path, corruption):
     run_id = preflight.json["run_id"]
     backup = client.post(
         f"/api/sync/runs/{run_id}/backup",
-        json={
-            "direction": "online-to-local",
-            "confirmation": f"BACKUP {run_id}",
-        },
+        json={"direction": "online-to-local"},
     )
     assert backup.status_code == 200
     claim_path = (

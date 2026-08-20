@@ -11,6 +11,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from roastlogger.services.database_backup import verify_backup_result
+from roastlogger.services.database_sync import forecast_collections
 from roastlogger.services.database_sync_plan import (
     DIRECTIONS,
     SyncRuntime,
@@ -302,6 +303,7 @@ class WebSyncService:
         previews: PreviewRegistry,
         *,
         backup,
+        forecast=forecast_collections,
         synchronize=synchronize_collections,
     ):
         self.values = values
@@ -310,6 +312,7 @@ class WebSyncService:
         self.previews = previews
         self.store = BrowserRunStore(self.root)
         self.backup_executor = backup
+        self.forecast_executor = forecast
         self.sync_executor = synchronize
 
     def register_preview(self, plan: dict) -> None:
@@ -408,6 +411,55 @@ class WebSyncService:
                 stage="recovery_required",
             ) from error
 
+    def _current_forecast(self, state: dict, runtime: SyncRuntime) -> dict:
+        expected = state.get("plan", {}).get("forecast")
+        if not isinstance(expected, dict):
+            raise WebSyncRecoveryRequired(
+                "saved sync forecast is missing; inspect ignored run artifacts",
+                run_id=state.get("run_id"),
+            )
+        source, destination = self._clients(runtime)
+        try:
+            return self.forecast_executor(runtime, source, destination)
+        except Exception as error:
+            raise WebSyncConflict(
+                "sync forecast could not be revalidated; cancel and preview again",
+                run_id=state.get("run_id"),
+                stage="awaiting_apply",
+            ) from error
+
+    def _require_forecast_match(
+        self,
+        state: dict,
+        runtime: SyncRuntime,
+        *,
+        stage: str,
+    ) -> dict:
+        try:
+            current = self._current_forecast(state, runtime)
+        except WebSyncConflict as error:
+            error.stage = stage
+            raise
+        if current != state["plan"]["forecast"]:
+            raise WebSyncConflict(
+                "database data changed after preview; cancel and preview again",
+                run_id=state["run_id"],
+                stage=stage,
+            )
+        return current
+
+    def _forecast_status(self, state: dict, runtime: SyncRuntime) -> tuple:
+        try:
+            current = self._current_forecast(state, runtime)
+        except WebSyncConflict as error:
+            return state["plan"]["forecast"], str(error)
+        if current != state["plan"]["forecast"]:
+            return current, (
+                "Database data changed after backup. Cancel this run and "
+                "preview again before applying."
+            )
+        return current, None
+
     def _terminalize(self, state: dict, result: dict, record: dict) -> dict:
         state.update(
             {
@@ -421,15 +473,10 @@ class WebSyncService:
         self.store.release(state)
         return self._terminal_response(state)
 
-    def backup(self, run_id, direction, confirmation) -> dict:
+    def backup(self, run_id, direction) -> dict:
         run_id = validate_web_run_id(run_id)
         direction = validate_web_direction(direction)
         plan = self.previews.take(run_id, direction)
-        if confirmation != f"BACKUP {run_id}":
-            raise WebSyncError(
-                "backup confirmation did not match; start a fresh preview",
-                run_id=run_id,
-            )
         runtime = self._runtime(direction)
         preview_state = {
             "run_id": run_id,
@@ -438,6 +485,11 @@ class WebSyncService:
             "plan": plan,
         }
         self._verify_identity(preview_state, runtime)
+        self._require_forecast_match(
+            preview_state,
+            runtime,
+            stage="forecast_changed",
+        )
         record = begin_guarded_execution(
             runtime,
             plan,
@@ -471,7 +523,12 @@ class WebSyncService:
             }
         )
         self.store.update(state)
-        return self._active_response(state)
+        forecast, forecast_error = self._forecast_status(state, runtime)
+        return self._active_response(
+            state,
+            forecast=forecast,
+            forecast_error=forecast_error,
+        )
 
     def active(self) -> dict | None:
         state = self.store.read_active()
@@ -486,9 +543,15 @@ class WebSyncService:
         runtime = self._runtime(state["direction"])
         self._verify_identity(state, runtime)
         self._verify_backup(state, runtime)
-        return self._active_response(state, restored=True)
+        forecast, forecast_error = self._forecast_status(state, runtime)
+        return self._active_response(
+            state,
+            restored=True,
+            forecast=forecast,
+            forecast_error=forecast_error,
+        )
 
-    def apply(self, run_id, direction, confirmation) -> dict:
+    def apply(self, run_id, direction) -> dict:
         run_id = validate_web_run_id(run_id)
         direction = validate_web_direction(direction)
         state = self.store.read_active()
@@ -496,11 +559,14 @@ class WebSyncService:
             raise WebSyncConflict("the requested sync run is not active")
         if state["direction"] != direction or state["stage"] != "awaiting_apply":
             raise WebSyncConflict("the sync run is not awaiting apply")
-        if confirmation != f"APPLY {direction} {run_id}":
-            raise WebSyncError("apply confirmation did not match", run_id=run_id)
         runtime = self._runtime(direction)
         self._verify_identity(state, runtime)
         self._verify_backup(state, runtime)
+        self._require_forecast_match(
+            state,
+            runtime,
+            stage="awaiting_apply",
+        )
         self.store.begin_transition(state, "apply")
         self._verify_backup(state, runtime)
         state["stage"] = "apply_in_progress"
@@ -558,18 +624,27 @@ class WebSyncService:
             "path": self._display_path(backup.get("path")),
         }
 
-    def _active_response(self, state: dict, *, restored=False) -> dict:
-        return {
+    def _active_response(
+        self,
+        state: dict,
+        *,
+        restored=False,
+        forecast=None,
+        forecast_error=None,
+    ) -> dict:
+        response = {
             "success": True,
             "run_id": state["run_id"],
             "direction": state["direction"],
             "stage": "awaiting_apply",
             "restored": restored,
             "backup": self._backup_summary(state["backup"]),
-            "apply_confirmation": (
-                f"APPLY {state['direction']} {state['run_id']}"
-            ),
+            "forecast": forecast or state["plan"]["forecast"],
+            "apply_ready": forecast_error is None,
         }
+        if forecast_error:
+            response["forecast_error"] = forecast_error
+        return response
 
     def _terminal_response(self, state: dict) -> dict:
         result = state["result"]

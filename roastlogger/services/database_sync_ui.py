@@ -144,6 +144,4 @@ def run_ui_preflight(
         "audit_path": str(audit_path.relative_to(root)),
         "apply_eligible": eligible,
     }
-    if eligible:
-        result["backup_confirmation"] = f"BACKUP {run_id}"
     return result

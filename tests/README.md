@@ -215,7 +215,9 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 
 - `test_sync_api.py` preserves RN-0015 timestamp-aware merge behavior.
 - `test_database_sync.py` covers validation, sanitized preflight, both
-  directions, sequential execution, and stop-on-failure behavior.
+  directions, shared forecast/apply classification, destination-only and
+  timestamp-conflict counts, zero forecast writes, sequential execution, and
+  stop-on-failure behavior.
 - `test_database_backup.py` verifies complete destination coverage, canonical
   Extended JSON BSON round trips, encoded collection names, byte counts,
   checksums, and incomplete backup handling.
@@ -224,17 +226,20 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
   audit recovery.
 - `test_database_sync_routes.py` verifies Settings audit-per-click behavior,
   direct peer/host, same-origin JSON, distinct preflight audits, phased route
-  payloads, sanitized failures, and fail-closed historic routes.
-- `test_database_sync_web.py` verifies exact one-use preview confirmation,
-  complete-backup verification before apply, zero pre-apply writes, atomic
-  resumable state, single-run claims, competing previews, cancellation, replay
-  rejection, corruption recovery, terminal audit behavior, and both directions.
+  direction-only payloads, sanitized forecast responses, rejected legacy
+  confirmation keys, sanitized failures, and fail-closed historic routes.
+- `test_database_sync_web.py` verifies one-use preview clicks, exact forecast
+  persistence and pre-backup/pre-apply drift rejection, complete-backup
+  verification before apply, zero pre-apply writes, atomic resumable state,
+  single-run claims, competing previews, cancellation, replay rejection,
+  corruption recovery, terminal audit behavior, and both directions.
 - `test_database_sync_cli.py` also locks the original prompt text/order and exit
   behavior after the shared runner was separated into phases.
 
 These tests use in-memory fakes and temporary filesystem roots. They never run
 an applied local/online mirror. Any configured live verification for sync must
 use `--dry-run`; an applied run requires a separate explicit user request and
+the guarded interface's two distinct decisions. CLI authorization still uses
 both run-specific confirmation tokens.
 
 Run the focused guarded-sync contract with:
@@ -258,9 +263,9 @@ uv run pytest \
 
 - `test_e2e_runtime.py` proves only the local `roastlogger_e2e` client is
   constructed, unsafe configuration is rejected, ordinary sync/global cleanup
-  fail closed, the explicit sync fake writes only ignored artifact data without
-  database access, browser-created records are run-marked, and cleanup is
-  run-scoped.
+  fail closed, the explicit sync fake returns deterministic action forecasts
+  and writes only ignored artifact data without database access,
+  browser-created records are run-marked, and cleanup is run-scoped.
 - `test_virtual_sensor.py` contract-tests all deterministic scenarios and
   representative retry/fault/recovery behavior through RoastLogger APIs.
 - `test_api_contracts.py` covers label assets/preferences, database settings,
@@ -286,8 +291,9 @@ beans, removes only their two CSV forms, and verifies zero matching records.
 Add `--sync-fake` only for the guarded Settings browser scenario. The app
 server then injects `tests.e2e.sync_fake.E2ESyncExecutor`; the ordinary harness
 has no applied-sync executor. The fake refuses non-artifact roots, never
-constructs or uses an online MongoDB client, and records every simulated phase
-with `database_access: false`.
+constructs or uses an online MongoDB client, returns a fixed per-collection and
+aggregate forecast, and records every simulated phase with
+`database_access: false`.
 
 ## Test Data Management
 

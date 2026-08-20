@@ -39,7 +39,7 @@ Shift+Tab remain contained inside the sheet. Escape and overlay selection close
 the sheet, body scrolling resumes, and focus returns to the control that opened
 Settings. Closing does not cancel or reset an active request.
 
-Any replacement sync confirmation receives focus only when Data is visible.
+Any replacement sync action receives focus only when Data is visible.
 When Data is hidden, its controls remain unfocusable and no asynchronous result
 may move focus into that panel.
 
@@ -66,8 +66,8 @@ E2E mode shows `local (roastlogger_e2e / <run-id>)` and disables Online.
 ### Guarded Database Sync
 
 The section title remains **Guarded Database Sync**. Supporting text explains
-that preview is first and direct local operation requires separate exact backup
-and apply confirmations.
+that preview is first and direct local operation requires a verified backup
+before a separate apply decision.
 
 Two secondary buttons remain visible:
 
@@ -79,14 +79,20 @@ disabled, both show **Preflight running...**, and their labels and availability
 are restored after success or failure.
 
 `#syncPreflightResult` is a polite, atomic live region. A successful preflight
-shows the run ID, sanitized source and destination, collection counts, complete
-backup scope, guarded CLI command, audit path, and connection eligibility.
+shows the run ID, sanitized source and destination, exact change forecast,
+complete backup scope, guarded CLI command, audit path, and connection
+eligibility.
 
-An eligible local preview adds:
+The forecast begins with a plain-language aggregate: **_n_ will change**, **_n_
+will stay unchanged**, and **_n_ expected after sync**. A compact matrix keeps
+Outcome, Beans, Roasts, and Total visible together; its rows cover add, update,
+same/newer destination, destination-only, timestamp issue, change-total,
+unchanged-total, and expected-after counts. Supporting copy says that the last
+three unchanged categories are not overwritten or deleted.
 
-- an empty text input labeled with the exact `BACKUP <run-id>` token;
-- the token in selectable code styling; and
-- **Create complete backup**.
+An eligible local preview adds one focused **1. Create and verify backup**
+button. There is no confirmation input, token to copy, or apply control at this
+stage.
 
 A hosted or non-loopback preview shows **Guarded CLI only from this
 connection** and no applied controls.
@@ -99,8 +105,14 @@ After complete backup verification, Data shows:
 - **Complete and verified**, or **Restored and re-verified** after reload;
 - collection and document totals;
 - verified manifest SHA-256 and ignored backup path;
-- an empty input labeled with `APPLY <direction> <run-id>`; and
-- separate Apply synchronization and Cancel run actions.
+- the revalidated forecast;
+- **2. Apply _n_ changes**; and
+- a separate **Cancel run** action.
+
+If data changed after preview or backup, the forecast error is prominent and
+the Apply action is absent. Before backup, the operator starts a fresh preview.
+After backup, Cancel remains available so the retained run can end safely
+before another preview.
 
 Reloading or reopening Settings calls the active-run endpoint. A valid
 awaiting-apply run restores the same state and keeps both preview buttons
@@ -162,6 +174,6 @@ click produces the existing prominent error and artifact-local intent audit
 without initializing online state.
 
 The full guarded interaction is enabled only with the explicit sync fake. It
-exercises the same typed gates, restore, cancel, terminal, and recovery
-rendering against ignored run artifacts and must never appear in an ordinary
-E2E run.
+exercises the exact forecast, two click-only phases, restore, cancel, terminal,
+and recovery rendering against ignored run artifacts and must never appear in
+an ordinary E2E run.

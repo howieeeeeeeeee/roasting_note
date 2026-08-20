@@ -21,18 +21,22 @@ def _bean_list_row(html: str, bean_name: str) -> str:
     return next(row for row in rows if bean_name in row)
 
 
-def test_guarded_settings_sync_markup_uses_typed_safe_phase_controls():
+def test_guarded_settings_sync_markup_uses_click_only_safe_phase_controls():
     template = Path("templates/base.html").read_text(encoding="utf-8")
     script = Path("static/js/settings-sheet.js").read_text(encoding="utf-8")
 
     assert "Guarded Database Sync" in template
-    assert "data.backup_confirmation" in script
-    assert "data.apply_confirmation" in script
+    assert "data.backup_confirmation" not in script
+    assert "data.apply_confirmation" not in script
+    assert "appendSyncForecast(result, plan.forecast)" in script
+    assert '"1. Create and verify backup"' in script
+    assert "`2. Apply ${changeCount} change" in script
     assert 'fetch("/api/sync/runs/active")' in script
     assert "`/api/sync/runs/${runId}/backup`" in script
     assert "`/api/sync/runs/${runId}/apply`" in script
     assert "`/api/sync/runs/${runId}/cancel`" in script
-    assert "required.textContent = token" in script
+    assert "Type the exact confirmation" not in script
+    assert "sync-confirmation-token" not in script
     assert "line.appendChild(document.createTextNode(value))" in script
     assert "Object.entries(data.sync.collections)" in script
     assert '"Verified manifest SHA-256"' in script
@@ -42,7 +46,7 @@ def test_guarded_settings_sync_markup_uses_typed_safe_phase_controls():
     assert "const expectedExistingRun = syncRunActive" in script
     assert "expectedExistingRun" in script
     assert "renderAwaitingApply(data.active, phaseError)" in script
-    assert "focusVisibleSyncControl(input)" in script
+    assert "focusVisibleSyncControl(focusTarget)" in script
 
 
 def test_label_image_and_recent_preferences_contract(client, beans_collection):

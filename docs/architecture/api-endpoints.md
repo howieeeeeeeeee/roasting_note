@@ -147,8 +147,8 @@ can distinguish fresh, retrying, stale, offline, and faulted sensor states.
 | `/api/settings/sensor` | POST | Set sensor URL |
 | `/api/sync/preflight/<direction>` | POST | Audited, read-only sync preflight for a supported direction |
 | `/api/sync/runs/active` | GET | Restore the sanitized active browser run, if any |
-| `/api/sync/runs/<run-id>/backup` | POST | Accept the exact first token and create/verify the complete backup |
-| `/api/sync/runs/<run-id>/apply` | POST | Accept the exact second token and run timestamp-aware sync |
+| `/api/sync/runs/<run-id>/backup` | POST | Consume the reviewed preview and create/verify the complete backup |
+| `/api/sync/runs/<run-id>/apply` | POST | Revalidate the forecast and run timestamp-aware sync |
 | `/api/sync/runs/<run-id>/cancel` | POST | Cancel an awaiting-apply run while retaining its backup |
 | `/api/sync/online-to-local` | POST | Fail-closed legacy route; returns CLI migration guidance |
 | `/api/sync/local-to-online` | POST | Fail-closed legacy route; returns CLI migration guidance |
@@ -184,27 +184,69 @@ return HTTP `409`.
   "audit_recorded": true,
   "audit_path": "docs/audit_history/database_mirrors/2026/07/...",
   "apply_eligible": true,
-  "backup_confirmation": "BACKUP 20260729T130000Z-1234abcd",
   "plan": {
     "direction": "online-to-local",
     "source": {"role": "online", "host": "cluster.example", "database": "roastlogger"},
     "destination": {"role": "local", "host": "localhost:27017", "database": "roastlogger"},
     "source_counts": {"beans": 5, "roasts": 10},
     "destination_counts": {"beans": 4, "roasts": 9},
+    "forecast": {
+      "collections": {
+        "beans": {
+          "source_documents": 5,
+          "destination_documents": 4,
+          "added": 1,
+          "updated": 1,
+          "unchanged": 2,
+          "destination_only": 0,
+          "conflicts": 1,
+          "will_change": 2,
+          "will_stay_unchanged": 3,
+          "destination_after": 5
+        },
+        "roasts": {
+          "source_documents": 10,
+          "destination_documents": 9,
+          "added": 2,
+          "updated": 2,
+          "unchanged": 5,
+          "destination_only": 1,
+          "conflicts": 1,
+          "will_change": 4,
+          "will_stay_unchanged": 7,
+          "destination_after": 11
+        }
+      },
+      "aggregate": {
+        "source_documents": 15,
+        "destination_documents": 13,
+        "added": 3,
+        "updated": 3,
+        "unchanged": 7,
+        "destination_only": 1,
+        "conflicts": 2,
+        "will_change": 6,
+        "will_stay_unchanged": 10,
+        "destination_after": 16
+      }
+    },
     "backup": {"scope": "complete_destination_database"},
     "cli_command": "uv run python scripts/sync_database.py --direction online-to-local"
   }
 }
 ```
 
-This route reads connectivity, collection metadata, and counts; it never writes
-to either database or creates a backup. It writes one terminal UI-intent audit
-record for every request, including failed preflights. `apply_eligible` is true
-only when the direct request peer and request host are loopback and the runtime
-is not ordinary E2E. A hosted/non-loopback success omits
-`backup_confirmation`. An audit persistence failure returns HTTP `500` with
-`audit_recorded: false`; a safely recorded preflight failure returns HTTP
-`503`.
+This route reads connectivity, collection metadata, active source identifiers
+and timestamps, and destination identifiers and timestamps; it never writes to
+either database or creates a backup. The forecast uses the same classifier as
+apply. `unchanged` means a matching destination is equal/newer,
+`destination_only` is retained without deletion, and `conflicts` means a
+timestamp could not be compared and no write will occur. It writes one
+terminal UI-intent audit record for every request, including failed
+preflights. `apply_eligible` is true only when the direct request peer and
+request host are loopback and the runtime is not ordinary E2E. An audit
+persistence failure returns HTTP `500` with `audit_recorded: false`; a safely
+recorded preflight failure returns HTTP `503`.
 
 ### Browser Sync Phase Boundary
 
@@ -219,31 +261,35 @@ The backup request is:
 
 ```json
 {
-  "direction": "online-to-local",
-  "confirmation": "BACKUP 20260729T130000Z-1234abcd"
+  "direction": "online-to-local"
 }
 ```
 
 It succeeds only for a server-held, process-local preview capability. The first
-backup attempt atomically consumes that capability. A wrong first token returns
-`400`; a competing request, process restart, or worker loss requires a fresh
-preview. Exact confirmation atomically claims the sole active-run slot before
-backup. Another preview may still return a read-only plan, but its later
-backup request receives `409` without changing the winning claim.
+valid backup request atomically consumes that capability; unknown payload keys
+return `400` before consumption. The server recomputes the full forecast before
+claiming or backing up. A mismatch returns `409`, creates no active state,
+backup, or applied audit, and requires a fresh preview. A competing request,
+process restart, or worker loss also requires a fresh preview. The valid first
+click atomically claims the sole active-run slot before backup. Another preview
+may still return a read-only plan, but its later backup request receives `409`
+without changing the winning claim.
 
 Successful backup returns `stage: awaiting_apply`, a sanitized backup summary,
-and the exact `apply_confirmation`. `GET /api/sync/runs/active` returns the same
-state with `restored: true` after it has reconstructed runtime identity and
-reverified the manifest and every payload. With no run it returns
-`{"success": true, "active": null}`. It never returns URIs, credentials, raw
-documents, or submitted confirmation text.
+the current count-only `forecast`, and `apply_ready`. The service recomputes the
+forecast after backup and whenever `GET /api/sync/runs/active` restores the
+state. If data changed or forecast reads fail, `apply_ready` is false,
+`forecast_error` gives sanitized cancel-and-preview guidance, and Cancel remains
+available. A normal restore has `restored: true` after runtime identity,
+manifest, and every payload are reverified. With no run, active returns
+`{"success": true, "active": null}`. Responses never return URIs,
+credentials, raw documents, document identifiers, or confirmation text.
 
 The apply request is:
 
 ```json
 {
-  "direction": "online-to-local",
-  "confirmation": "APPLY online-to-local 20260729T130000Z-1234abcd"
+  "direction": "online-to-local"
 }
 ```
 
@@ -251,10 +297,12 @@ The cancel request contains only `direction`. Both require the matching active
 run in `awaiting_apply`; invalid stages, direction mismatches, replay, or a
 different run return `409`. Apply and cancel atomically compete for one
 terminal-transition marker, so concurrent terminal requests cannot both run or
-write audits. A wrong apply token returns `400` and leaves the verified run
-available for exact retry or cancellation. Terminal responses include status,
-backup summary, collection/aggregate sync results when available, and a
-repository-relative audit or recovery path.
+write audits. Apply recomputes the forecast immediately before its transition;
+a mismatch returns `409` before a synchronization write, leaves Apply blocked,
+and retains the run for cancellation. Any extra apply/cancel payload key
+returns `400`. Terminal responses include status, backup summary,
+collection/aggregate sync results when available, and a repository-relative
+audit or recovery path.
 
 Atomic run state and the cross-process exclusive claim live under ignored
 `db_backup/database_mirrors/`. An interrupted phase or corrupt/inconsistent

@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qsl, urlsplit
 
+from roastlogger.services.database_sync import forecast_collections
+
 
 KNOWN_COLLECTIONS = ("beans", "roasts")
 DIRECTIONS = ("online-to-local", "local-to-online")
@@ -280,15 +282,18 @@ def build_preflight(
     source_db = source_client[runtime.source_database_name]
     destination_db = destination_client[runtime.destination_database_name]
     try:
+        forecast = forecast_collections(
+            runtime,
+            source_client,
+            destination_client,
+        )
         source_counts = {
-            name: source_db[name].count_documents(
-                {"archived": {"$ne": True}}
-            )
-            for name in runtime.requested_collections
+            name: values["source_documents"]
+            for name, values in forecast["collections"].items()
         }
         destination_counts = {
-            name: destination_db[name].count_documents({})
-            for name in runtime.requested_collections
+            name: values["destination_documents"]
+            for name, values in forecast["collections"].items()
         }
         backup_collections = sorted(destination_db.list_collection_names())
         backup_counts = {
@@ -312,6 +317,7 @@ def build_preflight(
         "batch_size": runtime.batch_size,
         "source_counts": source_counts,
         "destination_counts": destination_counts,
+        "forecast": forecast,
         "backup": {
             "scope": "complete_destination_database",
             "collections": backup_collections,

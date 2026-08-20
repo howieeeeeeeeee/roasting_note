@@ -79,6 +79,7 @@ def begin_guarded_execution(
         "preflight": {
             "source_counts": plan["source_counts"],
             "destination_counts": plan["destination_counts"],
+            "forecast": plan.get("forecast"),
         },
         "backup": {
             "path": plan["backup"]["path"],

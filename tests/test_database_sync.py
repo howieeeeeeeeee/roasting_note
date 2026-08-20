@@ -5,6 +5,10 @@ from datetime import datetime
 import pytest
 from bson.objectid import ObjectId
 
+from roastlogger.services.database_sync import (
+    forecast_sync_collection,
+    sync_collection,
+)
 from roastlogger.services.database_sync_plan import (
     SyncRuntime,
     SyncSafetyError,
@@ -125,12 +129,76 @@ def test_preflight_resolves_both_directions_without_writes(
         "roasts",
     ]
     assert plan["backup"]["counts"]["private_notes"] == 1
+    assert plan["forecast"]["aggregate"] == {
+        "source_documents": 1,
+        "destination_documents": 1,
+        "added": 1,
+        "updated": 0,
+        "unchanged": 0,
+        "destination_only": 1,
+        "conflicts": 0,
+        "will_change": 1,
+        "will_stay_unchanged": 1,
+        "destination_after": 2,
+    }
     assert not (tmp_path / "db_backup").exists()
     assert all(
         collection.write_count == 0
         for database in (source["roastlogger"], destination["roastlogger"])
         for collection in database.collections.values()
     )
+
+
+def test_forecast_exactly_matches_timestamp_sync_without_writes():
+    older = datetime(2026, 8, 20, 10, 0, 0)
+    newer = datetime(2026, 8, 20, 11, 0, 0)
+    add_id, update_id, unchanged_id = ObjectId(), ObjectId(), ObjectId()
+    conflict_id, archived_id, destination_only_id = (
+        ObjectId(),
+        ObjectId(),
+        ObjectId(),
+    )
+    source_documents = [
+        {"_id": add_id, "updated_at": newer, "archived": False},
+        {"_id": update_id, "updated_at": newer, "archived": False},
+        {"_id": unchanged_id, "updated_at": older, "archived": False},
+        {"_id": conflict_id, "archived": False},
+        {"_id": archived_id, "updated_at": newer, "archived": True},
+    ]
+    destination_documents = [
+        {"_id": update_id, "updated_at": older},
+        {"_id": unchanged_id, "updated_at": newer},
+        {"_id": conflict_id, "updated_at": older},
+        {"_id": destination_only_id, "updated_at": newer},
+    ]
+    source = FakeCollection(source_documents)
+    destination = FakeCollection(destination_documents)
+
+    forecast = forecast_sync_collection(source, destination, batch_size=17)
+
+    assert forecast == {
+        "source_documents": 4,
+        "destination_documents": 4,
+        "added": 1,
+        "updated": 1,
+        "unchanged": 1,
+        "destination_only": 1,
+        "conflicts": 1,
+        "will_change": 2,
+        "will_stay_unchanged": 3,
+        "destination_after": 5,
+    }
+    assert destination.write_count == 0
+
+    result = sync_collection(source, destination, batch_size=17)
+
+    assert result["added"] == forecast["added"]
+    assert result["updated"] == forecast["updated"]
+    assert result["skipped"] == forecast["unchanged"]
+    assert result["conflicts"] == forecast["conflicts"]
+    assert destination.count_documents({}) == forecast["destination_after"]
+    assert destination.documents[destination_only_id]
+    assert archived_id not in destination.documents
 
 
 def test_unavailable_endpoint_failure_is_credential_free(tmp_path):

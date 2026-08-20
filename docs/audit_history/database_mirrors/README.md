@@ -24,8 +24,8 @@ treated as applied attempts.
 
 ## Applied Attempt Records
 
-Once the first exact backup confirmation is accepted, one terminal record is
-required for:
+Once the CLI accepts its exact backup token, or Settings accepts its explicit
+backup-phase click, one terminal record is required for:
 
 - `success`;
 - `backup_failed`;
@@ -38,6 +38,12 @@ sanitized endpoint/database descriptors, timestamp-aware mode, batch and
 collection scope, preflight counts, complete destination-backup evidence,
 per-collection and aggregate results, post-run verification, sanitized
 failure/cancellation details, and Git commit/branch/dirty state.
+
+New preflight data also includes the sanitized action forecast: per-collection
+and aggregate add, update, unchanged, destination-only, timestamp-conflict,
+change-total, unchanged-total, and expected-after counts. It contains no
+document identifier or raw document. The applied attempt keeps that reviewed
+forecast so an operator can compare it with terminal results.
 
 ## Settings Intent Records
 
@@ -52,7 +58,7 @@ Every Settings sync-direction button request writes one terminal record with:
 
 These events prove operator intent and preflight outcome only. An eligible
 loopback response may create a process-local, one-use capability for the first
-exact confirmation, but the tracked intent record itself cannot initiate an
+Settings backup click, but the tracked intent record itself cannot initiate an
 applied sync.
 
 ## Browser Run State
@@ -61,11 +67,15 @@ Browser continuation stores sanitized operational state and one exclusive
 active claim under ignored `db_backup/database_mirrors/`, never in this tracked
 history. State contains run/direction identity, sanitized endpoint descriptors,
 credential-free source and destination topology fingerprints,
-the plan, backup evidence, phase, and in-progress terminal record; it contains
-no URI, credential, raw document, or confirmation input.
+the forecasted plan, backup evidence, phase, and in-progress terminal record;
+it contains no URI, credential, raw document, identifier, or confirmation
+input.
 
-No applied-attempt record exists before exact backup confirmation. After backup
-activity, Settings uses the same terminal event policy as the CLI: success,
+No applied-attempt record exists before a valid Settings backup click or exact
+CLI backup confirmation. Settings recomputes its count-only forecast before
+backup and apply; a pre-backup mismatch creates no applied record, while a
+post-backup mismatch leaves the run available only for cancellation. After
+backup activity, Settings uses the same terminal event policy as the CLI: success,
 backup failure, partial sync failure, or cancellation after backup produces one
 unsuffixed applied record. Audit-write failure preserves the sanitized record
 as ignored `audit-recovery.json` and exposes that path instead of claiming

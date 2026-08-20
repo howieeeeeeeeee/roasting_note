@@ -12,7 +12,6 @@ let settingsPreviousFocus = null;
 let syncRequestActive = false;
 let syncRunActive = false;
 let settingsActiveSyncLookup = null;
-let confirmationGateCount = 0;
 
 function storedSettingsSection() {
     try {
@@ -322,40 +321,23 @@ function focusVisibleSyncControl(control) {
     }
 }
 
-function appendConfirmationGate(container, token, label, handler, cancelHandler = null) {
-    confirmationGateCount += 1;
-    const inputId = `settingsSyncConfirmation${confirmationGateCount}`;
+function appendSyncActions(container, primaryLabel, primaryHandler, cancelHandler = null) {
     const gate = document.createElement("div");
-    gate.className = "sync-confirmation-gate";
-
-    const instruction = document.createElement("label");
-    instruction.className = "settings-hint";
-    instruction.htmlFor = inputId;
-    instruction.textContent = `Type the exact confirmation ${token}`;
-    gate.appendChild(instruction);
-
-    const required = document.createElement("code");
-    required.className = "sync-confirmation-token";
-    required.textContent = token;
-    gate.appendChild(required);
-
-    const input = document.createElement("input");
-    input.id = inputId;
-    input.type = "text";
-    input.className = "input-field";
-    input.autocomplete = "off";
-    input.spellcheck = false;
-    input.setAttribute("aria-label", `Type ${token}`);
-    gate.appendChild(input);
+    gate.className = "sync-action-gate";
 
     const actions = document.createElement("div");
     actions.className = "sync-gate-actions";
-    const submit = document.createElement("button");
-    submit.type = "button";
-    submit.className = "btn btn-secondary";
-    submit.textContent = label;
-    submit.addEventListener("click", () => handler(input.value));
-    actions.appendChild(submit);
+    let focusTarget = null;
+
+    if (primaryLabel && primaryHandler) {
+        const submit = document.createElement("button");
+        submit.type = "button";
+        submit.className = "btn btn-primary";
+        submit.textContent = primaryLabel;
+        submit.addEventListener("click", primaryHandler);
+        actions.appendChild(submit);
+        focusTarget = submit;
+    }
 
     if (cancelHandler) {
         const cancel = document.createElement("button");
@@ -364,11 +346,123 @@ function appendConfirmationGate(container, token, label, handler, cancelHandler 
         cancel.textContent = "Cancel run";
         cancel.addEventListener("click", cancelHandler);
         actions.appendChild(cancel);
+        focusTarget = focusTarget || cancel;
     }
 
     gate.appendChild(actions);
     container.appendChild(gate);
-    focusVisibleSyncControl(input);
+    if (focusTarget) {
+        focusVisibleSyncControl(focusTarget);
+    }
+}
+
+function validForecastCount(value) {
+    return Number.isSafeInteger(value) && value >= 0;
+}
+
+function appendSyncForecast(container, forecast) {
+    const collections = forecast?.collections;
+    const aggregate = forecast?.aggregate;
+    const fields = [
+        "added",
+        "updated",
+        "unchanged",
+        "destination_only",
+        "conflicts",
+        "will_change",
+        "will_stay_unchanged",
+        "destination_after",
+    ];
+    const entries = collections && typeof collections === "object"
+        ? Object.entries(collections)
+        : [];
+    const valid = entries.length > 0
+        && aggregate
+        && entries.every(([, values]) => (
+            fields.every((field) => validForecastCount(values?.[field]))
+        ))
+        && fields.every((field) => validForecastCount(aggregate[field]));
+    if (!valid) {
+        appendPreflightLine(
+            container,
+            "Change forecast",
+            "Unavailable. Do not continue until a fresh preview succeeds."
+        );
+        return false;
+    }
+
+    const section = document.createElement("section");
+    section.className = "sync-forecast";
+    const heading = document.createElement("h4");
+    heading.textContent = "Expected sync result";
+    section.appendChild(heading);
+
+    const summary = document.createElement("p");
+    summary.className = "sync-forecast-summary";
+    summary.textContent = (
+        `${aggregate.will_change} will change · `
+        + `${aggregate.will_stay_unchanged} will stay unchanged · `
+        + `${aggregate.destination_after} expected after sync`
+    );
+    section.appendChild(summary);
+
+    const tableWrap = document.createElement("div");
+    tableWrap.className = "sync-forecast-table-wrap";
+    const table = document.createElement("table");
+    table.className = "sync-forecast-table";
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    ["Outcome", ...entries.map(([name]) => name), "Total"].forEach((label) => {
+        const cell = document.createElement("th");
+        cell.scope = "col";
+        cell.textContent = label === "Outcome"
+            ? label
+            : `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
+        headRow.appendChild(cell);
+    });
+    head.appendChild(headRow);
+    table.appendChild(head);
+
+    const body = document.createElement("tbody");
+    [
+        ["Will change", "will_change", true],
+        ["Add", "added", false],
+        ["Update (newer source)", "updated", false],
+        ["Will stay unchanged", "will_stay_unchanged", true],
+        ["Same / newer destination", "unchanged", false],
+        ["Destination only", "destination_only", false],
+        ["Timestamp issue", "conflicts", false],
+        ["Expected after sync", "destination_after", true],
+    ].forEach(([labelText, field, emphasized]) => {
+        const row = document.createElement("tr");
+        if (emphasized) {
+            row.className = "sync-forecast-key-row";
+        }
+        const label = document.createElement("th");
+        label.scope = "row";
+        label.textContent = labelText;
+        row.appendChild(label);
+        [...entries.map(([, values]) => values[field]), aggregate[field]].forEach((value) => {
+            const cell = document.createElement("td");
+            cell.textContent = String(value);
+            row.appendChild(cell);
+        });
+        body.appendChild(row);
+    });
+    table.appendChild(body);
+    tableWrap.appendChild(table);
+    section.appendChild(tableWrap);
+
+    const note = document.createElement("p");
+    note.className = "settings-hint sync-forecast-note";
+    note.textContent = (
+        "Update means the source timestamp is newer. Same / newer destination, "
+        + "destination-only, and timestamp-issue documents are left unchanged. "
+        + "No destination-only document is deleted."
+    );
+    section.appendChild(note);
+    container.appendChild(section);
+    return true;
 }
 
 function beginSyncResult(statusClass = "") {
@@ -427,6 +521,7 @@ function renderSyncPreflight(data) {
         "Destination counts",
         JSON.stringify(plan.destination_counts)
     );
+    const forecastValid = appendSyncForecast(result, plan.forecast);
     appendPreflightLine(
         result,
         "Backup scope",
@@ -435,22 +530,23 @@ function renderSyncPreflight(data) {
     appendPreflightLine(result, "CLI command", plan.cli_command);
     appendPreflightLine(result, "Preflight audit", data.audit_path);
 
-    if (!data.apply_eligible) {
+    if (!data.apply_eligible || !forecastValid) {
         appendPreflightLine(
             result,
             "Applied sync",
-            "Guarded CLI only from this connection."
+            !data.apply_eligible
+                ? "Guarded CLI only from this connection."
+                : "Blocked until a valid forecast is available."
         );
         return;
     }
 
     syncRunActive = true;
     setSyncPreviewButtons(true);
-    appendConfirmationGate(
+    appendSyncActions(
         result,
-        data.backup_confirmation,
-        "Create complete backup",
-        (confirmation) => runSyncBackup(plan.run_id, plan.direction, confirmation)
+        "1. Create and verify backup",
+        () => runSyncBackup(plan.run_id, plan.direction)
     );
 }
 
@@ -476,6 +572,7 @@ function renderAwaitingApply(data, phaseError = null) {
         data.backup.manifest_sha256 || "unavailable"
     );
     appendPreflightLine(result, "Backup path", data.backup.path);
+    const forecastValid = appendSyncForecast(result, data.forecast);
     if (phaseError) {
         appendPreflightLine(
             result,
@@ -483,11 +580,18 @@ function renderAwaitingApply(data, phaseError = null) {
             syncErrorText(phaseError, "The guarded sync request failed.")
         );
     }
-    appendConfirmationGate(
+    if (data.forecast_error) {
+        appendPreflightLine(result, "Apply blocked", data.forecast_error);
+    }
+    const changeCount = data.forecast?.aggregate?.will_change;
+    appendSyncActions(
         result,
-        data.apply_confirmation,
-        "Apply synchronization",
-        (confirmation) => runSyncApply(data.run_id, data.direction, confirmation),
+        data.apply_ready && forecastValid
+            ? `2. Apply ${changeCount} change${changeCount === 1 ? "" : "s"}`
+            : null,
+        data.apply_ready && forecastValid
+            ? () => runSyncApply(data.run_id, data.direction)
+            : null,
         () => runSyncCancel(data.run_id, data.direction)
     );
 }
@@ -637,7 +741,7 @@ async function syncData(direction) {
     }
 }
 
-async function runSyncBackup(runId, direction, confirmation) {
+async function runSyncBackup(runId, direction) {
     if (syncRequestActive) {
         return;
     }
@@ -645,18 +749,23 @@ async function runSyncBackup(runId, direction, confirmation) {
     try {
         const { data } = await syncMutation(
             `/api/sync/runs/${runId}/backup`,
-            { direction, confirmation }
+            { direction }
         );
         if (data.stage === "awaiting_apply") {
             renderAwaitingApply(data);
-            showToast("Destination backup complete and verified", "success");
+            showToast(
+                data.apply_ready
+                    ? "Destination backup complete and verified"
+                    : "Backup complete; data changed, so apply is blocked",
+                data.apply_ready ? "success" : "error"
+            );
         } else if (data.stage === "terminal") {
             renderSyncTerminal(data);
             showToast("Backup phase needs attention", "error");
         } else {
             renderSyncPhaseError(data);
             await loadActiveSync();
-            showToast("Backup confirmation rejected", "error");
+            showToast("Backup request rejected; preview again", "error");
         }
     } catch (error) {
         renderSyncPhaseError({
@@ -669,7 +778,7 @@ async function runSyncBackup(runId, direction, confirmation) {
     }
 }
 
-async function runSyncApply(runId, direction, confirmation) {
+async function runSyncApply(runId, direction) {
     if (syncRequestActive) {
         return;
     }
@@ -677,7 +786,7 @@ async function runSyncApply(runId, direction, confirmation) {
     try {
         const { data } = await syncMutation(
             `/api/sync/runs/${runId}/apply`,
-            { direction, confirmation }
+            { direction }
         );
         if (data.stage === "terminal") {
             renderSyncTerminal(data);
@@ -689,7 +798,7 @@ async function runSyncApply(runId, direction, confirmation) {
             );
         } else {
             await loadActiveSync(data);
-            showToast("Apply confirmation rejected", "error");
+            showToast("Apply blocked; review the active run", "error");
         }
     } catch (error) {
         renderSyncPhaseError({

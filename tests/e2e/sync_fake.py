@@ -57,6 +57,7 @@ class E2ESyncExecutor:
     ):
         root = self._require_artifact_root(root)
         self._event("preflight")
+        forecast = self._forecast()
         return {
             "schema_version": 1,
             "run_id": run_id,
@@ -67,12 +68,13 @@ class E2ESyncExecutor:
             "requested_collections": ["beans", "roasts"],
             "resolved_collections": ["beans", "roasts"],
             "batch_size": runtime.batch_size,
-            "source_counts": {"beans": 2, "roasts": 1},
-            "destination_counts": {"beans": 1, "roasts": 1},
+            "source_counts": {"beans": 4, "roasts": 2},
+            "destination_counts": {"beans": 3, "roasts": 2},
+            "forecast": forecast,
             "backup": {
                 "scope": "complete_destination_database",
                 "collections": ["beans", "roasts", "e2e_metadata"],
-                "counts": {"beans": 1, "roasts": 1, "e2e_metadata": 1},
+                "counts": {"beans": 3, "roasts": 2, "e2e_metadata": 1},
                 "path": str(planned_backup_path(root, runtime, run_id)),
             },
             "audit_path": str(planned_audit_path(root, runtime, run_id)),
@@ -81,6 +83,44 @@ class E2ESyncExecutor:
             ),
         }
 
+    @staticmethod
+    def _forecast():
+        collections = {
+            "beans": {
+                "source_documents": 4,
+                "destination_documents": 3,
+                "added": 1,
+                "updated": 1,
+                "unchanged": 1,
+                "destination_only": 0,
+                "conflicts": 1,
+                "will_change": 2,
+                "will_stay_unchanged": 2,
+                "destination_after": 4,
+            },
+            "roasts": {
+                "source_documents": 2,
+                "destination_documents": 2,
+                "added": 1,
+                "updated": 0,
+                "unchanged": 1,
+                "destination_only": 1,
+                "conflicts": 0,
+                "will_change": 1,
+                "will_stay_unchanged": 2,
+                "destination_after": 3,
+            },
+        }
+        aggregate = {
+            key: sum(item[key] for item in collections.values())
+            for key in next(iter(collections.values()))
+        }
+        return {"collections": collections, "aggregate": aggregate}
+
+    def forecast(self, _runtime, _source_client, _destination_client):
+        self._event("forecast")
+        return self._forecast()
+
     def backup(self, runtime, _destination_client, root, run_id):
         root = self._require_artifact_root(root)
         backup_path = planned_backup_path(root, runtime, run_id).resolve()
@@ -88,19 +128,28 @@ class E2ESyncExecutor:
             raise RuntimeError("E2E sync fake refused a production backup path")
         backup_path.mkdir(parents=True, exist_ok=False)
         entries = []
-        for name in ("beans", "roasts", "e2e_metadata"):
+        document_counts = {"beans": 3, "roasts": 2, "e2e_metadata": 1}
+        for name, document_count in document_counts.items():
             filename = f"{encode_collection_name(name)}.jsonl"
-            payload = json.dumps(
-                {"e2e_fake": True, "collection": name},
-                sort_keys=True,
-            ).encode("utf-8") + b"\n"
+            payload = b"".join(
+                json.dumps(
+                    {
+                        "e2e_fake": True,
+                        "collection": name,
+                        "index": index,
+                    },
+                    sort_keys=True,
+                ).encode("utf-8")
+                + b"\n"
+                for index in range(document_count)
+            )
             payload_path = backup_path / filename
             payload_path.write_bytes(payload)
             entries.append(
                 {
                     "name": name,
                     "filename": filename,
-                    "documents": 1,
+                    "documents": document_count,
                     "bytes": len(payload),
                     "sha256": hashlib.sha256(payload).hexdigest(),
                 }
@@ -123,7 +172,7 @@ class E2ESyncExecutor:
             "status": "complete",
             "collections": entries,
             "collection_count": len(entries),
-            "document_count": len(entries),
+            "document_count": sum(document_counts.values()),
         }
         manifest_path = backup_path / "manifest.json"
         manifest_path.write_text(
@@ -139,7 +188,7 @@ class E2ESyncExecutor:
             ).hexdigest(),
             "status": "complete",
             "collection_count": len(entries),
-            "document_count": len(entries),
+            "document_count": sum(document_counts.values()),
             "collections": entries,
         }
 
@@ -149,16 +198,16 @@ class E2ESyncExecutor:
             "beans": {
                 "added": 1,
                 "updated": 1,
-                "skipped": 0,
-                "conflicts": 0,
-                "post_run_count": 3,
+                "skipped": 1,
+                "conflicts": 1,
+                "post_run_count": 4,
             },
             "roasts": {
                 "added": 1,
                 "updated": 0,
                 "skipped": 1,
                 "conflicts": 0,
-                "post_run_count": 2,
+                "post_run_count": 3,
             },
         }
         return {
@@ -166,8 +215,8 @@ class E2ESyncExecutor:
             "aggregate": {
                 "added": 2,
                 "updated": 1,
-                "skipped": 1,
-                "conflicts": 0,
+                "skipped": 2,
+                "conflicts": 1,
             },
             "verified": True,
         }

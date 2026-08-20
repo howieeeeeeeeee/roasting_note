@@ -8,10 +8,12 @@ Hosted and non-loopback Settings remain preview-only.
 ## Safety Contract
 
 - `DEVICE` is a required stable machine identifier.
-- Dry runs read connectivity, collection names, and document counts only.
+- Dry runs read connectivity, collection names, and the identifiers and
+  timestamps needed for a count-only action forecast.
 - Applied runs back up the complete destination database before any sync.
-- Applied runs require exact `BACKUP <run-id>` and
-  `APPLY <direction> <run-id>` tokens, with no bypass.
+- Local Settings requires separate backup and apply clicks; apply is not
+  offered until the complete backup verifies. The CLI continues to require
+  exact `BACKUP <run-id>` and `APPLY <direction> <run-id>` tokens.
 - Every applied attempt after backup starts produces a terminal audit record.
 - Backup payloads stay under ignored `db_backup/`; reviewed audit records live
   under `docs/audit_history/database_mirrors/`.
@@ -37,29 +39,45 @@ POST /api/sync/preflight/local-to-online
 ```
 
 The response shows a server-generated run ID, sanitized source/destination
-roles and host labels, collection counts, complete destination backup scope,
-CLI handoff, and audit paths. Both buttons are disabled while the request is
-active. Successful and failed preflights each write exactly one
-`settings_ui` / `sync_button_clicked` intent event.
+roles and host labels, an exact count-only action forecast, complete
+destination backup scope, CLI handoff, and audit paths. Both buttons are
+disabled while the request is active. Successful and failed preflights each
+write exactly one `settings_ui` / `sync_button_clicked` intent event.
 
 On an eligible direct-loopback request, Settings continues as follows:
 
-1. Type the exact `BACKUP <run-id>` value shown by the server.
+1. Review how many documents will be added, updated, or left unchanged, then
+   click **1. Create and verify backup**.
 2. Wait synchronously while every destination collection is backed up and its
    manifest and payload checksums are verified. No sync write occurs.
-3. Review the collection/document count, verified manifest SHA-256, ignored
-   backup path, and exact `APPLY <direction> <run-id>` value.
-4. Apply the timestamp-aware sync or cancel and retain the backup.
+3. Review the verified backup and revalidated action forecast.
+4. Click **2. Apply _n_ changes**, or cancel and retain the backup.
 5. Review collection/aggregate results and the applied audit or recovery path.
 
 The pre-backup preview capability is process-local and atomically taken by the
-first backup attempt. A wrong first token, competing request, application
-restart, or worker loss requires a fresh preview and causes no backup or
-applied-attempt audit. Once backup begins, an exclusive filesystem claim and
-atomic sanitized run state are written under `db_backup/database_mirrors/`.
+first backup click. A competing request, application restart, or worker loss
+requires a fresh preview and causes no backup or applied-attempt audit. Once
+backup begins, an exclusive filesystem claim and atomic sanitized run state
+are written under `db_backup/database_mirrors/`.
 An awaiting-apply run survives sheet closure, page reload, and application
 restart. Only one claimed run may proceed across application processes;
 another preview loses cleanly at the claim and cannot overwrite the active run.
+
+Preview and apply share one classifier. For every requested collection the
+forecast reports active source documents, destination documents, additions,
+updates from a newer source, matching same/newer destination documents,
+destination-only documents, timestamp conflicts, total changes, total
+unchanged, and expected destination count. Timestamp conflicts and
+destination-only documents are included in unchanged because sync does not
+write or delete them. Only counts leave the service; identifiers and raw
+documents do not appear in the plan, response, state summary, or audit.
+
+The server recomputes the forecast before creating the backup, after backup,
+whenever an awaiting-apply run is restored, and immediately before apply. A
+pre-backup mismatch consumes the preview but performs no backup, audit, state,
+or sync write. A later mismatch hides apply, retains Cancel, and requires a
+fresh preview and backup. This fail-closed revalidation keeps the displayed
+decision truthful without pretending the two databases share a lock.
 
 Apply and cancel also compete for one exclusive terminal-transition marker.
 Concurrent apply/apply or apply/cancel requests can run only one executor and
@@ -146,20 +164,23 @@ The CLI and Settings adapters call the same backup, apply, and after-backup
 cancellation phases. The CLI retains its arguments, output, prompt text/order,
 exit codes, backup layout, audits, and recovery guidance:
 
-1. Generate one stable run ID and print or display the complete preflight.
-2. Require the exact `BACKUP <run-id>` token.
+1. Generate one stable run ID and print or display the complete forecasted
+   preflight.
+2. In the CLI, require the exact `BACKUP <run-id>` token; in Settings, accept
+   the explicit first-phase button click.
 3. Stream every collection and document in the destination database into an
    Extended JSON backup.
-4. Require the exact `APPLY <direction> <run-id>` token.
+4. In the CLI, require the exact `APPLY <direction> <run-id>` token; in
+   Settings, show the second-phase button only after verification.
 5. Synchronize selected collections sequentially and stop on first failure.
 6. Verify post-run counts and persist one terminal audit record.
 
-A wrong or missing CLI first token leaves no backup and no audit. The Settings
-first token is likewise one-use and requires a new preview after mismatch. A
-wrong or missing CLI second token retains the completed backup and records
-`cancelled_after_backup`; Settings keeps an awaiting-apply run available for an
-exact retry or explicit cancel. Backup failure, partial sync failure, audit
-recovery, cancellation after backup, and success are terminal.
+A wrong or missing CLI first token leaves no backup and no audit. A wrong or
+missing CLI second token retains the completed backup and records
+`cancelled_after_backup`. Settings has no typed token: its process-local
+preview is one-use, and its awaiting-apply run remains available only for a
+revalidated apply click or explicit cancel. Backup failure, partial sync
+failure, audit recovery, cancellation after backup, and success are terminal.
 
 ## Timestamp-Aware Merge
 
@@ -173,8 +194,10 @@ The service preserves the RN-0015 behavior for non-archived source documents:
   destination document; and
 - retain all destination-only documents.
 
-Per-collection and aggregate output includes added, updated, skipped, conflict,
-and post-run counts.
+Preflight reports per-collection and aggregate added, updated, unchanged,
+destination-only, conflict, change-total, unchanged-total, and expected-after
+counts. Terminal output includes added, updated, skipped, conflict, and
+post-run counts.
 
 ## Destination Backup
 

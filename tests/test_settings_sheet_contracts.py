@@ -58,7 +58,7 @@ def test_settings_sheet_script_contains_complete_keyboard_and_state_cycle():
     assert 'document.body.classList.remove("settings-sheet-open")' in script
     assert "if (settingsActiveSyncLookup)" in script
     assert "&& !syncRequestActive" in script
-    assert "focusVisibleSyncControl(input)" in script
+    assert "focusVisibleSyncControl(focusTarget)" in script
     assert '!settingsOverlay.hidden && panel && !panel.hidden' in script
 
 

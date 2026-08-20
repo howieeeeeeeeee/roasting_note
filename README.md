@@ -39,9 +39,10 @@ Open `http://localhost:5000` in your browser.
 ## Database Sync Safety
 
 Settings offers audited previews. A direct loopback operator may continue in
-Settings through a complete destination backup and two exact run-specific
-confirmations; hosted and non-loopback Settings remain preview/CLI-only. The
-guarded CLI provides the same backup-then-apply contract:
+Settings by reviewing the exact action forecast, clicking a complete
+destination backup, then clicking Apply or Cancel; hosted and non-loopback
+Settings remain preview/CLI-only. The guarded CLI provides the same
+backup-then-apply contract with exact typed tokens:
 
 ```bash
 uv run python scripts/sync_database.py \

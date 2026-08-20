@@ -24,7 +24,17 @@ class FakeCollection:
         self.fail_find = fail_find
         self.write_count = 0
 
-    def find(self, query):
+    @staticmethod
+    def _project(document, projection):
+        if projection is None:
+            return document
+        return {
+            key: value
+            for key, value in document.items()
+            if projection.get(key)
+        }
+
+    def find(self, query, projection=None):
         if self.fail_find:
             raise RuntimeError("simulated collection failure")
         if query == {}:
@@ -37,11 +47,15 @@ class FakeCollection:
             )
         else:
             raise AssertionError(f"unexpected query: {query}")
-        return FakeCursor(list(values))
+        return FakeCursor(
+            [self._project(value, projection) for value in values]
+        )
 
-    def find_one(self, query):
+    def find_one(self, query, projection=None):
         value = self.documents.get(query["_id"])
-        return deepcopy(value) if value else None
+        if not value:
+            return None
+        return deepcopy(self._project(value, projection))
 
     def insert_one(self, document):
         self.documents[document["_id"]] = deepcopy(document)

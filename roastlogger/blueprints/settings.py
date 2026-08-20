@@ -13,6 +13,7 @@ from roastlogger.config import DEFAULT_TEMP_SENSOR_URL
 from roastlogger.database import get_connections, get_current_db_mode
 from roastlogger.routing import register_unprefixed_routes
 from roastlogger.services.database_backup import backup_destination_database
+from roastlogger.services.database_sync import forecast_collections
 from roastlogger.services.database_sync_plan import build_preflight, sanitize_failure
 from roastlogger.services.database_sync_runner import synchronize_collections
 from roastlogger.services.database_sync_ui import run_ui_preflight
@@ -119,6 +120,7 @@ def _web_sync_service():
         _sync_root(),
         _preview_registry(),
         backup=(executor.backup if executor else backup_destination_database),
+        forecast=(executor.forecast if executor else forecast_collections),
         synchronize=(
             executor.synchronize if executor else synchronize_collections
         ),
@@ -257,7 +259,7 @@ def _sync_route_disabled():
                 ),
                 "guidance": (
                     "Use guarded local Settings or scripts/sync_database.py; "
-                    "both require backup and apply confirmations."
+                    "both require separate backup and apply decisions."
                 ),
             }
         ),
@@ -304,11 +306,10 @@ def api_sync_backup(run_id):
     if guarded:
         return guarded
     try:
-        data = _phase_payload({"direction", "confirmation"})
+        data = _phase_payload({"direction"})
         result = _web_sync_service().backup(
             run_id,
             data.get("direction"),
-            data.get("confirmation"),
         )
         return jsonify(result), 200 if result["success"] else 500
     except Exception as error:
@@ -320,11 +321,10 @@ def api_sync_apply(run_id):
     if guarded:
         return guarded
     try:
-        data = _phase_payload({"direction", "confirmation"})
+        data = _phase_payload({"direction"})
         result = _web_sync_service().apply(
             run_id,
             data.get("direction"),
-            data.get("confirmation"),
         )
         return jsonify(result), 200 if result["success"] else 500
     except Exception as error:

@@ -134,10 +134,7 @@ def test_explicit_e2e_sync_fake_runs_only_inside_artifact_root(
 
     backup = client.post(
         f"/api/sync/runs/{run_id}/backup",
-        json={
-            "direction": "online-to-local",
-            "confirmation": f"BACKUP {run_id}",
-        },
+        json={"direction": "online-to-local"},
     )
     assert backup.status_code == 200
     assert backup.json["stage"] == "awaiting_apply"
@@ -152,27 +149,22 @@ def test_explicit_e2e_sync_fake_runs_only_inside_artifact_root(
     second_id = second.json["run_id"]
     client.post(
         f"/api/sync/runs/{second_id}/backup",
-        json={
-            "direction": "local-to-online",
-            "confirmation": f"BACKUP {second_id}",
-        },
+        json={"direction": "local-to-online"},
     )
     applied = client.post(
         f"/api/sync/runs/{second_id}/apply",
-        json={
-            "direction": "local-to-online",
-            "confirmation": f"APPLY local-to-online {second_id}",
-        },
+        json={"direction": "local-to-online"},
     )
     assert applied.status_code == 200
     assert applied.json["sync"]["aggregate"] == {
         "added": 2,
-        "conflicts": 0,
-        "skipped": 1,
+        "conflicts": 1,
+        "skipped": 2,
         "updated": 1,
     }
     events = (artifact_root / "sync-fake-events.jsonl").read_text()
     assert '"database_access": false' in events
+    assert events.count('"event": "forecast"') == 5
     assert '"event": "synchronize"' in events
     assert not (tmp_path / "db_backup").exists()
 

@@ -102,11 +102,12 @@ forwarded-header locality, cross-origin mutation requests, and non-JSON bodies.
 The old one-request mutation routes remain disabled.
 
 On a trusted local instance reached directly through `localhost`, `127.0.0.1`,
-or `::1`, Settings may continue from its audited preview through the exact
-`BACKUP <run-id>` token, complete verified destination backup, and exact
-`APPLY <direction> <run-id>` token. Awaiting-apply state is ignored and
-resumable after restart; an interrupted/corrupt phase requires manual artifact
-review. No proxy, remote authentication, or hosted browser apply is supported.
+or `::1`, Settings shows an exact count-only action forecast, then offers one
+button to create and verify the complete destination backup and a second button
+to Apply or Cancel. The forecast is revalidated before backup and apply.
+Awaiting-apply state is ignored and resumable after restart; changed data hides
+Apply, while interrupted/corrupt state requires manual artifact review. No
+proxy, remote authentication, or hosted browser apply is supported.
 
 Operators may instead use the guarded CLI from a trusted machine with both
 endpoints configured:
@@ -117,8 +118,8 @@ uv run python scripts/sync_database.py \
   --dry-run
 ```
 
-Review the sanitized plan before separately authorizing an applied run.
-Applied runs require both exact run-specific tokens and create a complete
-destination backup under ignored `db_backup/`. Only the reviewed audit record
-is eligible for publication. See
+Review the sanitized plan before separately authorizing an applied run. The CLI
+requires both exact run-specific tokens; Settings requires its two distinct
+phase clicks. Both create a complete destination backup under ignored
+`db_backup/`. Only the reviewed audit record is eligible for publication. See
 [Database Sync](../features/database-sync.md).

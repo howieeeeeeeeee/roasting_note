@@ -78,7 +78,7 @@ the safe executor:
 
 ```bash
 uv run python -m tests.e2e.manage start \
-  --run-id rn-0028-settings-sync-a \
+  --run-id rn-0030-sync-summary-a \
   --sync-fake
 ```
 
@@ -236,10 +236,10 @@ workflows below. Repeat the layout checks at `1440x900`, `1280x640`,
 ### Guarded Local Settings Sync
 
 First start an ordinary run without `--sync-fake` using run ID
-`rn-0028-settings-sync-ordinary`:
+`rn-0030-sync-summary-ordinary`:
 
 1. Open `http://127.0.0.1:5011`, open Settings, and confirm the database label
-   contains `local (roastlogger_e2e / rn-0028-settings-sync-ordinary)` and the
+   contains `local (roastlogger_e2e / rn-0030-sync-summary-ordinary)` and the
    Online radio is disabled.
 2. Click **Preview Online → Local**. Confirm the prominent ordinary-E2E error,
    artifact-local preflight audit path, and `503` network response.
@@ -248,35 +248,36 @@ First start an ordinary run without `--sync-fake` using run ID
    non-artifact audit path may be created.
 4. Save the fail-closed Settings screenshot and stop the run.
 
-Then start `rn-0028-settings-sync-a` with `--sync-fake`:
+Then start `rn-0030-sync-summary-a` with `--sync-fake`:
 
-1. Open Settings and preview **Online → Local**. Capture the sanitized plan,
-   selectable exact `BACKUP <run-id>` token, empty typed field, and enabled
-   **Create complete backup** action. Treat raw URI/credential/path data or
-   enabled one-click apply as failure.
-2. Submit an incorrect first token. Confirm `400`, no backup transition, and
-   the instruction to start a fresh preview.
-3. Preview again, type the new exact backup token, and submit. Confirm `200`,
-   **Complete and verified**, collection/document totals, verified manifest
-   SHA-256, backup path, no sync totals, and the empty exact-apply field.
-4. Reload the page, reopen Settings, and confirm the same run returns as
-   **Restored and re-verified** with preview buttons disabled. Capture this
-   apply-gate screenshot.
-5. Choose **Cancel run**. Confirm terminal `cancelled_after_backup`, retained
+1. Open Settings and preview **Online → Local**. Capture the sanitized plan and
+   exact forecast matrix. Verify Beans, Roasts, and Total columns; **3 will change**,
+   **4 will stay unchanged**, and **7 expected after sync**; and the enabled
+   **1. Create and verify backup** button. No confirmation input or apply
+   button may exist. Treat raw URI, credential, identifier, production path, or
+   one-click apply as failure.
+2. Click the backup button once. Confirm `200`, **Complete and verified**, six
+   backed-up documents, manifest SHA-256, artifact-local backup path, the same
+   forecast, no sync totals, and **2. Apply 3 changes** plus **Cancel run**.
+3. Reload the page, reopen Settings, and confirm the same run returns as
+   **Restored and re-verified**, the forecast is unchanged, and preview buttons
+   remain disabled. Capture this apply-decision screenshot.
+4. Choose **Cancel run**. Confirm terminal `cancelled_after_backup`, retained
    backup path, applied-audit path, and no sync totals. Capture cancellation.
-6. Start a fresh preview. Submit its exact backup token, then its exact
-   `APPLY <direction> <run-id>` token. Confirm the terminal per-collection and
-   aggregate added/updated/skipped/conflict summary plus applied-audit path.
-   Both **Beans outcome** and **Roasts outcome** must be visible. Capture
-   success.
-7. Verify request URLs/statuses and stage transitions in the network view.
+5. Start a fresh **Local → Online** preview. Verify the forecast, click its
+   backup button, then click **2. Apply 3 changes**. Confirm the terminal
+   per-collection and aggregate added/updated/skipped/conflict summary matches
+   the forecast: added `2`, updated `1`, skipped `2`, conflicts `1`, with the
+   applied-audit path. Both **Beans outcome** and **Roasts outcome** must be
+   visible. Capture success.
+6. Verify request URLs/statuses and stage transitions in the network view.
    Repeated backup/apply/cancel requests must return a conflict and must not
-   repeat artifacts or results. Treat console errors, failed requests outside
-   the deliberate `400`/`409` checks, missing restore state, or any MongoDB
-   access as failure.
-8. Inspect `sync-fake-events.jsonl`: every event must report
+   repeat artifacts or results. Treat confirmation fields, console errors,
+   failed requests outside deliberate `409` replay checks, missing restore
+   state, forecast/result disagreement, or any MongoDB access as failure.
+7. Inspect `sync-fake-events.jsonl`: every event must report
    `database_access: false`; all state, backup, and audit paths must remain
-   beneath `tests/e2e/artifacts/rn-0028-settings-sync-a/`.
+   beneath `tests/e2e/artifacts/rn-0030-sync-summary-a/`.
 
 ### Bean
 
