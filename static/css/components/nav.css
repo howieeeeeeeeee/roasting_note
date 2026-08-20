@@ -2,10 +2,6 @@
    Nav — Variant B unified header (brand · tabs · CTA · icons)
    ============================================================ */
 
-@view-transition {
-  navigation: auto;
-}
-
 @keyframes route-content-old {
   to { opacity: 0.92; transform: translateY(-4px); }
 }
@@ -121,7 +117,7 @@
   margin-left: auto;
   padding-left: var(--space-4);
 }
-.nav-menu a {
+.nav-menu a[data-nav-tab] {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -145,8 +141,8 @@
   background: var(--pr);
   view-transition-name: active-nav-indicator;
 }
-.nav-menu a:hover  { color: var(--txt); }
-.nav-menu a.active { color: var(--pr); font-weight: 600; }
+.nav-menu a[data-nav-tab]:hover  { color: var(--txt); }
+.nav-menu a[data-nav-tab].active { color: var(--pr); font-weight: 600; }
 
 .nav-tab-count {
   background: var(--surf2);
@@ -158,7 +154,7 @@
   letter-spacing: 0.02em;
   transition: background 0.14s, color 0.14s;
 }
-.nav-menu a.active .nav-tab-count { background: var(--pr-l); color: var(--pr); }
+.nav-menu a[data-nav-tab].active .nav-tab-count { background: var(--pr-l); color: var(--pr); }
 
 .nav-actions {
   display: flex;
@@ -207,7 +203,7 @@
     gap: 0;
   }
   .nav-menu.active { display: flex; }
-  .nav-menu a { padding: var(--space-3) var(--space-5); }
+  .nav-menu a[data-nav-tab] { padding: var(--space-3) var(--space-5); }
   .nav-context-actions {
     flex-wrap: wrap;
     gap: var(--space-2);

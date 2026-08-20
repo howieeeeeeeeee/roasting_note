@@ -13,6 +13,14 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>
+        if (typeof document.startViewTransition === 'function'
+            && 'onpageswap' in window && 'onpagereveal' in window) {
+            const transitionOptIn = document.createElement('style');
+            transitionOptIn.textContent = '@view-transition { navigation: auto; }';
+            document.head.appendChild(transitionOptIn);
+        }
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 

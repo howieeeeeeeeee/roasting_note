@@ -22,10 +22,13 @@ entry so it remains usable without horizontal overflow at `390px`.
 ## Workspace continuity
 
 Same-origin documents progressively opt into native cross-document View
-Transitions with `@view-transition { navigation: auto; }`. Ordinary anchors,
-URLs, direct loads, browser history, and failure behavior remain the complete
-fallback. No fetch interception, partial HTML replacement, or client-side
-router is involved.
+Transitions with `@view-transition { navigation: auto; }`. A synchronous head
+feature check installs that rule only when the browser exposes the complete
+`startViewTransition`, `pageswap`, and `pagereveal` lifecycle. Browsers with a
+partial CSS implementation use the immediate fallback without emitting a
+skipped-transition error. Ordinary anchors, URLs, direct loads, browser
+history, and failure behavior remain the complete fallback. No fetch
+interception, partial HTML replacement, or client-side router is involved.
 
 Named transition roles are:
 

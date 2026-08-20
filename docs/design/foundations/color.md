@@ -52,6 +52,11 @@ base semantic tokens for intentionally faint borders, rules, and other
 non-text decoration. Do not lower visible text contrast to make a separator
 quieter.
 
+Global toasts use one neutral border around the whole surface. They do not use
+a colored left rail. Error and warning copy may use the text-safe semantic
+roles; success keeps the ordinary text color so status does not become a
+decorative card treatment.
+
 ## Warm-Earth Rationale
 
 Both palettes share a brown/tan undertone rather than a neutral grey. The light background `#FAFAF9` is not pure white; the dark background `#0E0D0B` is not pure black. This matches the coffee/roastery aesthetic and avoids the sterile feel of a pure-neutral UI.

@@ -101,7 +101,10 @@ def test_visible_text_tokens_meet_aa_on_documented_surfaces():
         assert _contrast_ratio(foreground, background) >= 4.5
 
     forms = _read("static/css/components/forms.css")
+    toasts = _read("static/css/components/toasts.css")
     assert "opacity: 1;" in forms
+    assert "border-left" not in toasts
+    assert "color: var(--err-text);" in toasts
 
 
 def test_fonts_are_global_only_when_shared_by_ordinary_pages():
@@ -166,8 +169,11 @@ def test_primary_navigation_uses_progressive_named_transitions():
     assert container_rule
     assert "animation:" not in container_rule.group("body")
 
-    assert "@view-transition" in nav_css
-    assert "navigation: auto;" in nav_css
+    assert "@view-transition { navigation: auto; }" in base_template
+    assert "typeof document.startViewTransition === 'function'" in base_template
+    assert "'onpageswap' in window" in base_template
+    assert "'onpagereveal' in window" in base_template
+    assert "@view-transition" not in nav_css
     assert "view-transition-name: app-navbar;" in nav_css
     assert "view-transition-name: app-content;" in nav_css
     assert "view-transition-name: active-nav-indicator;" in nav_css
@@ -197,6 +203,8 @@ def test_primary_navigation_uses_progressive_named_transitions():
     assert base_template.index('class="nav-context-actions"') < base_template.index('</ul>')
     assert ".nav-context-actions" in nav_css
     assert ".nav-context-actions .btn" in nav_css
+    assert ".nav-menu a[data-nav-tab]" in nav_css
+    assert ".nav-menu a {" not in nav_css
     assert "navToggle.setAttribute('aria-expanded'" in base_template
     assert "no-route-transition" in live_template
 
