@@ -2,14 +2,14 @@
 id: RN-0029-04
 title: Compact Browse and Edit Screens
 type: improvement
-status: blocked
+status: resolved
 priority: medium
 created: 2026-08-20
-resolved:
+resolved: 2026-08-20
 area: design-system
 parent: RN-0029
 decisions: []
-blocked_by: [RN-0029-01]
+blocked_by: []
 testing_policy: v1
 tags:
   - beans
@@ -68,30 +68,30 @@ while making actions reachable and short-height layouts more efficient.
 
 ## Acceptance Criteria
 
-- [ ] Bean add/edit and Roast edit use available desktop/tablet width to reduce
+- [x] Bean add/edit and Roast edit use available desktop/tablet width to reduce
   stacked panel height while preserving logical DOM order and field labels.
-- [ ] All form controls retain at least `44px` targets, labels above fields,
+- [x] All form controls retain at least `44px` targets, labels above fields,
   visible helper/error text, keyboard order, autofill names, and validation.
-- [ ] Long forms keep Save/Add and Cancel reachable in a sticky action row that
+- [x] Long forms keep Save/Add and Cancel reachable in a sticky action row that
   does not cover the final field, validation message, or mobile safe area.
-- [ ] At widths below `768px`, every multi-column form and detail cluster
+- [x] At widths below `768px`, every multi-column form and detail cluster
   becomes one logical column with no horizontal page scrolling.
-- [ ] At `1280x640` and `1024x768`, compact headings, sections, and actions use
+- [x] At `1280x640` and `1024x768`, compact headings, sections, and actions use
   materially less vertical chrome than the audit baseline.
-- [ ] Roasts and Beans tables retain their columns, sorting/filtering, row
+- [x] Roasts and Beans tables retain their columns, sorting/filtering, row
   navigation, contextual actions, empty states, and narrow-screen overflow.
-- [ ] RN-0027 stock-meter markup and behavior remain intact if present; this
+- [x] RN-0027 stock-meter markup and behavior remain intact if present; this
   ticket does not redesign or widen the Stock cell.
-- [ ] Bean and Roast detail screens preserve reviews, histories, charts,
+- [x] Bean and Roast detail screens preserve reviews, histories, charts,
   notes, print output, and existing action ordering.
-- [ ] Light/dark hierarchy, contrast, focus, hover, active, loading, empty, and
+- [x] Light/dark hierarchy, contrast, focus, hover, active, loading, empty, and
   error states remain complete at all required viewports.
-- [ ] Live-roast normal/fullscreen geometry, target sizes, chart, sensor states,
+- [x] Live-roast normal/fullscreen geometry, target sizes, chart, sensor states,
   and interactions are unchanged.
-- [ ] No API, route, field name, form payload, database shape, persistence,
+- [x] No API, route, field name, form payload, database shape, persistence,
   synchronization, or printable-output behavior changes.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
@@ -130,6 +130,21 @@ applied-mirror behavior changes.
 
 - None. Compact the browse/manage surfaces, keep `44px` targets and native
   document/form behavior, preserve tables, and leave live roasting unchanged.
+
+## Resolution
+
+- Added responsive management-only grids, compact flat detail clusters, and
+  safe-area-aware sticky Save/Cancel actions while preserving logical source
+  order, labels, validation, field names, payloads, print behavior, and mobile
+  one-column fallback.
+- Retained operational tables, internal narrow-screen overflow, RN-0027 Stock
+  markup, route behavior, detail content, and the untouched live-roast template.
+- The parent aggregate browser run created, edited, and inspected an isolated
+  Bean and Roast across tablet and mobile layouts. It verified reachable
+  actions, visible validation, no page overflow, light/dark hierarchy, stock
+  presentation, detail grids, and protected live controls.
+- Management static contracts, unchanged Bean/Roast API regressions, and the
+  complete `213 passed` suite succeeded. Scoped cleanup left no run records.
 
 ## Related Files
 

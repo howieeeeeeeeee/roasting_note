@@ -6,6 +6,11 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RN-0029-04 | [IMPROVEMENT] | Medium | design-system | [Compact Browse and Edit Screens](./resolved/RN-0029-quiet-compact-ui-refresh/RN-0029-04-compact-management-screens.md) | [RN-0029](./resolved/RN-0029-quiet-compact-ui-refresh.md) | - | 2026-08-20 | 2026-08-20 |
+| RN-0029-03 | [IMPROVEMENT] | High | settings | [Rebuild Settings as Accessible Sectioned Sheet](./resolved/RN-0029-quiet-compact-ui-refresh/RN-0029-03-rebuild-settings-sheet.md) | [RN-0029](./resolved/RN-0029-quiet-compact-ui-refresh.md) | - | 2026-08-20 | 2026-08-20 |
+| RN-0029-02 | [IMPROVEMENT] | High | navigation | [Smooth Primary Navigation Continuity](./resolved/RN-0029-quiet-compact-ui-refresh/RN-0029-02-smooth-primary-navigation.md) | [RN-0029](./resolved/RN-0029-quiet-compact-ui-refresh.md) | - | 2026-08-20 | 2026-08-20 |
+| RN-0029-01 | [IMPROVEMENT] | High | design-system | [Establish Quiet Compact UI Foundations](./resolved/RN-0029-quiet-compact-ui-refresh/RN-0029-01-establish-quiet-compact-foundations.md) | [RN-0029](./resolved/RN-0029-quiet-compact-ui-refresh.md) | - | 2026-08-20 | 2026-08-20 |
+| RN-0029 | [EPIC] | High | design-system | [Deliver Quiet Compact UI Refresh](./resolved/RN-0029-quiet-compact-ui-refresh.md) | - | - | 2026-08-20 | 2026-08-20 |
 | RN-0028 | [IMPROVEMENT] | High | database-sync | [Enable Guarded Applied Sync in Local Settings](./resolved/RN-0028-guarded-settings-applied-sync.md) | - | - | 2026-08-20 | 2026-08-20 |
 | RN-0027 | [IMPROVEMENT] | Medium | bean-inventory | [Add Bean Stock Remaining Meter](./resolved/RN-0027-bean-stock-remaining-meter.md) | - | - | 2026-08-20 | 2026-08-20 |
 | RN-0026 | [IMPROVEMENT] | Low | design-system | [Remove Form Panel Accent Strips](./resolved/RN-0026-remove-form-panel-accent-strips.md) | - | - | 2026-08-20 | 2026-08-20 |

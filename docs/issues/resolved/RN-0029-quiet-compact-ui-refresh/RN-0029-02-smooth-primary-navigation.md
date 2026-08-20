@@ -2,14 +2,14 @@
 id: RN-0029-02
 title: Smooth Primary Navigation Continuity
 type: improvement
-status: blocked
+status: resolved
 priority: high
 created: 2026-08-20
-resolved:
+resolved: 2026-08-20
 area: navigation
 parent: RN-0029
 decisions: []
-blocked_by: [RN-0029-01]
+blocked_by: []
 testing_policy: v1
 tags:
   - navigation
@@ -64,29 +64,29 @@ main content without reanimating the entire page chrome.
 
 ## Acceptance Criteria
 
-- [ ] Clicking Roasts or Beans keeps the navbar visually stationary while the
+- [x] Clicking Roasts or Beans keeps the navbar visually stationary while the
   selected indicator and main content communicate the document change.
-- [ ] Roasts, Beans, contextual actions, record counts, URLs, and active-page
+- [x] Roasts, Beans, contextual actions, record counts, URLs, and active-page
   semantics remain server rendered and correct after click, Back, Forward, and
   direct load.
-- [ ] The normal-motion transition completes in `160-200ms`, moves content no
+- [x] The normal-motion transition completes in `160-200ms`, moves content no
   more than `4px`, and animates only transform and opacity.
-- [ ] First load, unsupported browsers, failed navigation, and reduced-motion
+- [x] First load, unsupported browsers, failed navigation, and reduced-motion
   mode remain complete and usable without relying on animation.
-- [ ] Reduced-motion mode has no route fade, translation, shared-indicator
+- [x] Reduced-motion mode has no route fade, translation, shared-indicator
   motion, or delayed content visibility.
-- [ ] The blanket `.container` entrance does not double-animate navigation or
+- [x] The blanket `.container` entrance does not double-animate navigation or
   make the persistent header appear to reload.
-- [ ] The desktop navbar remains one line at `1024px`; mobile navigation is
+- [x] The desktop navbar remains one line at `1024px`; mobile navigation is
   usable at `390px` without horizontal page overflow.
-- [ ] Light and dark modes use the same motion hierarchy and readable active,
+- [x] Light and dark modes use the same motion hierarchy and readable active,
   inactive, hover, focus, and pressed states.
-- [ ] Live-roast chart, readings, controls, and active sensor state do not
+- [x] Live-roast chart, readings, controls, and active sensor state do not
   receive route-content choreography or changed dimensions.
-- [ ] No JavaScript scroll listener, React-style state layer, navigation
+- [x] No JavaScript scroll listener, React-style state layer, navigation
   framework, new dependency, route, or API change is introduced.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
@@ -123,6 +123,20 @@ operation.
 
 - None. Use native cross-document transitions as progressive enhancement and
   preserve ordinary server navigation as the complete fallback.
+
+## Resolution
+
+- Kept ordinary server-rendered links, URLs, history, focus, and failure
+  behavior while adding stable shell roles and a restrained `180ms`
+  transform/opacity-only transition for fully capable browsers.
+- Added a synchronous complete-lifecycle feature gate. The in-app browser's
+  partial implementation selected the immediate fallback, and repeated
+  Roasts/Beans navigation plus Back/Forward completed without console errors.
+- Moved contextual actions into the controlled mobile menu, retained readable
+  filled-button labels, and verified zero horizontal overflow at `390px`.
+- Reduced-motion cancellation is covered by static design contracts because
+  the browser harness could not emulate the preference. The parent aggregate
+  browser run supplied the remaining navigation evidence.
 
 ## Related Files
 

@@ -2,14 +2,14 @@
 id: RN-0029-03
 title: Rebuild Settings as Accessible Sectioned Sheet
 type: improvement
-status: blocked
+status: resolved
 priority: high
 created: 2026-08-20
-resolved:
+resolved: 2026-08-20
 area: settings
 parent: RN-0029
 decisions: []
-blocked_by: [RN-0029-01]
+blocked_by: []
 testing_policy: v1
 tags:
   - settings
@@ -78,31 +78,31 @@ keyboard complete, and mobile-native.
 
 ## Acceptance Criteria
 
-- [ ] Settings opens from the existing gear as a right-side desktop/tablet
+- [x] Settings opens from the existing gear as a right-side desktop/tablet
   sheet and a full-screen mobile sheet without moving or scrolling the page
   underneath it.
-- [ ] Sensor, Data, and Advanced are keyboard-operable single-select sections;
+- [x] Sensor, Data, and Advanced are keyboard-operable single-select sections;
   only the selected section is visible, announced, and focusable.
-- [ ] Default Sensor and Data states fit within the sheet at `1024x768` and
+- [x] Default Sensor and Data states fit within the sheet at `1024x768` and
   `1280x640` without outer page/overlay scrolling.
-- [ ] Expanded content scrolls only inside the sheet body while the title,
+- [x] Expanded content scrolls only inside the sheet body while the title,
   close button, and section control remain available.
-- [ ] Advanced keeps the Danger Zone collapsed by default and retains both
+- [x] Advanced keeps the Danger Zone collapsed by default and retains both
   existing cleanup explanations, confirmations, button severity, and results.
-- [ ] The close control is a real button; the sheet is labeled as a modal
+- [x] The close control is a real button; the sheet is labeled as a modal
   dialog, contains focus, handles Escape safely, and returns focus to Settings.
-- [ ] Hidden sections cannot receive focus, and every request status or result
+- [x] Hidden sections cannot receive focus, and every request status or result
   continues to use an appropriate live-region announcement.
-- [ ] Closing, reopening, and page-session section restoration do not erase or
+- [x] Closing, reopening, and page-session section restoration do not erase or
   duplicate active Settings requests or their visible state.
-- [ ] All RN-0022 and applicable RN-0028 sync safety, confirmation, audit,
+- [x] All RN-0022 and applicable RN-0028 sync safety, confirmation, audit,
   restoration, hosted/local, and E2E states remain complete in the Data section.
-- [ ] Sensor save/test, database selection, preflight/sync, and cleanup routes,
+- [x] Sensor save/test, database selection, preflight/sync, and cleanup routes,
   payloads, server behavior, and safe text construction remain unchanged.
-- [ ] Light and dark modes pass contrast and focus-state requirements at
+- [x] Light and dark modes pass contrast and focus-state requirements at
   `1440x900`, `1280x640`, `1024x768`, and `390x844`.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
@@ -145,6 +145,22 @@ database and must never run an applied mirror.
 
 - None. Sensor, Data, and Advanced are the approved sections; Danger Zone is
   collapsed; desktop/tablet use a right sheet and mobile uses full screen.
+
+## Resolution
+
+- Rebuilt Settings as a `560px` right sheet and full-screen mobile surface with
+  Sensor, Data, and Advanced ARIA tabs, a real close button, contained focus,
+  Escape handling, opener focus return, session section restoration, body
+  scroll lock, and viewport-bounded internal scrolling.
+- Preserved every RN-0028 endpoint, payload, typed gate, backup/recovery phase,
+  cancellation state, exact destructive confirmation, and safe status-rendering
+  contract while extracting the behavior into a focused JavaScript module.
+- The parent aggregate browser run verified sensor healthy/offline/recovery
+  states, all available guarded-sync phases with the artifact-only fake,
+  desktop and mobile geometry, keyboard behavior, dark mode, and neutral toast
+  styling. No real database access or destructive cleanup occurred.
+- Settings, sync, sensor, API, file-size, and full-suite verification passed;
+  no `db_backup` payload is tracked.
 
 ## Related Files
 
