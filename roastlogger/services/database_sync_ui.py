@@ -57,6 +57,7 @@ def run_ui_preflight(
     preflight=build_preflight,
     audit_writer=write_ui_intent_audit,
     blocked_error=None,
+    apply_eligible=False,
 ):
     root = Path(root)
     run_id = new_run_id()
@@ -130,13 +131,19 @@ def run_ui_preflight(
             "error": failure,
             "audit_recorded": False,
             "audit_error": sanitize_failure(error),
+            "apply_eligible": False,
         }
 
-    return {
+    eligible = bool(plan is not None and apply_eligible)
+    result = {
         "success": plan is not None,
         "run_id": run_id,
         "plan": plan,
         "error": failure,
         "audit_recorded": True,
         "audit_path": str(audit_path.relative_to(root)),
+        "apply_eligible": eligible,
     }
+    if eligible:
+        result["backup_confirmation"] = f"BACKUP {run_id}"
+    return result

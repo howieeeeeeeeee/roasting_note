@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 import re
 from uuid import uuid4
 
@@ -18,6 +19,29 @@ def _bean_list_row(html: str, bean_name: str) -> str:
         flags=re.DOTALL,
     )
     return next(row for row in rows if bean_name in row)
+
+
+def test_guarded_settings_sync_markup_uses_typed_safe_phase_controls():
+    template = Path("templates/base.html").read_text(encoding="utf-8")
+
+    assert "Guarded Database Sync" in template
+    assert "data.backup_confirmation" in template
+    assert "data.apply_confirmation" in template
+    assert "'/api/sync/runs/active'" in template
+    assert "`/api/sync/runs/${runId}/backup`" in template
+    assert "`/api/sync/runs/${runId}/apply`" in template
+    assert "`/api/sync/runs/${runId}/cancel`" in template
+    assert "required.textContent = token" in template
+    assert "line.appendChild(document.createTextNode(value))" in template
+    assert "Object.entries(data.sync.collections)" in template
+    assert "'Verified manifest SHA-256'" in template
+    assert "data.status === 'cancelled_after_backup'" in template
+    assert "'Cancellation audit needs recovery attention'" in template
+    assert "body: JSON.stringify(body)" in template
+    assert "const expectedExistingRun = syncRunActive" in template
+    assert "expectedExistingRun" in template
+    assert "renderAwaitingApply(data.active, phaseError)" in template
+    assert "queueMicrotask(() => input.focus())" in template
 
 
 def test_label_image_and_recent_preferences_contract(client, beans_collection):

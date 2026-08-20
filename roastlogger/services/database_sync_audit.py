@@ -77,7 +77,7 @@ def write_ui_intent_audit(
         / "database_mirrors"
         / timestamp[:4]
         / timestamp[4:6]
-        / f"{timestamp}__{device}__{direction}__{run_id}.json"
+        / f"{timestamp}__{device}__{direction}__{run_id}__preflight.json"
     )
     return _atomic_append_only_json(path, record)
 

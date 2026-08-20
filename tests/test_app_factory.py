@@ -82,6 +82,10 @@ EXPECTED_ROUTES = {
         "POST",
         "api_sync_preflight",
     ),
+    ("/api/sync/runs/active", "GET", "api_sync_active_run"),
+    ("/api/sync/runs/<run_id>/backup", "POST", "api_sync_backup"),
+    ("/api/sync/runs/<run_id>/apply", "POST", "api_sync_apply"),
+    ("/api/sync/runs/<run_id>/cancel", "POST", "api_sync_cancel"),
     ("/api/db/clean-test-data", "POST", "api_clean_test_data"),
     ("/api/db/clean-local", "POST", "api_clean_local_db"),
 }

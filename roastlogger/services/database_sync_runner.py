@@ -1,4 +1,4 @@
-"""Two-confirmation guarded execution for timestamp-aware database sync."""
+"""Phased guarded execution for timestamp-aware database sync."""
 
 from __future__ import annotations
 
@@ -54,10 +54,17 @@ def synchronize_collections(runtime, source_client, destination_client):
     }
 
 
-def _base_audit(runtime, plan, started_at):
+def begin_guarded_execution(
+    runtime,
+    plan,
+    *,
+    trigger="guarded_cli",
+):
+    """Create the shared in-memory audit state before guarded activity."""
+    started_at = datetime.now(timezone.utc)
     return {
         "schema_version": 1,
-        "trigger": "guarded_cli",
+        "trigger": trigger,
         "run_id": plan["run_id"],
         "status": "started",
         "started_at": utc_text(started_at),
@@ -81,8 +88,13 @@ def _base_audit(runtime, plan, started_at):
     }
 
 
-def _finish_record(root, record, status, started_at, **values):
+def _started_at(record):
+    return datetime.fromisoformat(record["started_at"].replace("Z", "+00:00"))
+
+
+def _finish_record(root, record, status, **values):
     ended_at = datetime.now(timezone.utc)
+    started_at = _started_at(record)
     record.update(values)
     record.update(
         {
@@ -125,32 +137,19 @@ def _persist_record(root, runtime, plan, record, activity_started):
         }
 
 
-def run_guarded_sync(
+def perform_backup_phase(
     runtime,
-    source_client,
     destination_client,
     root: Path,
     plan: dict,
+    record: dict,
     *,
-    prompt=input,
     backup=backup_destination_database,
-    synchronize=synchronize_collections,
+    verify=None,
 ):
-    """Apply one run; callers must print the preflight before invoking this."""
-    started_at = datetime.now(timezone.utc)
-    record = _base_audit(runtime, plan, started_at)
+    """Create and optionally re-verify the complete destination backup."""
     run_id = plan["run_id"]
-    try:
-        first = prompt(f"Type BACKUP {run_id}: ")
-    except EOFError:
-        first = ""
-    if first != f"BACKUP {run_id}":
-        return {
-            "status": "cancelled_before_backup",
-            "exit_code": 1,
-            "audit_path": None,
-        }
-
+    backup_result = None
     try:
         backup_result = backup(
             runtime,
@@ -158,20 +157,32 @@ def run_guarded_sync(
             root,
             run_id,
         )
+        if verify is not None:
+            verify(runtime, root, run_id, backup_result)
         record["backup"] = backup_result
+        return (
+            {
+                "status": "awaiting_apply",
+                "exit_code": 0,
+                "backup": backup_result,
+            },
+            record,
+        )
     except Exception as error:
-        backup_path = Path(plan["backup"]["path"])
-        record["backup"] = {
-            "path": str(
-                backup_path.with_name(f"{backup_path.name}.partial")
-            ),
-            "status": "incomplete",
-        }
+        if backup_result is None:
+            backup_path = Path(plan["backup"]["path"])
+            record["backup"] = {
+                "path": str(
+                    backup_path.with_name(f"{backup_path.name}.partial")
+                ),
+                "status": "incomplete",
+            }
+        else:
+            record["backup"] = {**backup_result, "status": "invalid"}
         record = _finish_record(
             root,
             record,
             "backup_failed",
-            started_at,
             failure=sanitize_failure(error),
         )
         persisted = _persist_record(
@@ -181,33 +192,45 @@ def run_guarded_sync(
             record,
             activity_started=True,
         )
-        return {"status": "backup_failed", "exit_code": 1, **persisted}
-
-    try:
-        second = prompt(f"Type APPLY {runtime.direction} {run_id}: ")
-    except EOFError:
-        second = ""
-    if second != f"APPLY {runtime.direction} {run_id}":
-        record = _finish_record(
-            root,
+        return (
+            {"status": "backup_failed", "exit_code": 1, **persisted},
             record,
-            "cancelled_after_backup",
-            started_at,
-            cancellation={"stage": "after_backup"},
         )
-        persisted = _persist_record(
-            root,
-            runtime,
-            plan,
-            record,
-            activity_started=True,
-        )
-        return {
-            "status": "cancelled_after_backup",
-            "exit_code": 1,
-            **persisted,
-        }
 
+
+def perform_cancel_phase(runtime, root: Path, plan: dict, record: dict):
+    """Persist a terminal cancellation after a completed backup."""
+    record = _finish_record(
+        root,
+        record,
+        "cancelled_after_backup",
+        cancellation={"stage": "after_backup"},
+    )
+    persisted = _persist_record(
+        root,
+        runtime,
+        plan,
+        record,
+        activity_started=True,
+    )
+    return {
+        "status": "cancelled_after_backup",
+        "exit_code": 1,
+        **persisted,
+    }, record
+
+
+def perform_apply_phase(
+    runtime,
+    source_client,
+    destination_client,
+    root: Path,
+    plan: dict,
+    record: dict,
+    *,
+    synchronize=synchronize_collections,
+):
+    """Synchronize after callers have independently verified confirmation."""
     try:
         sync_result = synchronize(
             runtime,
@@ -218,7 +241,6 @@ def run_guarded_sync(
             root,
             record,
             "success",
-            started_at,
             sync=sync_result,
         )
         status = "success"
@@ -235,7 +257,6 @@ def run_guarded_sync(
             root,
             record,
             "partial_sync_failed",
-            started_at,
             sync=partial_result,
             failure=sanitize_failure(error),
         )
@@ -252,9 +273,68 @@ def run_guarded_sync(
     if persisted["audit_error"]:
         exit_code = 2
         status = f"{status}_audit_recovery"
-    return {
-        "status": status,
-        "exit_code": exit_code,
-        "sync": record.get("sync"),
-        **persisted,
-    }
+    return (
+        {
+            "status": status,
+            "exit_code": exit_code,
+            "sync": record.get("sync"),
+            **persisted,
+        },
+        record,
+    )
+
+
+def run_guarded_sync(
+    runtime,
+    source_client,
+    destination_client,
+    root: Path,
+    plan: dict,
+    *,
+    prompt=input,
+    backup=backup_destination_database,
+    synchronize=synchronize_collections,
+):
+    """Apply one CLI run while preserving the original prompt contract."""
+    run_id = plan["run_id"]
+    try:
+        first = prompt(f"Type BACKUP {run_id}: ")
+    except EOFError:
+        first = ""
+    if first != f"BACKUP {run_id}":
+        return {
+            "status": "cancelled_before_backup",
+            "exit_code": 1,
+            "audit_path": None,
+        }
+
+    record = begin_guarded_execution(runtime, plan)
+    backup_result, record = perform_backup_phase(
+        runtime,
+        destination_client,
+        root,
+        plan,
+        record,
+        backup=backup,
+    )
+    if backup_result["status"] != "awaiting_apply":
+        return backup_result
+
+    try:
+        second = prompt(f"Type APPLY {runtime.direction} {run_id}: ")
+    except EOFError:
+        second = ""
+    if second != f"APPLY {runtime.direction} {run_id}":
+        result, _ = perform_cancel_phase(runtime, root, plan, record)
+        return result
+
+    result, _ = perform_apply_phase(
+        runtime,
+        source_client,
+        destination_client,
+        root,
+        plan,
+        record,
+        synchronize=synchronize,
+    )
+    return result

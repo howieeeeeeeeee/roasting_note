@@ -1,8 +1,9 @@
 # Guarded Database Sync
 
 RoastLogger supports timestamp-aware synchronization between its local and
-online MongoDB databases. Settings is preview-only. The guarded CLI is the only
-supported applied-sync entry point.
+online MongoDB databases. Applied sync is available through the guarded CLI or
+through Settings when the browser reaches the app directly over loopback.
+Hosted and non-loopback Settings remain preview-only.
 
 ## Safety Contract
 
@@ -15,14 +16,17 @@ supported applied-sync entry point.
 - Backup payloads stay under ignored `db_backup/`; reviewed audit records live
   under `docs/audit_history/database_mirrors/`.
 - Console, API, and audit output never includes MongoDB URIs or credentials.
+- Browser phase routes require a direct loopback peer, a loopback `Host`, JSON
+  mutation bodies, and a matching `Origin` whenever one is supplied. Forwarded
+  headers never establish locality.
 
 An applied mirror is never an application startup step, automated-test step,
 cleanup step, or implicit consequence of changing database mode.
 
-## Settings Preflight
+## Settings Guarded Flow
 
-The Settings modal keeps both direction buttons as audited, non-mutating
-preflight actions. A click calls:
+Both Settings direction buttons begin with the existing audited, non-mutating
+preflight:
 
 ```text
 POST /api/sync/preflight/online-to-local
@@ -30,20 +34,66 @@ POST /api/sync/preflight/local-to-online
 ```
 
 The response shows a server-generated run ID, sanitized source/destination
-roles and host labels, requested collection counts, complete destination backup
-scope, CLI handoff, and audit path. Both buttons are disabled while the request
-is active. Successful and failed preflights each write exactly one
-`settings_ui` / `sync_button_clicked` audit event.
+roles and host labels, collection counts, complete destination backup scope,
+CLI handoff, and audit paths. Both buttons are disabled while the request is
+active. Successful and failed preflights each write exactly one
+`settings_ui` / `sync_button_clicked` intent event.
 
-The historic mutation URLs remain only to fail closed with HTTP `409` and CLI
-migration guidance:
+On an eligible direct-loopback request, Settings continues as follows:
+
+1. Type the exact `BACKUP <run-id>` value shown by the server.
+2. Wait synchronously while every destination collection is backed up and its
+   manifest and payload checksums are verified. No sync write occurs.
+3. Review the collection/document count, verified manifest SHA-256, ignored
+   backup path, and exact `APPLY <direction> <run-id>` value.
+4. Apply the timestamp-aware sync or cancel and retain the backup.
+5. Review collection/aggregate results and the applied audit or recovery path.
+
+The pre-backup preview capability is process-local and atomically taken by the
+first backup attempt. A wrong first token, competing request, application
+restart, or worker loss requires a fresh preview and causes no backup or
+applied-attempt audit. Once backup begins, an exclusive filesystem claim and
+atomic sanitized run state are written under `db_backup/database_mirrors/`.
+An awaiting-apply run survives modal closure, page reload, and application
+restart. Only one claimed run may proceed across application processes;
+another preview loses cleanly at the claim and cannot overwrite the active run.
+
+Apply and cancel also compete for one exclusive terminal-transition marker.
+Concurrent apply/apply or apply/cancel requests can run only one executor and
+write only one terminal audit. A marker left by interruption keeps the run
+blocked as recovery-required rather than permitting a duplicate action.
+
+Before apply or cancel, the server reconstructs runtime configuration and
+checks the saved run ID, direction, endpoint descriptors, credential-free
+source and destination topology fingerprints, destination identity, manifest
+digest, payload digests, byte counts, and document counts. Corrupt or
+interrupted state remains claimed and returns recovery guidance instead of
+being retried automatically. Terminal state stays beside its ignored backup;
+the active claim is released only after that state is persisted.
+
+The historic one-request mutation URLs remain disabled with HTTP `409`:
 
 ```text
 POST /api/sync/online-to-local
 POST /api/sync/local-to-online
 ```
 
-They perform no database access, backup, or audit write.
+They perform no database access, backup, state, or audit write. The supported
+loopback-only phase API is:
+
+```text
+GET  /api/sync/runs/active
+POST /api/sync/runs/<run-id>/backup
+POST /api/sync/runs/<run-id>/apply
+POST /api/sync/runs/<run-id>/cancel
+```
+
+Remote, non-loopback-host, cross-origin, non-JSON, malformed, replayed, and
+out-of-order requests fail closed before guarded activity. Host and Origin
+parsing rejects user information, queries, fragments, and non-HTTP(S) origins.
+Ordinary E2E mode also fails closed. Browser workflow verification injects an
+artifact-root-only fake executor; it never constructs an online client, uses a
+MongoDB collection, or writes production backup/audit paths.
 
 The interaction and visual states are specified in
 [Settings screen design](../design/screens/settings.md).
@@ -87,9 +137,13 @@ Preflight rejects:
 Failures are credential-free. Endpoint descriptions contain only roles, host
 labels, and database names.
 
-## Applied Operation Sequence
+## Shared Applied Operation Sequence
 
-1. Generate one stable run ID and print the complete preflight.
+The CLI and Settings adapters call the same backup, apply, and after-backup
+cancellation phases. The CLI retains its arguments, output, prompt text/order,
+exit codes, backup layout, audits, and recovery guidance:
+
+1. Generate one stable run ID and print or display the complete preflight.
 2. Require the exact `BACKUP <run-id>` token.
 3. Stream every collection and document in the destination database into an
    Extended JSON backup.
@@ -97,10 +151,12 @@ labels, and database names.
 5. Synchronize selected collections sequentially and stop on first failure.
 6. Verify post-run counts and persist one terminal audit record.
 
-A wrong or missing first token leaves no backup and no audit. A wrong or
-missing second token retains the completed backup and records
-`cancelled_after_backup`. Backup failure, partial sync failure, and success are
-also audited.
+A wrong or missing CLI first token leaves no backup and no audit. The Settings
+first token is likewise one-use and requires a new preview after mismatch. A
+wrong or missing CLI second token retains the completed backup and records
+`cancelled_after_backup`; Settings keeps an awaiting-apply run available for an
+exact retry or explicit cancel. Backup failure, partial sync failure, audit
+recovery, cancellation after backup, and success are terminal.
 
 ## Timestamp-Aware Merge
 

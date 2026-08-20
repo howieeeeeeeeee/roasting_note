@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ipaddress
 import os
+from urllib.parse import urlsplit
 
 from bson.objectid import ObjectId
 from flask import Blueprint, current_app, jsonify, request, session
@@ -10,10 +12,174 @@ from flask import Blueprint, current_app, jsonify, request, session
 from roastlogger.config import DEFAULT_TEMP_SENSOR_URL
 from roastlogger.database import get_connections, get_current_db_mode
 from roastlogger.routing import register_unprefixed_routes
+from roastlogger.services.database_backup import backup_destination_database
+from roastlogger.services.database_sync_plan import build_preflight, sanitize_failure
+from roastlogger.services.database_sync_runner import synchronize_collections
 from roastlogger.services.database_sync_ui import run_ui_preflight
+from roastlogger.services.database_sync_web import (
+    PreviewRegistry,
+    WebSyncError,
+    WebSyncService,
+)
 
 
 blueprint = Blueprint("settings", __name__)
+
+
+def _is_loopback(value):
+    candidate = (value or "").split("%", 1)[0].strip().lower()
+    if candidate == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(candidate).is_loopback
+    except ValueError:
+        return False
+
+
+def _host_is_loopback():
+    try:
+        parsed = urlsplit(f"//{request.host}")
+        hostname = parsed.hostname
+        parsed.port
+    except ValueError:
+        return False
+    if (
+        parsed.username is not None
+        or parsed.password is not None
+        or parsed.path
+        or parsed.query
+        or parsed.fragment
+    ):
+        return False
+    return _is_loopback(hostname)
+
+
+def _request_is_direct_loopback():
+    return _is_loopback(request.remote_addr) and _host_is_loopback()
+
+
+def _normalized_origin(value):
+    try:
+        parsed = urlsplit(value)
+        port = parsed.port
+    except ValueError:
+        return None
+    if (
+        parsed.scheme.lower() not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in {"", "/"}
+        or parsed.query
+        or parsed.fragment
+    ):
+        return None
+    if port is None:
+        port = 443 if parsed.scheme.lower() == "https" else 80
+    return parsed.scheme.lower(), parsed.hostname.lower(), port
+
+
+def _same_origin_request():
+    supplied = request.headers.get("Origin")
+    if not supplied:
+        return True
+    return _normalized_origin(supplied) == _normalized_origin(request.host_url)
+
+
+def _e2e_sync_executor():
+    executor = current_app.config.get("E2E_SYNC_EXECUTOR")
+    return executor if current_app.config.get("E2E_MODE") else None
+
+
+def _browser_apply_allowed():
+    if not _request_is_direct_loopback():
+        return False
+    if current_app.config.get("E2E_MODE"):
+        return _e2e_sync_executor() is not None
+    return True
+
+
+def _sync_root():
+    if current_app.config.get("E2E_MODE"):
+        return current_app.config["E2E_ARTIFACT_ROOT"]
+    return current_app.config["REPOSITORY_ROOT"]
+
+
+def _preview_registry():
+    return current_app.extensions.setdefault(
+        "database_sync_previews", PreviewRegistry()
+    )
+
+
+def _web_sync_service():
+    executor = _e2e_sync_executor()
+    return WebSyncService(
+        current_app.config,
+        get_connections(),
+        _sync_root(),
+        _preview_registry(),
+        backup=(executor.backup if executor else backup_destination_database),
+        synchronize=(
+            executor.synchronize if executor else synchronize_collections
+        ),
+    )
+
+
+def _phase_guard(*, require_json):
+    if not _request_is_direct_loopback():
+        return jsonify(
+            {
+                "success": False,
+                "error": "Browser-applied sync requires a direct loopback peer and host",
+            }
+        ), 403
+    if current_app.config.get("E2E_MODE") and _e2e_sync_executor() is None:
+        return jsonify(
+            {
+                "success": False,
+                "error": "Browser-applied sync is disabled in ordinary E2E mode",
+            }
+        ), 409
+    if require_json and not request.is_json:
+        return jsonify(
+            {
+                "success": False,
+                "error": "Browser-applied sync requires application/json",
+            }
+        ), 415
+    if require_json and not _same_origin_request():
+        return jsonify(
+            {
+                "success": False,
+                "error": "Browser-applied sync requires a same-origin request",
+            }
+        ), 403
+    return None
+
+
+def _phase_payload(allowed):
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or set(data) - set(allowed):
+        raise WebSyncError("sync request payload is invalid")
+    return data
+
+
+def _phase_error(error):
+    if isinstance(error, WebSyncError):
+        body = {
+            "success": False,
+            "error": str(error),
+            "stage": error.stage,
+            "run_id": error.run_id,
+        }
+        return jsonify(body), error.status_code
+    return jsonify(
+        {
+            "success": False,
+            "error": sanitize_failure(error)["message"],
+            "stage": "recovery_required",
+        }
+    ), 500
 
 
 def api_get_db_settings():
@@ -87,11 +253,11 @@ def _sync_route_disabled():
                 "error": (
                     "Database sync is disabled in E2E mode"
                     if e2e_mode
-                    else "Applied database sync is CLI-only"
+                    else "Legacy one-request database sync is disabled"
                 ),
                 "guidance": (
-                    "Use scripts/sync_database.py for guarded sync, or the "
-                    "Settings preflight action for a read-only plan."
+                    "Use guarded local Settings or scripts/sync_database.py; "
+                    "both require backup and apply confirmations."
                 ),
             }
         ),
@@ -101,25 +267,80 @@ def _sync_route_disabled():
 
 def api_sync_preflight(direction):
     e2e_mode = current_app.config.get("E2E_MODE")
-    root = (
-        current_app.config["E2E_ARTIFACT_ROOT"]
-        if e2e_mode
-        else current_app.config["REPOSITORY_ROOT"]
-    )
+    executor = _e2e_sync_executor()
     result = run_ui_preflight(
         current_app.config,
         get_connections(),
-        root,
+        _sync_root(),
         direction,
+        preflight=executor.preflight if executor else build_preflight,
         blocked_error=(
             "Database sync preflight is disabled in E2E mode"
-            if e2e_mode
+            if e2e_mode and executor is None
             else None
         ),
+        apply_eligible=_browser_apply_allowed(),
     )
     if not result["audit_recorded"]:
         return jsonify(result), 500
+    if result["success"] and result["apply_eligible"]:
+        _web_sync_service().register_preview(result["plan"])
     return jsonify(result), 200 if result["success"] else 503
+
+
+def api_sync_active_run():
+    guarded = _phase_guard(require_json=False)
+    if guarded:
+        return guarded
+    try:
+        state = _web_sync_service().active()
+        return jsonify({"success": True, "active": state})
+    except Exception as error:
+        return _phase_error(error)
+
+
+def api_sync_backup(run_id):
+    guarded = _phase_guard(require_json=True)
+    if guarded:
+        return guarded
+    try:
+        data = _phase_payload({"direction", "confirmation"})
+        result = _web_sync_service().backup(
+            run_id,
+            data.get("direction"),
+            data.get("confirmation"),
+        )
+        return jsonify(result), 200 if result["success"] else 500
+    except Exception as error:
+        return _phase_error(error)
+
+
+def api_sync_apply(run_id):
+    guarded = _phase_guard(require_json=True)
+    if guarded:
+        return guarded
+    try:
+        data = _phase_payload({"direction", "confirmation"})
+        result = _web_sync_service().apply(
+            run_id,
+            data.get("direction"),
+            data.get("confirmation"),
+        )
+        return jsonify(result), 200 if result["success"] else 500
+    except Exception as error:
+        return _phase_error(error)
+
+
+def api_sync_cancel(run_id):
+    guarded = _phase_guard(require_json=True)
+    if guarded:
+        return guarded
+    try:
+        data = _phase_payload({"direction"})
+        result = _web_sync_service().cancel(run_id, data.get("direction"))
+        return jsonify(result), 200 if result["success"] else 500
+    except Exception as error:
+        return _phase_error(error)
 
 
 def api_clean_test_data():
@@ -225,6 +446,30 @@ register_unprefixed_routes(
             "/api/sync/preflight/<direction>",
             "api_sync_preflight",
             api_sync_preflight,
+            ["POST"],
+        ),
+        (
+            "/api/sync/runs/active",
+            "api_sync_active_run",
+            api_sync_active_run,
+            ["GET"],
+        ),
+        (
+            "/api/sync/runs/<run_id>/backup",
+            "api_sync_backup",
+            api_sync_backup,
+            ["POST"],
+        ),
+        (
+            "/api/sync/runs/<run_id>/apply",
+            "api_sync_apply",
+            api_sync_apply,
+            ["POST"],
+        ),
+        (
+            "/api/sync/runs/<run_id>/cancel",
+            "api_sync_cancel",
+            api_sync_cancel,
             ["POST"],
         ),
         (

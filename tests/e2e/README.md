@@ -37,9 +37,14 @@ cross-screen workflow.
 - E2E startup constructs only the local MongoDB client. It places a disabled
   placeholder in `MONGO_URI`; the app never initializes or accesses it.
 - E2E mode forces local database selection and rejects online selection,
-  historic sync mutation routes, sync preflight execution, and global cleanup.
-- Settings sync-button clicks still create sanitized terminal intent audits,
-  but those records live inside ignored run artifacts.
+  historic sync mutation routes, and global cleanup.
+- Ordinary E2E rejects sync preflight and every browser phase route. Settings
+  sync-button clicks still create sanitized terminal intent audits inside
+  ignored run artifacts.
+- Guarded-sync success coverage requires the explicit `--sync-fake` start
+  option. Its injected executor refuses non-artifact roots, never constructs or
+  uses an online MongoDB client, and records `database_access: false` for every
+  simulated phase.
 - Browser-created beans and roasts receive `test_data: true` and the exact
   `test_run_id`. Updates retain both fields.
 - All logs, screenshots, summaries, and service output stay under ignored
@@ -67,6 +72,15 @@ The command starts:
 It prints the run ID, URLs, and ignored artifact path after both services are
 healthy. Startup fails if the run ID already has artifacts or the database name
 is not exactly `roastlogger_e2e`.
+
+For the guarded local Settings simulation, use a new run and explicitly inject
+the safe executor:
+
+```bash
+uv run python -m tests.e2e.manage start \
+  --run-id rn-0028-settings-sync-a \
+  --sync-fake
+```
 
 Before opening the browser, verify the runtime:
 
@@ -114,17 +128,50 @@ The control endpoint rejects non-loopback clients.
 
 Use Codex's in-app browser, not a standalone browser driver.
 
-### Preflight And Fail-Closed Sync
+### Guarded Local Settings Sync
 
-1. Open `http://127.0.0.1:5011`.
-2. Open Settings and confirm the database label contains
-   `local (roastlogger_e2e / <run-id>)`.
-3. Confirm the Online radio is disabled.
-4. Click **Preview Online → Local**. The result must prominently say sync
-   preflight is disabled in E2E mode and show an artifact-local audit path.
-5. In the browser network view, confirm the preflight request is `503`.
-6. If directly checking the historic POST sync URLs, confirm `409`. Neither
-   path may create `db_backup/` or access an online database.
+First start an ordinary run without `--sync-fake` using run ID
+`rn-0028-settings-sync-ordinary`:
+
+1. Open `http://127.0.0.1:5011`, open Settings, and confirm the database label
+   contains `local (roastlogger_e2e / rn-0028-settings-sync-ordinary)` and the
+   Online radio is disabled.
+2. Click **Preview Online → Local**. Confirm the prominent ordinary-E2E error,
+   artifact-local preflight audit path, and `503` network response.
+3. Confirm `GET /api/sync/runs/active` and direct phase requests return `409`.
+   Historic sync URLs also return `409`. No `db_backup/`, online client, or
+   non-artifact audit path may be created.
+4. Save the fail-closed Settings screenshot and stop the run.
+
+Then start `rn-0028-settings-sync-a` with `--sync-fake`:
+
+1. Open Settings and preview **Online → Local**. Capture the sanitized plan,
+   selectable exact `BACKUP <run-id>` token, empty typed field, and enabled
+   **Create complete backup** action. Treat raw URI/credential/path data or
+   enabled one-click apply as failure.
+2. Submit an incorrect first token. Confirm `400`, no backup transition, and
+   the instruction to start a fresh preview.
+3. Preview again, type the new exact backup token, and submit. Confirm `200`,
+   **Complete and verified**, collection/document totals, verified manifest
+   SHA-256, backup path, no sync totals, and the empty exact-apply field.
+4. Reload the page, reopen Settings, and confirm the same run returns as
+   **Restored and re-verified** with preview buttons disabled. Capture this
+   apply-gate screenshot.
+5. Choose **Cancel run**. Confirm terminal `cancelled_after_backup`, retained
+   backup path, applied-audit path, and no sync totals. Capture cancellation.
+6. Start a fresh preview. Submit its exact backup token, then its exact
+   `APPLY <direction> <run-id>` token. Confirm the terminal per-collection and
+   aggregate added/updated/skipped/conflict summary plus applied-audit path.
+   Both **Beans outcome** and **Roasts outcome** must be visible. Capture
+   success.
+7. Verify request URLs/statuses and stage transitions in the network view.
+   Repeated backup/apply/cancel requests must return a conflict and must not
+   repeat artifacts or results. Treat console errors, failed requests outside
+   the deliberate `400`/`409` checks, missing restore state, or any MongoDB
+   access as failure.
+8. Inspect `sync-fake-events.jsonl`: every event must report
+   `database_access: false`; all state, backup, and audit paths must remain
+   beneath `tests/e2e/artifacts/rn-0028-settings-sync-a/`.
 
 ### Bean
 
@@ -195,7 +242,9 @@ tests/e2e/artifacts/<run-id>/
 └── docs/audit_history/...
 ```
 
-Save screenshots for Settings safety, the open bean **More actions** menu,
+Save screenshots for ordinary Settings fail-closed behavior, the permitted
+backup gate, restored apply gate, cancelled state, simulated sync success, the
+open bean **More actions** menu,
 the zero-stock history result, the out-of-stock inventory result, live healthy
 state, retry/offline/fault state, and final roast detail. Update `summary.md`
 with:

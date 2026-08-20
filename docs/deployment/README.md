@@ -96,10 +96,20 @@ TZ=Asia/Taipei
 
 ## Database Synchronization
 
-Do not expose an applied synchronization endpoint from Render. Settings
-preflight is read-only and audited; the old mutation routes fail closed.
-Operators run the guarded CLI from a trusted machine with both endpoints
-configured:
+Render and every non-loopback host remain preview-only. The browser phase API
+requires both the direct request peer and `Host` to be loopback and rejects
+forwarded-header locality, cross-origin mutation requests, and non-JSON bodies.
+The old one-request mutation routes remain disabled.
+
+On a trusted local instance reached directly through `localhost`, `127.0.0.1`,
+or `::1`, Settings may continue from its audited preview through the exact
+`BACKUP <run-id>` token, complete verified destination backup, and exact
+`APPLY <direction> <run-id>` token. Awaiting-apply state is ignored and
+resumable after restart; an interrupted/corrupt phase requires manual artifact
+review. No proxy, remote authentication, or hosted browser apply is supported.
+
+Operators may instead use the guarded CLI from a trusted machine with both
+endpoints configured:
 
 ```bash
 uv run python scripts/sync_database.py \

@@ -111,10 +111,10 @@
                 </div>
 
                 <div class="settings-section">
-                    <h3>Database Sync Preflight</h3>
+                    <h3>Guarded Database Sync</h3>
                     <p class="settings-hint">
-                        Preview the guarded CLI operation. These actions never
-                        modify either database.
+                        Preview either direction. On a direct local connection,
+                        two exact confirmations protect backup and apply.
                     </p>
                     <div class="sync-buttons">
                         <button class="btn btn-secondary" id="syncOnlineToLocalBtn"
@@ -176,6 +176,7 @@
             document.getElementById('settingsModal').style.display = 'block';
             loadDbSettings();
             loadSensorSettings();
+            loadActiveSync();
         }
 
         // Sensor URL Settings
@@ -278,14 +279,15 @@
             });
         });
 
-        let syncPreflightActive = false;
+        let syncRequestActive = false;
+        let syncRunActive = false;
 
-        function setSyncPreflightButtons(disabled) {
+        function setSyncPreviewButtons(disabled, busy = false) {
             const onlineButton = document.getElementById('syncOnlineToLocalBtn');
             const localButton = document.getElementById('syncLocalToOnlineBtn');
             onlineButton.disabled = disabled;
             localButton.disabled = disabled;
-            if (disabled) {
+            if (busy) {
                 onlineButton.innerHTML = '<span class="material-icons spinning">sync</span> Preflight running...';
                 localButton.innerHTML = '<span class="material-icons spinning">sync</span> Preflight running...';
                 return;
@@ -303,14 +305,75 @@
             container.appendChild(line);
         }
 
-        function renderSyncPreflight(data) {
+        function syncErrorText(data, fallback) {
+            if (typeof data?.error === 'string') {
+                return data.error;
+            }
+            return data?.error?.message || fallback;
+        }
+
+        function appendConfirmationGate(container, token, label, handler, cancelHandler = null) {
+            const gate = document.createElement('div');
+            gate.className = 'sync-confirmation-gate';
+
+            const instruction = document.createElement('label');
+            instruction.className = 'settings-hint';
+            instruction.textContent = 'Type the exact confirmation:';
+            gate.appendChild(instruction);
+
+            const required = document.createElement('code');
+            required.className = 'sync-confirmation-token';
+            required.textContent = token;
+            gate.appendChild(required);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'input-field';
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            input.setAttribute('aria-label', `Type ${token}`);
+            gate.appendChild(input);
+
+            const actions = document.createElement('div');
+            actions.className = 'sync-gate-actions';
+            const submit = document.createElement('button');
+            submit.type = 'button';
+            submit.className = 'btn btn-secondary';
+            submit.textContent = label;
+            submit.addEventListener('click', () => handler(input.value));
+            actions.appendChild(submit);
+            if (cancelHandler) {
+                const cancel = document.createElement('button');
+                cancel.type = 'button';
+                cancel.className = 'btn btn-secondary';
+                cancel.textContent = 'Cancel run';
+                cancel.addEventListener('click', cancelHandler);
+                actions.appendChild(cancel);
+            }
+            gate.appendChild(actions);
+            container.appendChild(gate);
+            queueMicrotask(() => input.focus());
+        }
+
+        function beginSyncResult(statusClass = '') {
             const result = document.getElementById('syncPreflightResult');
+            const containedFocus = result.contains(document.activeElement);
             result.replaceChildren();
             result.hidden = false;
             result.className = 'sync-preflight-result';
+            result.tabIndex = -1;
+            if (statusClass) {
+                result.classList.add(statusClass);
+            }
+            if (containedFocus) {
+                queueMicrotask(() => result.focus());
+            }
+            return result;
+        }
 
+        function renderSyncPreflight(data) {
             if (!data.audit_recorded) {
-                result.classList.add('status-error');
+                const result = beginSyncResult('status-error');
                 appendPreflightLine(
                     result,
                     'Audit failure',
@@ -319,7 +382,7 @@
                 return;
             }
             if (!data.success || !data.plan) {
-                result.classList.add('status-error');
+                const result = beginSyncResult('status-error');
                 appendPreflightLine(
                     result,
                     'Preflight failed',
@@ -330,7 +393,7 @@
             }
 
             const plan = data.plan;
-            result.classList.add('status-success');
+            const result = beginSyncResult('status-success');
             appendPreflightLine(result, 'Run ID', plan.run_id);
             appendPreflightLine(
                 result,
@@ -358,16 +421,164 @@
                 `${plan.backup.scope}: ${plan.backup.collections.join(', ') || 'empty database'}`
             );
             appendPreflightLine(result, 'CLI command', plan.cli_command);
-            appendPreflightLine(result, 'Audit record', data.audit_path);
-        }
-
-        // Audited read-only database sync preflight
-        async function syncData(direction) {
-            if (syncPreflightActive) {
+            appendPreflightLine(result, 'Preflight audit', data.audit_path);
+            if (!data.apply_eligible) {
+                appendPreflightLine(
+                    result,
+                    'Applied sync',
+                    'Guarded CLI only from this connection.'
+                );
                 return;
             }
-            syncPreflightActive = true;
-            setSyncPreflightButtons(true);
+            syncRunActive = true;
+            setSyncPreviewButtons(true);
+            appendConfirmationGate(
+                result,
+                data.backup_confirmation,
+                'Create complete backup',
+                confirmation => runSyncBackup(plan.run_id, plan.direction, confirmation)
+            );
+        }
+
+        function renderAwaitingApply(data, phaseError = null) {
+            syncRunActive = true;
+            setSyncPreviewButtons(true);
+            const result = beginSyncResult('status-success');
+            appendPreflightLine(result, 'Run ID', data.run_id);
+            appendPreflightLine(result, 'Direction', data.direction);
+            appendPreflightLine(
+                result,
+                data.restored ? 'State' : 'Backup',
+                data.restored ? 'Restored and re-verified' : 'Complete and verified'
+            );
+            appendPreflightLine(
+                result,
+                'Backup summary',
+                `${data.backup.collection_count} collections, ${data.backup.document_count} documents`
+            );
+            appendPreflightLine(
+                result,
+                'Verified manifest SHA-256',
+                data.backup.manifest_sha256 || 'unavailable'
+            );
+            appendPreflightLine(result, 'Backup path', data.backup.path);
+            if (phaseError) {
+                appendPreflightLine(
+                    result,
+                    'Sync request failed',
+                    syncErrorText(phaseError, 'The guarded sync request failed.')
+                );
+            }
+            appendConfirmationGate(
+                result,
+                data.apply_confirmation,
+                'Apply synchronization',
+                confirmation => runSyncApply(data.run_id, data.direction, confirmation),
+                () => runSyncCancel(data.run_id, data.direction)
+            );
+        }
+
+        function renderSyncTerminal(data) {
+            syncRunActive = false;
+            setSyncPreviewButtons(false);
+            const successful = data.status === 'success' || data.status === 'cancelled_after_backup';
+            const result = beginSyncResult(successful ? 'status-success' : 'status-error');
+            appendPreflightLine(result, 'Run ID', data.run_id);
+            appendPreflightLine(result, 'Status', data.status);
+            if (data.backup) {
+                appendPreflightLine(result, 'Backup path', data.backup.path);
+            }
+            if (data.sync?.collections) {
+                Object.entries(data.sync.collections).forEach(([name, outcome]) => {
+                    appendPreflightLine(
+                        result,
+                        `${name.charAt(0).toUpperCase()}${name.slice(1)} outcome`,
+                        JSON.stringify(outcome)
+                    );
+                });
+            }
+            if (data.sync?.aggregate) {
+                appendPreflightLine(
+                    result,
+                    'Sync totals',
+                    JSON.stringify(data.sync.aggregate)
+                );
+            }
+            if (data.error) {
+                appendPreflightLine(result, 'Failure', syncErrorText(data, 'Sync failed'));
+            }
+            if (data.audit_path) {
+                appendPreflightLine(result, 'Audit record', data.audit_path);
+            }
+            if (data.recovery_path) {
+                appendPreflightLine(result, 'Audit recovery', data.recovery_path);
+            }
+        }
+
+        function renderSyncPhaseError(data, preserveRun = false) {
+            if (data.stage !== 'recovery_required' && !preserveRun) {
+                syncRunActive = false;
+                setSyncPreviewButtons(false);
+            } else {
+                syncRunActive = true;
+                setSyncPreviewButtons(true);
+            }
+            const result = beginSyncResult('status-error');
+            appendPreflightLine(
+                result,
+                data.stage === 'recovery_required' ? 'Recovery required' : 'Sync request failed',
+                syncErrorText(data, 'The guarded sync request failed.')
+            );
+            if (data.run_id) {
+                appendPreflightLine(result, 'Run ID', data.run_id);
+            }
+        }
+
+        async function syncMutation(url, body) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            return { response, data: await response.json() };
+        }
+
+        async function loadActiveSync(phaseError = null) {
+            const expectedExistingRun = syncRunActive;
+            try {
+                const response = await fetch('/api/sync/runs/active');
+                const data = await response.json();
+                if (response.ok && data.active) {
+                    renderAwaitingApply(data.active, phaseError);
+                } else if (
+                    response.ok
+                    && !data.active
+                    && expectedExistingRun
+                    && syncRunActive
+                ) {
+                    syncRunActive = false;
+                    setSyncPreviewButtons(false);
+                    const result = document.getElementById('syncPreflightResult');
+                    result.replaceChildren();
+                    result.hidden = true;
+                    result.className = 'sync-preflight-result';
+                } else if (!response.ok) {
+                    renderSyncPhaseError(data);
+                }
+            } catch (error) {
+                renderSyncPhaseError({
+                    stage: 'recovery_required',
+                    error: 'Unable to determine whether a guarded sync is active.'
+                });
+            }
+        }
+
+        async function syncData(direction) {
+            if (syncRequestActive || syncRunActive) {
+                return;
+            }
+            syncRequestActive = true;
+            setSyncPreviewButtons(true, true);
 
             try {
                 const response = await fetch(
@@ -392,8 +603,101 @@
                 });
                 showToast('Sync preflight failed: Network error', 'error');
             } finally {
-                syncPreflightActive = false;
-                setSyncPreflightButtons(false);
+                syncRequestActive = false;
+                if (!syncRunActive) {
+                    setSyncPreviewButtons(false);
+                }
+            }
+        }
+
+        async function runSyncBackup(runId, direction, confirmation) {
+            if (syncRequestActive) return;
+            syncRequestActive = true;
+            try {
+                const { data } = await syncMutation(
+                    `/api/sync/runs/${runId}/backup`,
+                    { direction, confirmation }
+                );
+                if (data.stage === 'awaiting_apply') {
+                    renderAwaitingApply(data);
+                    showToast('Destination backup complete and verified', 'success');
+                } else if (data.stage === 'terminal') {
+                    renderSyncTerminal(data);
+                    showToast('Backup phase needs attention', 'error');
+                } else {
+                    renderSyncPhaseError(data);
+                    await loadActiveSync();
+                    showToast('Backup confirmation rejected', 'error');
+                }
+            } catch (error) {
+                renderSyncPhaseError({
+                    stage: 'recovery_required',
+                    run_id: runId,
+                    error: 'Network failure during backup; inspect the saved run before continuing.'
+                });
+            } finally {
+                syncRequestActive = false;
+            }
+        }
+
+        async function runSyncApply(runId, direction, confirmation) {
+            if (syncRequestActive) return;
+            syncRequestActive = true;
+            try {
+                const { data } = await syncMutation(
+                    `/api/sync/runs/${runId}/apply`,
+                    { direction, confirmation }
+                );
+                if (data.stage === 'terminal') {
+                    renderSyncTerminal(data);
+                    showToast(
+                        data.status === 'success' ? 'Database sync complete' : 'Database sync needs attention',
+                        data.status === 'success' ? 'success' : 'error'
+                    );
+                } else {
+                    await loadActiveSync(data);
+                    showToast('Apply confirmation rejected', 'error');
+                }
+            } catch (error) {
+                renderSyncPhaseError({
+                    stage: 'recovery_required',
+                    run_id: runId,
+                    error: 'Network failure during apply; inspect the saved run before retrying.'
+                });
+            } finally {
+                syncRequestActive = false;
+            }
+        }
+
+        async function runSyncCancel(runId, direction) {
+            if (syncRequestActive) return;
+            syncRequestActive = true;
+            try {
+                const { data } = await syncMutation(
+                    `/api/sync/runs/${runId}/cancel`,
+                    { direction }
+                );
+                if (data.stage === 'terminal') {
+                    renderSyncTerminal(data);
+                    const cancelled = data.status === 'cancelled_after_backup';
+                    showToast(
+                        cancelled
+                            ? 'Guarded sync cancelled; backup retained'
+                            : 'Cancellation audit needs recovery attention',
+                        cancelled ? 'success' : 'error'
+                    );
+                } else {
+                    await loadActiveSync(data);
+                    showToast('Cancellation request rejected', 'error');
+                }
+            } catch (error) {
+                renderSyncPhaseError({
+                    stage: 'recovery_required',
+                    run_id: runId,
+                    error: 'Network failure during cancellation; inspect the saved run.'
+                });
+            } finally {
+                syncRequestActive = false;
             }
         }
 

@@ -2,18 +2,27 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 
 
 KNOWN_COLLECTIONS = ("beans", "roasts")
 DIRECTIONS = ("online-to-local", "local-to-online")
 DEVICE_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
 DATABASE_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
+TOPOLOGY_OPTIONS = {
+    "directconnection",
+    "loadbalanced",
+    "replicaset",
+    "srvmaxhosts",
+    "srvservicename",
+}
 
 
 class SyncSafetyError(ValueError):
@@ -79,6 +88,28 @@ def endpoint_descriptor(uri: str, role: str, database_name: str) -> dict:
         "host": host or "configured-endpoint",
         "database": database_name,
     }
+
+
+def endpoint_fingerprint(uri: str, database_name: str) -> str:
+    """Hash credential-free endpoint topology for restart verification."""
+    parsed = urlsplit(uri)
+    hosts = parsed.netloc.rsplit("@", 1)[-1].lower()
+    normalized_hosts = sorted(
+        value.strip() for value in hosts.split(",") if value.strip()
+    )
+    topology = sorted(
+        (key.lower(), value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        if key.lower() in TOPOLOGY_OPTIONS
+    )
+    identity = {
+        "scheme": parsed.scheme.lower(),
+        "hosts": normalized_hosts,
+        "database": database_name,
+        "topology": topology,
+    }
+    payload = json.dumps(identity, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def sanitize_failure(error: Exception) -> dict:
@@ -180,6 +211,20 @@ class SyncRuntime:
         return endpoint_descriptor(
             self.destination_uri,
             self.destination_role,
+            self.destination_database_name,
+        )
+
+    @property
+    def source_endpoint_fingerprint(self):
+        return endpoint_fingerprint(
+            self.source_uri,
+            self.source_database_name,
+        )
+
+    @property
+    def destination_endpoint_fingerprint(self):
+        return endpoint_fingerprint(
+            self.destination_uri,
             self.destination_database_name,
         )
 

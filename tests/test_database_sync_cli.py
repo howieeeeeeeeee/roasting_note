@@ -181,6 +181,49 @@ def test_second_confirmation_mismatch_audits_after_complete_backup(
     assert audit["backup"]["status"] == "complete"
 
 
+def test_second_confirmation_audit_failure_preserves_cli_contract(
+    monkeypatch,
+    tmp_path,
+):
+    prompts = iter(
+        [
+            "BACKUP 20260729T130000Z-1234abcd",
+            "wrong",
+        ]
+    )
+    backup_path = tmp_path / "db_backup" / "complete"
+    monkeypatch.setattr(
+        runner,
+        "write_applied_audit",
+        lambda *args: (_ for _ in ()).throw(OSError("read-only docs")),
+    )
+
+    result = runner.run_guarded_sync(
+        make_runtime(),
+        FakeClient(),
+        FakeClient(),
+        tmp_path,
+        make_plan(tmp_path),
+        prompt=lambda _: next(prompts),
+        backup=lambda *args: {
+            "path": str(backup_path),
+            "status": "complete",
+            "manifest_sha256": "abc",
+            "collection_count": 3,
+            "document_count": 2,
+            "collections": [],
+        },
+        synchronize=lambda *args: pytest.fail("sync ran before APPLY token"),
+    )
+
+    assert result["status"] == "cancelled_after_backup"
+    assert result["exit_code"] == 1
+    assert result["audit_path"] is None
+    assert result["audit_error"]["type"] == "OSError"
+    assert "read-only docs" not in result["audit_error"]["message"]
+    assert Path(result["recovery_path"]).is_file()
+
+
 def test_backup_failure_writes_terminal_audit_without_sync(tmp_path):
     prompts = iter(["BACKUP 20260729T130000Z-1234abcd"])
     result = runner.run_guarded_sync(
@@ -300,6 +343,49 @@ def test_exact_tokens_allow_sync_and_write_one_success_audit(tmp_path):
     assert audit["DEVICE"] == "test-mac"
     assert audit["sync"]["aggregate"]["added"] == 1
     assert audit["git"]["commit"]
+
+
+def test_cli_phase_extraction_preserves_exact_prompt_order(tmp_path):
+    prompts = []
+    answers = iter(
+        [
+            "BACKUP 20260729T130000Z-1234abcd",
+            "APPLY online-to-local 20260729T130000Z-1234abcd",
+        ]
+    )
+
+    result = runner.run_guarded_sync(
+        make_runtime(),
+        FakeClient(),
+        FakeClient(),
+        tmp_path,
+        make_plan(tmp_path),
+        prompt=lambda text: prompts.append(text) or next(answers),
+        backup=lambda *args: {
+            "path": str(tmp_path / "db_backup" / "complete"),
+            "status": "complete",
+            "manifest_sha256": "abc",
+            "collection_count": 0,
+            "document_count": 0,
+            "collections": [],
+        },
+        synchronize=lambda *args: {
+            "collections": {},
+            "aggregate": {
+                "added": 0,
+                "updated": 0,
+                "skipped": 0,
+                "conflicts": 0,
+            },
+            "verified": True,
+        },
+    )
+
+    assert result["exit_code"] == 0
+    assert prompts == [
+        "Type BACKUP 20260729T130000Z-1234abcd: ",
+        "Type APPLY online-to-local 20260729T130000Z-1234abcd: ",
+    ]
 
 
 def test_audit_failure_after_activity_writes_untracked_recovery(

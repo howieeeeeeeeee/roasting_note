@@ -18,6 +18,10 @@ from roastlogger.services.database_sync_plan import (
 )
 
 
+class BackupVerificationError(RuntimeError):
+    """A completed backup no longer matches its trusted run identity."""
+
+
 def utc_text(value=None) -> str:
     current = value or datetime.now(timezone.utc)
     return current.isoformat().replace("+00:00", "Z")
@@ -79,6 +83,103 @@ def _manifest_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _payload_details(path: Path) -> dict:
+    digest = hashlib.sha256()
+    byte_count = 0
+    document_count = 0
+    with path.open("rb") as payload:
+        for line in payload:
+            digest.update(line)
+            byte_count += len(line)
+            document_count += 1
+    return {
+        "sha256": digest.hexdigest(),
+        "bytes": byte_count,
+        "documents": document_count,
+    }
+
+
+def verify_backup_result(
+    runtime: SyncRuntime,
+    root: Path,
+    run_id: str,
+    result: dict,
+) -> dict:
+    """Verify a complete backup manifest and every payload before apply."""
+    expected_path = planned_backup_path(root, runtime, run_id).resolve()
+    try:
+        backup_path = Path(result["path"]).resolve()
+        manifest_path = Path(result["manifest_path"]).resolve()
+    except (KeyError, TypeError, OSError) as error:
+        raise BackupVerificationError("backup evidence is incomplete") from error
+    if backup_path != expected_path:
+        raise BackupVerificationError("backup path does not match the run")
+    if manifest_path != backup_path / "manifest.json":
+        raise BackupVerificationError("backup manifest path is invalid")
+    if result.get("status") != "complete" or not manifest_path.is_file():
+        raise BackupVerificationError("backup is not complete")
+    if _manifest_digest(manifest_path) != result.get("manifest_sha256"):
+        raise BackupVerificationError("backup manifest checksum does not match")
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise BackupVerificationError("backup manifest is unreadable") from error
+    expected_identity = {
+        "role": runtime.destination_role,
+        "database": runtime.destination_database_name,
+        "endpoint_fingerprint": runtime.destination_endpoint_fingerprint,
+    }
+    if (
+        manifest.get("schema_version") != 1
+        or manifest.get("extended_json_mode") != "canonical"
+        or manifest.get("run_id") != run_id
+        or manifest.get("status") != "complete"
+        or manifest.get("device") != runtime.device
+        or manifest.get("destination") != expected_identity
+    ):
+        raise BackupVerificationError("backup identity does not match the run")
+
+    entries = manifest.get("collections")
+    if not isinstance(entries, list):
+        raise BackupVerificationError("backup collection evidence is invalid")
+    names = set()
+    document_count = 0
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("name"), str):
+            raise BackupVerificationError("backup collection entry is invalid")
+        name = entry["name"]
+        filename = f"{encode_collection_name(name)}.jsonl"
+        if name in names or entry.get("filename") != filename:
+            raise BackupVerificationError("backup collection identity is invalid")
+        names.add(name)
+        payload_path = (backup_path / filename).resolve()
+        if payload_path.parent != backup_path or not payload_path.is_file():
+            raise BackupVerificationError("backup collection payload is missing")
+        details = _payload_details(payload_path)
+        if any(entry.get(key) != value for key, value in details.items()):
+            raise BackupVerificationError(
+                "backup collection checksum or count does not match"
+            )
+        document_count += details["documents"]
+
+    collection_count = len(entries)
+    if (
+        manifest.get("collection_count") != collection_count
+        or manifest.get("document_count") != document_count
+        or result.get("collection_count") != collection_count
+        or result.get("document_count") != document_count
+        or result.get("collections") != entries
+    ):
+        raise BackupVerificationError("backup aggregate counts do not match")
+    return {
+        "status": "complete",
+        "collection_count": collection_count,
+        "document_count": document_count,
+        "manifest_sha256": result["manifest_sha256"],
+    }
+
+
 def backup_destination_database(
     runtime: SyncRuntime,
     destination_client,
@@ -120,6 +221,9 @@ def backup_destination_database(
             "destination": {
                 "role": runtime.destination_role,
                 "database": runtime.destination_database_name,
+                "endpoint_fingerprint": (
+                    runtime.destination_endpoint_fingerprint
+                ),
             },
             "device": runtime.device,
             "started_at": started_at,
@@ -149,6 +253,9 @@ def backup_destination_database(
             "destination": {
                 "role": runtime.destination_role,
                 "database": runtime.destination_database_name,
+                "endpoint_fingerprint": (
+                    runtime.destination_endpoint_fingerprint
+                ),
             },
             "device": runtime.device,
             "started_at": started_at,

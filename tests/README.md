@@ -79,6 +79,7 @@ uv run pytest tests/test_database_sync.py
 uv run pytest tests/test_database_backup.py
 uv run pytest tests/test_database_sync_cli.py
 uv run pytest tests/test_database_sync_routes.py
+uv run pytest tests/test_database_sync_web.py
 uv run pytest tests/test_e2e_runtime.py
 uv run pytest tests/test_virtual_sensor.py
 uv run pytest tests/test_api_contracts.py
@@ -109,6 +110,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_database_sync.py` | Sync validation, read-only preflight, direction, and conflicts |
 | `test_database_sync_cli.py` | Confirmations, cancellation, backups, and audit behavior |
 | `test_database_sync_routes.py` | Audited Settings preflight, overlap prevention, and fail-closed routes |
+| `test_database_sync_web.py` | Phased backup/apply/cancel state, resume, endpoint-drift rejection, exclusive claims, replay, and recovery |
 | `test_datetime_formatting.py` | UTC and operator-timezone formatting |
 | `test_e2e_runtime.py` | Isolated database, run markers, cleanup, and online exclusion |
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
@@ -193,20 +195,43 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
   confirmations, cancellation policy, applied audit records, and untracked
   audit recovery.
 - `test_database_sync_routes.py` verifies Settings audit-per-click behavior,
-  read-only plans, sanitized failures, overlap prevention, and fail-closed
-  historic routes.
+  direct peer/host, same-origin JSON, distinct preflight audits, phased route
+  payloads, sanitized failures, and fail-closed historic routes.
+- `test_database_sync_web.py` verifies exact one-use preview confirmation,
+  complete-backup verification before apply, zero pre-apply writes, atomic
+  resumable state, single-run claims, competing previews, cancellation, replay
+  rejection, corruption recovery, terminal audit behavior, and both directions.
+- `test_database_sync_cli.py` also locks the original prompt text/order and exit
+  behavior after the shared runner was separated into phases.
 
 These tests use in-memory fakes and temporary filesystem roots. They never run
 an applied local/online mirror. Any configured live verification for sync must
 use `--dry-run`; an applied run requires a separate explicit user request and
 both run-specific confirmation tokens.
 
+Run the focused guarded-sync contract with:
+
+```bash
+uv run pytest \
+  tests/test_database_sync_web.py \
+  tests/test_database_sync_routes.py \
+  tests/test_database_sync_cli.py \
+  tests/test_database_sync.py \
+  tests/test_database_backup.py \
+  tests/test_sync_api.py \
+  tests/test_app_factory.py \
+  tests/test_e2e_runtime.py \
+  tests/test_api_contracts.py \
+  tests/test_file_size_policy.py
+```
+
 ### Dedicated Browser E2E Harness
 
 - `test_e2e_runtime.py` proves only the local `roastlogger_e2e` client is
-  constructed, unsafe configuration is rejected, browser-created records are
-  run-marked, updates retain markers, sync/global cleanup fail closed, and
-  cleanup is run-scoped.
+  constructed, unsafe configuration is rejected, ordinary sync/global cleanup
+  fail closed, the explicit sync fake writes only ignored artifact data without
+  database access, browser-created records are run-marked, and cleanup is
+  run-scoped.
 - `test_virtual_sensor.py` contract-tests all deterministic scenarios and
   representative retry/fault/recovery behavior through RoastLogger APIs.
 - `test_api_contracts.py` covers label assets/preferences, database settings,
@@ -224,6 +249,12 @@ Start runs in the foreground and binds the app and virtual sensor only to
 loopback. Artifacts, runtime state, and E2E logs are ignored. Cleanup refuses
 any database except `roastlogger_e2e`, deletes selected-run roasts before
 beans, removes only their two CSV forms, and verifies zero matching records.
+
+Add `--sync-fake` only for the guarded Settings browser scenario. The app
+server then injects `tests.e2e.sync_fake.E2ESyncExecutor`; the ordinary harness
+has no applied-sync executor. The fake refuses non-artifact roots, never
+constructs or uses an online MongoDB client, and records every simulated phase
+with `database_access: false`.
 
 ## Test Data Management
 

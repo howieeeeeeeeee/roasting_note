@@ -15,7 +15,9 @@ from roastlogger import create_app
 import roastlogger.database as database_module
 from roastlogger.e2e import E2EConfigError, E2E_DATABASE_NAME
 from tests.e2e.cleanup import CleanupSafetyError, cleanup_run
+import tests.e2e.manage as e2e_manage
 from tests.e2e.manage import start
+from tests.e2e.sync_fake import E2ESyncExecutor
 from tests.sync_fakes import FakeClient
 
 
@@ -92,6 +94,9 @@ def test_e2e_routes_reject_online_sync_and_global_cleanup(
         assert preflight.status_code == 503
         assert preflight.json["audit_recorded"] is True
         assert "disabled in E2E mode" in preflight.json["error"]["message"]
+    active = client.get("/api/sync/runs/active")
+    assert active.status_code == 409
+    assert "ordinary E2E mode" in active.json["error"]
     for route in ("/api/db/clean-test-data", "/api/db/clean-local"):
         response = client.post(route)
         assert response.status_code == 409
@@ -102,6 +107,147 @@ def test_e2e_routes_reject_online_sync_and_global_cleanup(
     rendered = "".join(path.read_text() for path in records)
     assert "password" not in rendered
     assert "mongodb://" not in rendered
+
+
+def test_explicit_e2e_sync_fake_runs_only_inside_artifact_root(
+    monkeypatch,
+    tmp_path,
+):
+    constructed = []
+
+    def recording_client(uri):
+        constructed.append(uri)
+        return FakeClient()
+
+    monkeypatch.setattr(database_module, "MongoClient", recording_client)
+    config = e2e_config(tmp_path, "sync-fake-test")
+    artifact_root = Path(config["E2E_ARTIFACT_ROOT"])
+    config["E2E_SYNC_EXECUTOR"] = E2ESyncExecutor(artifact_root)
+    app = create_app(config)
+    client = app.test_client()
+
+    assert constructed == ["mongodb://127.0.0.1:27017/"]
+    first = client.post("/api/sync/preflight/online-to-local")
+    assert first.status_code == 200
+    assert first.json["apply_eligible"] is True
+    run_id = first.json["run_id"]
+
+    backup = client.post(
+        f"/api/sync/runs/{run_id}/backup",
+        json={
+            "direction": "online-to-local",
+            "confirmation": f"BACKUP {run_id}",
+        },
+    )
+    assert backup.status_code == 200
+    assert backup.json["stage"] == "awaiting_apply"
+    cancelled = client.post(
+        f"/api/sync/runs/{run_id}/cancel",
+        json={"direction": "online-to-local"},
+    )
+    assert cancelled.status_code == 200
+    assert cancelled.json["status"] == "cancelled_after_backup"
+
+    second = client.post("/api/sync/preflight/local-to-online")
+    second_id = second.json["run_id"]
+    client.post(
+        f"/api/sync/runs/{second_id}/backup",
+        json={
+            "direction": "local-to-online",
+            "confirmation": f"BACKUP {second_id}",
+        },
+    )
+    applied = client.post(
+        f"/api/sync/runs/{second_id}/apply",
+        json={
+            "direction": "local-to-online",
+            "confirmation": f"APPLY local-to-online {second_id}",
+        },
+    )
+    assert applied.status_code == 200
+    assert applied.json["sync"]["aggregate"] == {
+        "added": 2,
+        "conflicts": 0,
+        "skipped": 1,
+        "updated": 1,
+    }
+    events = (artifact_root / "sync-fake-events.jsonl").read_text()
+    assert '"database_access": false' in events
+    assert '"event": "synchronize"' in events
+    assert not (tmp_path / "db_backup").exists()
+
+
+def test_e2e_sync_executor_is_rejected_outside_e2e(tmp_path):
+    with pytest.raises(ValueError, match="requires E2E mode"):
+        create_app(
+            {
+                "TESTING": True,
+                "E2E_MODE": False,
+                "E2E_SYNC_EXECUTOR": E2ESyncExecutor(tmp_path),
+            }
+        )
+
+
+@pytest.mark.parametrize(("sync_fake", "expected"), [(False, False), (True, True)])
+def test_e2e_start_controls_sync_fake_without_parent_env_leak(
+    monkeypatch,
+    tmp_path,
+    sync_fake,
+    expected,
+):
+    artifact_root = tmp_path / "artifacts"
+    runtime_root = tmp_path / "runtime"
+    environments = []
+
+    class CompletedProcess:
+        def poll(self):
+            return 0
+
+        def wait(self, timeout):
+            return 0
+
+        def terminate(self):
+            return None
+
+        def kill(self):
+            return None
+
+    def record_process(*_args, **kwargs):
+        environments.append(dict(kwargs["env"]))
+        return CompletedProcess()
+
+    monkeypatch.setenv("E2E_SYNC_FAKE", "1")
+    monkeypatch.setattr(
+        e2e_manage,
+        "_paths",
+        lambda _run_id: (artifact_root, runtime_root),
+    )
+    monkeypatch.setattr(e2e_manage, "_wait_for", lambda *_args: None)
+    monkeypatch.setattr(
+        e2e_manage,
+        "_summary",
+        lambda root, *_args, **_kwargs: (root / "summary.md").write_text(
+            "isolated test\n",
+            encoding="utf-8",
+        ),
+    )
+    monkeypatch.setattr(e2e_manage.subprocess, "Popen", record_process)
+    monkeypatch.setattr(e2e_manage.signal, "signal", lambda *_args: None)
+
+    start(
+        Namespace(
+            run_id="sync-fake-env-test",
+            database=E2E_DATABASE_NAME,
+            app_port=5011,
+            sensor_port=5012,
+            sync_fake=sync_fake,
+        )
+    )
+
+    assert len(environments) == 2
+    assert all(("E2E_SYNC_FAKE" in value) is expected for value in environments)
+    if expected:
+        assert all(value["E2E_SYNC_FAKE"] == "1" for value in environments)
 
 
 def test_browser_creation_marks_and_updates_e2e_documents(tmp_path):

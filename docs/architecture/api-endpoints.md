@@ -146,6 +146,10 @@ can distinguish fresh, retrying, stale, offline, and faulted sensor states.
 | `/api/settings/sensor` | GET | Get current sensor URL |
 | `/api/settings/sensor` | POST | Set sensor URL |
 | `/api/sync/preflight/<direction>` | POST | Audited, read-only sync preflight for a supported direction |
+| `/api/sync/runs/active` | GET | Restore the sanitized active browser run, if any |
+| `/api/sync/runs/<run-id>/backup` | POST | Accept the exact first token and create/verify the complete backup |
+| `/api/sync/runs/<run-id>/apply` | POST | Accept the exact second token and run timestamp-aware sync |
+| `/api/sync/runs/<run-id>/cancel` | POST | Cancel an awaiting-apply run while retaining its backup |
 | `/api/sync/online-to-local` | POST | Fail-closed legacy route; returns CLI migration guidance |
 | `/api/sync/local-to-online` | POST | Fail-closed legacy route; returns CLI migration guidance |
 | `/api/db/clean-test-data` | POST | Delete test data (`test_data: True`) from local DB |
@@ -165,8 +169,11 @@ Dedicated E2E mode adds `e2e_mode: true`, `local_database:
 select online mode return HTTP `409`. Both global cleanup routes also return
 HTTP `409` in E2E mode and direct the operator to run-scoped harness cleanup.
 
-E2E sync preflight is audited into ignored run artifacts but returns HTTP
-`503` without endpoint access. Historic sync POST routes return HTTP `409`.
+Ordinary E2E sync preflight is audited into ignored run artifacts but returns
+HTTP `503` without endpoint access; its phase routes return `409`. The explicit
+browser sync simulation injects an artifact-only executor and may use the phase
+routes without constructing an online client. Historic sync POST routes always
+return HTTP `409`.
 
 ### Sync Preflight Response
 
@@ -176,6 +183,8 @@ E2E sync preflight is audited into ignored run artifacts but returns HTTP
   "run_id": "20260729T130000Z-1234abcd",
   "audit_recorded": true,
   "audit_path": "docs/audit_history/database_mirrors/2026/07/...",
+  "apply_eligible": true,
+  "backup_confirmation": "BACKUP 20260729T130000Z-1234abcd",
   "plan": {
     "direction": "online-to-local",
     "source": {"role": "online", "host": "cluster.example", "database": "roastlogger"},
@@ -190,13 +199,71 @@ E2E sync preflight is audited into ignored run artifacts but returns HTTP
 
 This route reads connectivity, collection metadata, and counts; it never writes
 to either database or creates a backup. It writes one terminal UI-intent audit
-record for every request, including failed preflights. An audit persistence
-failure returns HTTP `500` with `audit_recorded: false`; a safely recorded
-preflight failure returns HTTP `503`.
+record for every request, including failed preflights. `apply_eligible` is true
+only when the direct request peer and request host are loopback and the runtime
+is not ordinary E2E. A hosted/non-loopback success omits
+`backup_confirmation`. An audit persistence failure returns HTTP `500` with
+`audit_recorded: false`; a safely recorded preflight failure returns HTTP
+`503`.
+
+### Browser Sync Phase Boundary
+
+All four run endpoints require both the direct peer address and `Host` to be
+loopback. `X-Forwarded-For`, `Forwarded`, and similar headers never establish
+locality. Mutation requests additionally require `application/json`; when an
+`Origin` header is supplied, its scheme, host, and effective port must equal
+the request origin. Access failures happen before database, backup, state, or
+audit activity.
+
+The backup request is:
+
+```json
+{
+  "direction": "online-to-local",
+  "confirmation": "BACKUP 20260729T130000Z-1234abcd"
+}
+```
+
+It succeeds only for a server-held, process-local preview capability. The first
+backup attempt atomically consumes that capability. A wrong first token returns
+`400`; a competing request, process restart, or worker loss requires a fresh
+preview. Exact confirmation atomically claims the sole active-run slot before
+backup. Another preview may still return a read-only plan, but its later
+backup request receives `409` without changing the winning claim.
+
+Successful backup returns `stage: awaiting_apply`, a sanitized backup summary,
+and the exact `apply_confirmation`. `GET /api/sync/runs/active` returns the same
+state with `restored: true` after it has reconstructed runtime identity and
+reverified the manifest and every payload. With no run it returns
+`{"success": true, "active": null}`. It never returns URIs, credentials, raw
+documents, or submitted confirmation text.
+
+The apply request is:
+
+```json
+{
+  "direction": "online-to-local",
+  "confirmation": "APPLY online-to-local 20260729T130000Z-1234abcd"
+}
+```
+
+The cancel request contains only `direction`. Both require the matching active
+run in `awaiting_apply`; invalid stages, direction mismatches, replay, or a
+different run return `409`. Apply and cancel atomically compete for one
+terminal-transition marker, so concurrent terminal requests cannot both run or
+write audits. A wrong apply token returns `400` and leaves the verified run
+available for exact retry or cancellation. Terminal responses include status,
+backup summary, collection/aggregate sync results when available, and a
+repository-relative audit or recovery path.
+
+Atomic run state and the cross-process exclusive claim live under ignored
+`db_backup/database_mirrors/`. An interrupted phase or corrupt/inconsistent
+state remains claimed and returns `stage: recovery_required`; the API never
+silently discards, overwrites, or repeats it.
 
 The two historic sync routes return HTTP `409`, perform no database or
-filesystem operation, and direct the caller to the guarded CLI documented in
-[Database Sync](../features/database-sync.md).
+filesystem operation, and direct the caller to guarded local Settings or the
+CLI documented in [Database Sync](../features/database-sync.md).
 
 ### Clean Test Data Response
 

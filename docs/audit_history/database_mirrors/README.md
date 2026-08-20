@@ -10,10 +10,17 @@ payloads, or roast/tasting content.
 ```text
 docs/audit_history/database_mirrors/YYYY/MM/
   YYYYMMDDTHHMMSSZ__<DEVICE>__<direction>__<run-id>.json
+  YYYYMMDDTHHMMSSZ__<DEVICE>__<direction>__<run-id>__preflight.json
 ```
 
-Every filename is unique to one generated run ID. Records are written
-atomically and never overwritten.
+The unsuffixed path is reserved for the terminal applied attempt. New Settings
+intent records use `__preflight.json`, allowing the same server-generated run
+ID to correlate preview and a later browser-applied attempt without a filename
+collision. Records are atomically created and never overwritten.
+
+This naming rule is forward-only. Existing unsuffixed Settings intent records
+are valid historical evidence and are not renamed, rewritten, backfilled, or
+treated as applied attempts.
 
 ## Applied Attempt Records
 
@@ -43,8 +50,26 @@ Every Settings sync-direction button request writes one terminal record with:
 - Git provenance when available; and
 - successful or failed preflight outcome.
 
-These events prove operator intent and preflight outcome only. They never prove
-or initiate an applied sync.
+These events prove operator intent and preflight outcome only. An eligible
+loopback response may create a process-local, one-use capability for the first
+exact confirmation, but the tracked intent record itself cannot initiate an
+applied sync.
+
+## Browser Run State
+
+Browser continuation stores sanitized operational state and one exclusive
+active claim under ignored `db_backup/database_mirrors/`, never in this tracked
+history. State contains run/direction identity, sanitized endpoint descriptors,
+credential-free source and destination topology fingerprints,
+the plan, backup evidence, phase, and in-progress terminal record; it contains
+no URI, credential, raw document, or confirmation input.
+
+No applied-attempt record exists before exact backup confirmation. After backup
+activity, Settings uses the same terminal event policy as the CLI: success,
+backup failure, partial sync failure, or cancellation after backup produces one
+unsuffixed applied record. Audit-write failure preserves the sanitized record
+as ignored `audit-recovery.json` and exposes that path instead of claiming
+publication success.
 
 ## Review And Publication
 

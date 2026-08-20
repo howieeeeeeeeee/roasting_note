@@ -51,7 +51,7 @@ def _wait_for(url, processes, timeout=15):
     raise RuntimeError(f"timed out waiting for {url}")
 
 
-def _summary(artifact_root, run_id, app_url, sensor_url):
+def _summary(artifact_root, run_id, app_url, sensor_url, *, sync_fake):
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
         cwd=ROOT,
@@ -65,6 +65,7 @@ def _summary(artifact_root, run_id, app_url, sensor_url):
 - Commit: `{commit or "unavailable"}`
 - App URL: `{app_url}`
 - Sensor URL: `{sensor_url}`
+- Guarded sync executor: `{"artifact-only fake" if sync_fake else "disabled"}`
 - Scenarios: pending
 - Browser assertions: pending
 - Console/network failures: pending
@@ -105,7 +106,16 @@ def start(args):
             "TEMP_SENSOR_URL": sensor_url,
         }
     )
-    _summary(artifact_root, run_id, app_url, sensor_url)
+    environment.pop("E2E_SYNC_FAKE", None)
+    if getattr(args, "sync_fake", False):
+        environment["E2E_SYNC_FAKE"] = "1"
+    _summary(
+        artifact_root,
+        run_id,
+        app_url,
+        sensor_url,
+        sync_fake=getattr(args, "sync_fake", False),
+    )
     state = {
         "run_id": run_id,
         "app_url": app_url,
@@ -204,6 +214,11 @@ def build_parser():
         )
     start_parser.add_argument("--app-port", type=int, default=5011)
     start_parser.add_argument("--sensor-port", type=int, default=5012)
+    start_parser.add_argument(
+        "--sync-fake",
+        action="store_true",
+        help="inject the artifact-only guarded-sync fake executor",
+    )
     start_parser.set_defaults(handler=start)
     cleanup_parser.set_defaults(handler=cleanup)
     return parser

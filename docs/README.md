@@ -65,7 +65,7 @@ docs/
 │   ├── live-roasting.md   # Live roasting interface
 │   ├── bean-label-creator.md
 │   ├── sticker-sheet.md   # US-4 PDF sticker sheet creator
-│   ├── database-sync.md   # Guarded CLI and audited Settings preflight
+│   ├── database-sync.md   # Guarded CLI and local Settings sync
 │   ├── temperature-sensor.md
 │   └── chart-visualization.md
 ├── hardware/              # Hardware docs
@@ -91,8 +91,9 @@ database connections and template helpers, registers feature-focused
 blueprints, and delegates lifecycle, sensor/RoR, live-sync, and
 timestamp-aware database-sync behavior to service modules. `app.py` keeps the
 historic development, test-import, and Gunicorn entry-point contract.
-Applied database sync is isolated in `scripts/sync_database.py`; Settings only
-requests audited, read-only preflight plans.
+Applied database sync is available through `scripts/sync_database.py` and the
+same guarded phases in Settings when both the direct peer and request host are
+loopback. Hosted and non-loopback Settings remain audited, read-only preflight.
 
 ## Keeping Docs in Sync
 

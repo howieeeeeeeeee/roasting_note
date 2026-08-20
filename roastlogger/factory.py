@@ -88,6 +88,8 @@ def create_app(config_overrides=None):
     if config_overrides:
         app.config.update(config_overrides)
     configure_e2e_runtime(app.config, ROOT)
+    if app.config.get("E2E_SYNC_EXECUTOR") and not app.config.get("E2E_MODE"):
+        raise ValueError("E2E sync executor requires E2E mode")
 
     _configure_logging()
     init_database(app)
