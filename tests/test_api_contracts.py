@@ -7,6 +7,8 @@ from uuid import uuid4
 
 from bson.objectid import ObjectId
 
+import roastlogger.blueprints.beans as bean_blueprint
+
 
 def test_label_image_and_recent_preferences_contract(client, beans_collection):
     marker = f"api-contract-{uuid4().hex[:10]}"
@@ -85,6 +87,79 @@ def test_page_routes_render_for_existing_records(
     roasts_collection.delete_one({"_id": generated_id})
 
 
+def test_bean_detail_stock_zero_action_and_history_contract(
+    client,
+    beans_collection,
+    created_test_bean,
+):
+    bean_id = ObjectId(created_test_bean)
+    positive = client.get(f"/beans/detail/{bean_id}").get_data(as_text=True)
+    assert 'id="beanMoreActions"' in positive
+    assert "Set stock to zero" in positive
+    assert 'id="stockHistoryTableContainer" hidden' in positive
+    assert 'id="stockHistoryEmpty">No stock changes recorded.' in positive
+
+    beans_collection.update_one(
+        {"_id": bean_id},
+        {"$set": {"stock_grams": 0}},
+    )
+    zero = client.get(f"/beans/detail/{bean_id}").get_data(as_text=True)
+    assert 'id="beanMoreActions"' not in zero
+    assert "Set stock to zero" not in zero
+
+    beans_collection.update_one(
+        {"_id": bean_id},
+        {
+            "$set": {
+                "stock_grams": -35,
+                "stock_change_log": [
+                    {
+                        "event_type": "set_to_zero",
+                        "previous_stock_grams": 120,
+                        "change_grams": -120,
+                        "resulting_stock_grams": 0,
+                        "recorded_at": datetime(2026, 8, 20, 10, 0),
+                    },
+                    {
+                        "event_type": "set_to_zero",
+                        "previous_stock_grams": -35,
+                        "change_grams": 35,
+                        "resulting_stock_grams": 0,
+                        "recorded_at": datetime(2026, 8, 20, 11, 0),
+                    },
+                ],
+            }
+        },
+    )
+    negative = client.get(f"/beans/detail/{bean_id}").get_data(as_text=True)
+    assert 'id="beanMoreActions"' in negative
+    history = negative.split('id="stockHistoryBody"', 1)[1]
+    assert history.index("-35g") < history.index("120g")
+    assert "+35g" in history
+
+
+def test_bean_list_out_of_stock_filter_labels_match_visibility(
+    client,
+    beans_collection,
+    created_test_bean,
+):
+    bean_id = ObjectId(created_test_bean)
+    beans_collection.update_one(
+        {"_id": bean_id},
+        {"$set": {"stock_grams": 0}},
+    )
+
+    default_view = client.get("/beans").get_data(as_text=True)
+    assert "Show Out of Stock" in default_view
+    assert f"/beans/detail/{bean_id}" not in default_view
+
+    revealed_view = client.get(
+        "/beans?filter_out_of_stock=false"
+    ).get_data(as_text=True)
+    assert "Hide Out of Stock" in revealed_view
+    assert f"/beans/detail/{bean_id}" in revealed_view
+
+
 def test_invalid_and_missing_identifiers_return_stable_errors(
     client,
     created_test_bean,
@@ -96,6 +171,15 @@ def test_invalid_and_missing_identifiers_return_stable_errors(
     api = client.post("/api/beans/delete/not-an-object-id")
     assert api.status_code == 400
     assert api.json == {
+        "success": False,
+        "error": "Invalid identifier",
+    }
+
+    stock_api = client.post(
+        "/api/beans/not-an-object-id/set-stock-zero"
+    )
+    assert stock_api.status_code == 400
+    assert stock_api.json == {
         "success": False,
         "error": "Invalid identifier",
     }
@@ -113,3 +197,21 @@ def test_invalid_and_missing_identifiers_return_stable_errors(
         content_type="application/json",
     )
     assert malformed.status_code == 400
+
+
+def test_stock_zero_conflict_returns_stable_error(client, monkeypatch):
+    monkeypatch.setattr(
+        bean_blueprint,
+        "set_bean_stock_to_zero",
+        lambda *_args: {"status": "conflict"},
+    )
+
+    response = client.post(
+        f"/api/beans/{ObjectId()}/set-stock-zero"
+    )
+
+    assert response.status_code == 409
+    assert response.json == {
+        "success": False,
+        "error": "Bean stock changed; refresh and try again",
+    }

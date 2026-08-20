@@ -125,6 +125,53 @@ def test_sync_updates_older_target_document(collection_type):
     assert target.docs[doc_id]["value"] == "newer"
 
 
+def test_sync_round_trips_bean_stock_change_history_on_insert_and_update():
+    doc_id = ObjectId()
+    first_change = {
+        "event_type": "set_to_zero",
+        "previous_stock_grams": 250,
+        "change_grams": -250,
+        "resulting_stock_grams": 0,
+        "recorded_at": datetime(2026, 5, 1, 9, 0, 0),
+    }
+    source_doc = make_sync_doc(
+        "beans",
+        datetime(2026, 5, 1, 10, 0, 0),
+        "source",
+        doc_id,
+    )
+    source_doc["stock_change_log"] = [first_change]
+    source = FakeCollection([source_doc])
+    target = FakeCollection()
+
+    inserted = app_module.sync_collection(source, target)
+
+    assert inserted["added"] == 1
+    assert target.docs[doc_id]["stock_change_log"] == [first_change]
+
+    second_change = {
+        "event_type": "set_to_zero",
+        "previous_stock_grams": -20,
+        "change_grams": 20,
+        "resulting_stock_grams": 0,
+        "recorded_at": datetime(2026, 5, 1, 11, 0, 0),
+    }
+    newer_source = deepcopy(source_doc)
+    newer_source["updated_at"] = datetime(2026, 5, 1, 12, 0, 0)
+    newer_source["stock_change_log"].append(second_change)
+
+    updated = app_module.sync_collection(
+        FakeCollection([newer_source]),
+        target,
+    )
+
+    assert updated["updated"] == 1
+    assert target.docs[doc_id]["stock_change_log"] == [
+        first_change,
+        second_change,
+    ]
+
+
 @pytest.mark.parametrize("collection_type", ["beans", "roasts"])
 def test_sync_fills_missing_created_at_when_updating_target(collection_type):
     doc_id = ObjectId()

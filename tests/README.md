@@ -102,7 +102,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 
 | Module | Primary coverage |
 | --- | --- |
-| `test_api_contracts.py` | Labels, preferences, Settings, rendered pages, identifiers, and payload failures |
+| `test_api_contracts.py` | Labels, preferences, Settings, rendered stock-history states, identifiers, and payload failures |
 | `test_app_factory.py` | Route manifest, configuration boundaries, and live-roast module entry |
 | `test_beans_api.py` | Bean CRUD, stock, labels, pricing, and validation |
 | `test_database_backup.py` | Complete backups, BSON round trips, and incomplete-backup safety |
@@ -114,7 +114,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
 | `test_reviews_api.py` | Review CRUD and validation |
 | `test_roasts_api.py` | Roast lifecycle, events, temperature, stock, and weight loss |
-| `test_sync_api.py` | Timestamp-aware document synchronization |
+| `test_sync_api.py` | Timestamp-aware document synchronization, including embedded bean stock history |
 | `test_temperature_api.py` | Temperature endpoints, timeouts, settings, and RoR |
 | `test_ticket_system.py` | Tracker validation, policy, generation, and dashboard |
 | `test_virtual_sensor.py` | Deterministic sensor scenarios and recovery |
@@ -125,7 +125,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 - Create bean with valid/invalid data
 - Edit bean details
 - Delete bean (soft delete verification)
-- Stock management
+- Stock deduction/restoration and atomic positive/negative set-to-zero history
 - Unit price calculation
 - Form validation and data handling
 

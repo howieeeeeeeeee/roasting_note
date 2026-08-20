@@ -1,5 +1,8 @@
 from datetime import datetime
 from bson.decimal128 import Decimal128
+from bson.objectid import ObjectId
+
+from roastlogger.time_utils import get_current_time_with_tz
 
 
 def normalize_short_flavor_notes(value):
@@ -47,6 +50,7 @@ def create_bean(beans_collection, bean_data, markers=None):
         'short_flavor_notes': normalize_short_flavor_notes(
             bean_data.get('short_flavor_notes')
         ),
+        'stock_change_log': [],
         'color': bean_data.get('color', '#6B8E6F'),  # Default: muted green
         'archived': False,
         'created_at': datetime.now(),
@@ -104,8 +108,6 @@ def update_bean(beans_collection, bean_id, bean_data):
         bean_id: String or ObjectId of bean to update
         bean_data: Dictionary with updated bean information
     """
-    from bson.objectid import ObjectId
-
     current_time = datetime.now()
     existing_bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
 
@@ -166,3 +168,48 @@ def update_bean(beans_collection, bean_id, bean_data):
         {'_id': ObjectId(bean_id)},
         {'$set': update_doc}
     )
+
+
+def set_bean_stock_to_zero(beans_collection, bean_id):
+    object_id = ObjectId(bean_id)
+    active_query = {'_id': object_id, 'archived': {'$ne': True}}
+    bean = beans_collection.find_one(active_query)
+    if not bean:
+        return {'status': 'not_found'}
+
+    previous_stock = bean.get('stock_grams', 0)
+    if previous_stock == 0:
+        return {'status': 'already_zero'}
+    if not isinstance(previous_stock, int) or isinstance(previous_stock, bool):
+        return {'status': 'conflict'}
+
+    recorded_at = get_current_time_with_tz()
+    stock_change = {
+        'event_type': 'set_to_zero',
+        'previous_stock_grams': previous_stock,
+        'change_grams': -previous_stock,
+        'resulting_stock_grams': 0,
+        'recorded_at': recorded_at,
+    }
+    result = beans_collection.update_one(
+        {**active_query, 'stock_grams': previous_stock},
+        {
+            '$set': {'stock_grams': 0, 'updated_at': recorded_at},
+            '$push': {'stock_change_log': stock_change},
+        },
+    )
+    if result.modified_count == 1:
+        return {
+            'status': 'success',
+            'previous_stock_grams': previous_stock,
+            'change_grams': -previous_stock,
+            'stock_grams': 0,
+            'stock_change': stock_change,
+        }
+
+    current_bean = beans_collection.find_one(active_query)
+    if not current_bean:
+        return {'status': 'not_found'}
+    if current_bean.get('stock_grams', 0) == 0:
+        return {'status': 'already_zero'}
+    return {'status': 'conflict'}

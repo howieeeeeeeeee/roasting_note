@@ -29,9 +29,35 @@ return the same message as plain text.
 | `/api/beans/add` | POST | Create new bean |
 | `/api/beans/edit/<bean_id>` | POST | Update bean |
 | `/api/beans/delete/<bean_id>` | POST | Archive bean (soft delete) |
+| `/api/beans/<bean_id>/set-stock-zero` | POST | Conditionally set non-zero stock to zero and append bean stock history |
 | `/api/beans/<bean_id>/label` | POST | Save label creator data for a bean |
 | `/api/label/preferences` | GET | Default `templateId` / `fontPreset` / `aspectRatio` for new beans, derived from the most recent saved label |
 | `/api/label/images` | GET | List image assets under `/static/img/` for the label image picker |
+
+### Set Bean Stock To Zero
+
+`POST /api/beans/<bean_id>/set-stock-zero` accepts no body. Success returns:
+
+```json
+{
+  "success": true,
+  "previous_stock_grams": -25,
+  "change_grams": 25,
+  "stock_grams": 0,
+  "stock_change": {
+    "event_type": "set_to_zero",
+    "previous_stock_grams": -25,
+    "change_grams": 25,
+    "resulting_stock_grams": 0,
+    "recorded_at": "2026-08-20T11:15:00-04:00"
+  }
+}
+```
+
+The endpoint returns `404` / `Bean not found` for missing or archived beans,
+`409` / `Bean stock is already zero` at zero, and `409` / `Bean stock changed;
+refresh and try again` when the observed balance loses a concurrent update.
+Malformed ObjectIds use the shared `400` / `Invalid identifier` response.
 
 ---
 

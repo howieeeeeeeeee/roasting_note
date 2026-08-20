@@ -74,6 +74,31 @@ The bean name field uses `.form-group-title` so it matches record-title typograp
 | Color dot in header | `.bean-color-indicator` with inline `background-color: bean.color` |
 | Sections | `.detail-section` + `.detail-grid` |
 | Create Label | `.btn.btn-primary` with a Material icon — opens the [label creator modal](./label-creator.md) |
+| More actions | `.dropdown-menu-container` + `.dropdown-menu`; present only for non-zero stock |
+| Stock history | `.stock-history-table` inside a horizontally scrollable bordered container |
+
+### Set Stock To Zero Interaction
+
+The More actions icon follows the existing header dropdown pattern and sits
+after Archive without moving any established action. Its single action,
+**Set stock to zero**, uses danger styling because it replaces the current
+balance and has no automatic undo.
+
+- Render the menu only when the signed integer stock is non-zero, including a
+  negative balance.
+- The confirmation names the bean and shows the signed transition from the
+  current balance to `0g`. It does not collect a note.
+- Cancellation closes the menu without a request.
+- While the request is active, disable the action. Success updates the stock
+  badge, removes the empty More actions menu, prepends the history row, and
+  shows a success toast. Failure preserves the visible state and shows an error
+  toast.
+- The history table displays Recorded, Previous, Change, and Result columns in
+  newest-first order. Positive deltas use the success color and negative deltas
+  use the error color; numeric cells use the monospace data face.
+- When no history exists, show **No stock changes recorded.** The table becomes
+  horizontally scrollable rather than compressing its columns on narrow
+  screens.
 
 The bean detail roast-history Date column follows the main roast list: it shows
 `roast_start_time` when available, falls back to `roast_date` for draft/manual

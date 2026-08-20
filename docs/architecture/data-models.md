@@ -59,6 +59,7 @@ Stores information about each type of green coffee bean in inventory.
   "purchase_weight_grams": "Integer",
   "unit_price_per_kg": "Decimal128",
   "stock_grams": "Integer",
+  "stock_change_log": ["StockChange"],
   "short_flavor_notes": ["String"],
   "notes": "String",
   "color": "String",
@@ -80,6 +81,7 @@ Stores information about each type of green coffee bean in inventory.
 | `purchase_price_total` | Decimal | No | - | Total cost for batch |
 | `purchase_weight_grams` | Integer | No | - | Original batch weight |
 | `stock_grams` | Integer | Yes | 0 | Current available stock |
+| `stock_change_log` | Array[Object] | No | [] | Embedded history of explicit set-to-zero stock changes |
 | `short_flavor_notes` | Array[String] | No | [] | Compact flavor notes for bean previews and label auto-fill, one note per array item |
 | `color` | String | No | "#6B8E6F" | Hex color for visual identification |
 | `archived` | Boolean | No | false | Soft delete flag |
@@ -126,6 +128,31 @@ Optional label configuration for the bean label creator.
 | `exportWidthCm` | Number | Export width in cm |
 | `exportHeightCm` | Number | Export height in cm |
 | `customFields` | Object | Per-field overrides keyed by field name, each with optional `fontSize`, `fontFamily`, `color`, `x`, `y` |
+
+### Embedded: `stock_change_log` Array
+
+Each entry records one successful explicit set-to-zero action:
+
+```json
+{
+  "event_type": "set_to_zero",
+  "previous_stock_grams": -25,
+  "change_grams": 25,
+  "resulting_stock_grams": 0,
+  "recorded_at": "Date"
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `event_type` | String | Always `set_to_zero` for this history version |
+| `previous_stock_grams` | Integer | Signed stock observed before the conditional update |
+| `change_grams` | Integer | `0 - previous_stock_grams` |
+| `resulting_stock_grams` | Integer | Always `0` |
+| `recorded_at` | Date | Timezone-aware time shared with the bean's new `updated_at` value |
+
+Legacy beans may omit `stock_change_log`; readers treat omission as an empty
+array. No backfill is required.
 
 ---
 
@@ -304,3 +331,11 @@ db.roasts.updateOne(
 
 ### On Roast Weight Edit
 Calculate difference and apply to bean stock.
+
+### On Explicit Set To Zero
+
+`POST /api/beans/<bean_id>/set-stock-zero` accepts any non-zero integer balance.
+It conditionally matches the observed value and atomically sets stock to zero,
+appends one `stock_change_log` entry, and refreshes `updated_at`. Zero, repeated,
+or concurrently stale requests append no entry. Manual edits and roast-driven
+stock changes do not write this history.
