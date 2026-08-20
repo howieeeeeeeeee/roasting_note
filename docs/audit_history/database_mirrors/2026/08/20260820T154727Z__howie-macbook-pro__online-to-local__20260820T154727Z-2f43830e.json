@@ -1,0 +1,75 @@
+{
+  "DEVICE": "howie-macbook-pro",
+  "destination": {
+    "database": "roastlogger",
+    "host": "localhost:27017",
+    "role": "local"
+  },
+  "direction": "online-to-local",
+  "event": "sync_button_clicked",
+  "git": {
+    "branch": "improve/RN-0026-form-panel-accents",
+    "commit": "e2e860c64965880df3bfc4620685916ad3a89a7e",
+    "dirty": true
+  },
+  "preflight": {
+    "failure": null,
+    "plan": {
+      "audit_path": "/Users/howieee/Personal/roasting_note/docs/audit_history/database_mirrors/2026/08/20260820T154727Z__howie-macbook-pro__online-to-local__20260820T154727Z-2f43830e.json",
+      "backup": {
+        "collections": [
+          "beans",
+          "roasts"
+        ],
+        "counts": {
+          "beans": 13,
+          "roasts": 30
+        },
+        "path": "/Users/howieee/Personal/roasting_note/db_backup/database_mirrors/local--howie-macbook-pro/roastlogger/20260820T154727Z__20260820T154727Z-2f43830e",
+        "scope": "complete_destination_database"
+      },
+      "batch_size": 500,
+      "cli_command": "uv run python scripts/sync_database.py --direction online-to-local",
+      "destination": {
+        "database": "roastlogger",
+        "host": "localhost:27017",
+        "role": "local"
+      },
+      "destination_counts": {
+        "beans": 13,
+        "roasts": 30
+      },
+      "device": "howie-macbook-pro",
+      "direction": "online-to-local",
+      "requested_collections": [
+        "beans",
+        "roasts"
+      ],
+      "resolved_collections": [
+        "beans",
+        "roasts"
+      ],
+      "run_id": "20260820T154727Z-2f43830e",
+      "schema_version": 1,
+      "source": {
+        "database": "roastlogger",
+        "host": "cluster0.ni3d51g.mongodb.net",
+        "role": "online"
+      },
+      "source_counts": {
+        "beans": 13,
+        "roasts": 29
+      }
+    },
+    "status": "success"
+  },
+  "run_id": "20260820T154727Z-2f43830e",
+  "schema_version": 1,
+  "source": {
+    "database": "roastlogger",
+    "host": "cluster0.ni3d51g.mongodb.net",
+    "role": "online"
+  },
+  "timestamp": "2026-08-20T15:47:27.214946Z",
+  "trigger": "settings_ui"
+}
