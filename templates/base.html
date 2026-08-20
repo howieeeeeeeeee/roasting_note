@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Raleway:wght@400;500;600;700;800;900&family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700;800&family=Roboto+Slab:wght@100..900&display=swap">
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Raleway:wght@400;600;800;900&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -24,38 +24,46 @@
        without writing it to the page body. #}
     {% set active_tab %}{% block nav_tab %}{% endblock %}{% endset %}
     {% set active_tab = active_tab | trim %}
-    <nav class="navbar">
+    <nav class="navbar" aria-label="Primary navigation">
         <div class="nav-container">
             <div class="nav-brand">
                 <a href="{{ url_for('index') }}">Howie's Roast Log</a>
             </div>
             <span class="nav-brand-divider" aria-hidden="true"></span>
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation"
+                aria-controls="navMenu" aria-expanded="false">
                 <span></span>
                 <span></span>
                 <span></span>
             </button>
             <ul class="nav-menu" id="navMenu">
                 <li>
-                    <a href="{{ url_for('index') }}" class="{% if active_tab == 'roasts' %}active{% endif %}">
+                    <a href="{{ url_for('index') }}" data-nav-tab="roasts"
+                        class="{% if active_tab == 'roasts' %}active{% endif %}"
+                        {% if active_tab == 'roasts' %}aria-current="page"{% endif %}>
                         Roasts
                         <span class="nav-tab-count">{{ nav_roast_count }}</span>
+                        {% if active_tab == 'roasts' %}<span class="nav-active-indicator" aria-hidden="true"></span>{% endif %}
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url_for('beans_list') }}" class="{% if active_tab == 'beans' %}active{% endif %}">
+                    <a href="{{ url_for('beans_list') }}" data-nav-tab="beans"
+                        class="{% if active_tab == 'beans' %}active{% endif %}"
+                        {% if active_tab == 'beans' %}aria-current="page"{% endif %}>
                         Beans
                         <span class="nav-tab-count">{{ nav_bean_count }}</span>
+                        {% if active_tab == 'beans' %}<span class="nav-active-indicator" aria-hidden="true"></span>{% endif %}
                     </a>
                 </li>
             </ul>
             <div class="nav-actions">
                 {% block nav_actions %}{% endblock %}
                 <button class="btn-icon dark-mode-toggle" id="darkModeToggle" onclick="toggleDarkMode()"
-                    title="Toggle dark mode">
+                    title="Toggle dark mode" aria-label="Toggle dark mode">
                     <span class="material-icons" id="darkModeIcon">dark_mode</span>
                 </button>
-                <button class="btn-icon settings-btn" onclick="openSettingsModal()" title="Settings">
+                <button class="btn-icon settings-btn" onclick="openSettingsModal()" title="Settings"
+                    aria-label="Open Settings">
                     <span class="material-icons">settings</span>
                 </button>
             </div>
@@ -153,7 +161,7 @@
         </div>
     </div>
 
-    <main class="container">
+    <main class="container{% block main_class %}{% endblock %}">
         {% block content %}{% endblock %}
     </main>
 
@@ -167,8 +175,9 @@
         const navMenu = document.getElementById('navMenu');
 
         navToggle.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
-            navToggle.classList.toggle('active');
+            const isOpen = navMenu.classList.toggle('active');
+            navToggle.classList.toggle('active', isOpen);
+            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         });
 
         // Settings Modal

@@ -83,6 +83,7 @@ uv run pytest tests/test_database_sync_web.py
 uv run pytest tests/test_e2e_runtime.py
 uv run pytest tests/test_virtual_sensor.py
 uv run pytest tests/test_api_contracts.py
+uv run pytest tests/test_design_contracts.py
 ```
 
 Run specific test class or method:
@@ -111,6 +112,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_database_sync_cli.py` | Confirmations, cancellation, backups, and audit behavior |
 | `test_database_sync_routes.py` | Audited Settings preflight, overlap prevention, and fail-closed routes |
 | `test_database_sync_web.py` | Phased backup/apply/cancel state, resume, endpoint-drift rejection, exclusive claims, replay, and recovery |
+| `test_design_contracts.py` | Quiet Compact contrast, font scope, density, reduced motion, and navigation transition contracts |
 | `test_datetime_formatting.py` | UTC and operator-timezone formatting |
 | `test_e2e_runtime.py` | Isolated database, run markers, cleanup, and online exclusion |
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
@@ -138,6 +140,17 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 - Remaining meters expose clamped 0–100 values for positive integer purchase
   baselines and omit the progressbar for missing or invalid baselines.
 - Existing out-of-stock labels and visibility remain stable.
+
+### Quiet Compact Design Contracts (`test_design_contracts.py`)
+
+- Secondary and tertiary text colors meet WCAG AA on documented light and
+  dark surfaces.
+- Global and label-only font resources stay route-scoped without duplicate
+  token imports.
+- Management and live-roast target sizes remain separate at 44px and 54px.
+- Flat grouping, motion tokens, and reduced-motion overrides remain present.
+- Roasts/Beans navigation retains named progressive transitions, native link
+  semantics, and the live-roast content opt-out.
 
 ### Roast Operations (`test_roasts_api.py`)
 - Create draft roast

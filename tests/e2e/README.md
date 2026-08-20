@@ -128,6 +128,43 @@ The control endpoint rejects non-loopback clients.
 
 Use Codex's in-app browser, not a standalone browser driver.
 
+### Quiet Compact UI
+
+#### Foundations
+
+1. Start run `rn-0029-foundations-a` and open Roasts, Beans, Add Bean,
+   Settings, and the live-roast shell at `1440x900` and `1024x768`.
+2. Repeat representative views in light and dark modes. Confirm small labels,
+   placeholders, inactive navigation, and table headings remain readable.
+3. Inspect computed fonts and network requests. Ordinary pages use Inter,
+   Raleway, DM Mono, and Material Icons without a duplicate stylesheet
+   request. Bean detail loads the three additional label faces before canvas
+   drawing.
+4. Measure representative management controls at 44px or larger and live-roast
+   controls at 54px or larger. Confirm the chart and instrument values retain
+   their previous geometry.
+5. Save representative light/dark screenshots and record font requests,
+   computed text colors, target measurements, console errors, failed network
+   requests, and cleanup in the run summary.
+
+#### Navigation continuity
+
+1. Start run `rn-0029-navigation-a`. Repeatedly activate Roasts and Beans,
+   then use Back and Forward and open a record before returning to its list.
+2. At `1440x900`, `1024x768`, and `390x844`, confirm the 56px navbar keeps the
+   same geometry, counts and contextual actions stay correct, and the active
+   link exposes `aria-current="page"`.
+3. With normal motion, confirm main content moves no more than 4px and completes
+   in 160-200ms without a second container entrance. Unsupported behavior must
+   fall back to an immediate native navigation.
+4. Enable reduced motion and repeat Roasts/Beans, Back, and Forward. Confirm
+   there is no route fade, translation, or active-indicator choreography.
+5. Enter the live-roast shell and verify its chart, readings, setup, sensor
+   state, and controls do not receive management content choreography.
+6. Verify direct loads and a failed URL remain truthful native document loads.
+   Record screenshots, motion observations, history results, console errors,
+   failed network requests, and cleanup in the run summary.
+
 ### Guarded Local Settings Sync
 
 First start an ordinary run without `--sync-fake` using run ID

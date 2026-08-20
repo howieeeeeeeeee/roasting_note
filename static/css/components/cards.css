@@ -55,6 +55,20 @@
   box-shadow: var(--shadow-sm);
   transition: background 0.25s ease, border-color 0.25s ease;
 }
+.detail-section.surface-flat { box-shadow: none; }
+
+.flat-section-group {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-xl);
+  overflow: clip;
+}
+.flat-section-group > .flat-section {
+  padding: var(--manage-section-padding);
+}
+.flat-section-group > .flat-section + .flat-section {
+  border-top: 1px solid var(--bd2);
+}
 .detail-section h2 {
   margin-bottom: var(--space-5);
   padding-bottom: var(--space-3);

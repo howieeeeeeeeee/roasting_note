@@ -1,6 +1,6 @@
 # Design Principles
 
-The five principles below govern every visual and interaction decision in RoastLogger. When a new screen or component is designed, it should be checkable against each of them.
+The six principles below govern every visual and interaction decision in RoastLogger. When a new screen or component is designed, it should be checkable against each of them.
 
 ## 1. Tablet-first for live roasting
 
@@ -9,6 +9,7 @@ The live roasting screen is used with a tablet propped next to a hot roaster. In
 - Primary touch targets are **≥ 54px** on a side.
 - Controls live within thumb reach from either edge of the tablet.
 - Layout does not depend on hover or right-click.
+- Browse and management screens may use compact spacing with 44px controls; live-roast controls retain their separate 54px minimum.
 
 ## 2. Chart dominance
 
@@ -40,3 +41,17 @@ Roasteries and garages are dimly lit. Dark mode is not a tacked-on theme — it 
 - Palette uses **warm** undertones (`#0E0D0B` base, `#C9A87A` accent) — never cold pure-black.
 - All new components must consume `var(--*)` tokens rather than hardcoded hex.
 - See [foundations/dark-mode.md](./foundations/dark-mode.md) for the full system.
+
+## 6. Stable workspace continuity
+
+Roasts and Beans are two states of one workspace. The 56px navbar remains
+visually stable while the active indicator and main content communicate a
+document change. Links, URLs, Back, Forward, and direct loads remain native.
+
+- Motion explains a state change rather than decorating a page load.
+- Normal route motion lasts 160-200ms and changes only opacity or transform.
+- Reduced-motion users receive an immediate update with no choreography.
+- Live-roast content opts out of management-page transition choreography.
+
+See [components/navigation.md](./components/navigation.md) for the component
+contract.

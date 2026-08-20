@@ -121,6 +121,48 @@ def test_page_routes_render_for_existing_records(
     roasts_collection.delete_one({"_id": generated_id})
 
 
+def test_quiet_compact_fonts_and_navigation_render_by_route(
+    client,
+    created_test_bean,
+    created_test_roast,
+):
+    roasts = client.get("/").get_data(as_text=True)
+    beans = client.get("/beans").get_data(as_text=True)
+    bean_detail = client.get(
+        f"/beans/detail/{created_test_bean}"
+    ).get_data(as_text=True)
+    live = client.get(
+        f"/roast/live/{created_test_roast['roast_id']}"
+    ).get_data(as_text=True)
+
+    for ordinary_page in (roasts, beans, live):
+        assert ordinary_page.count("fonts.googleapis.com/css2") == 1
+        assert "Barlow+Condensed" not in ordinary_page
+        assert "Playfair+Display" not in ordinary_page
+        assert "Roboto+Slab" not in ordinary_page
+
+    assert bean_detail.count("fonts.googleapis.com/css2") == 2
+    assert "Barlow+Condensed" in bean_detail
+    assert "Playfair+Display" in bean_detail
+    assert "Roboto+Slab" in bean_detail
+
+    assert re.search(
+        r'data-nav-tab="roasts"[^>]*aria-current="page"',
+        roasts,
+    )
+    assert re.search(
+        r'data-nav-tab="beans"[^>]*aria-current="page"',
+        beans,
+    )
+    assert roasts.count('class="nav-tab-count"') == 2
+    assert beans.count('class="nav-tab-count"') == 2
+    assert roasts.count('class="nav-active-indicator"') == 1
+    assert beans.count('class="nav-active-indicator"') == 1
+    assert 'href="/" data-nav-tab="roasts"' in beans
+    assert 'href="/beans" data-nav-tab="beans"' in roasts
+    assert 'class="container no-route-transition"' in live
+
+
 def test_bean_detail_stock_zero_action_and_history_contract(
     client,
     beans_collection,

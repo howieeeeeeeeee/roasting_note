@@ -23,6 +23,8 @@ padding: 1.5rem to 2rem;
 | `.form-section` | Full-page edit form panels (add/edit bean, roast edit) | `var(--space-7)` |
 | `.roast-detail` | Detail page container | `2rem` |
 | `.modal-content` | Modal body | variable (see form/modal patterns) |
+| `.surface-flat` | Static management section | `var(--manage-section-padding)` |
+| `.flat-section-group` | Several related static sections in one shell | One shared border with sparse internal dividers |
 
 ## Grid Layout
 
@@ -64,6 +66,11 @@ Card lists use auto-filling grids so they reflow to the container width without 
 | Hover (list cards) | `var(--shadow-hover)` + `transform: translateY(-2px)` |
 
 Hover lift is reserved for **clickable** cards (the whole card is a link). Static cards (form panels, chart containers) don't lift.
+
+Dialogs and menus may use `--shadow-modal` or `--shadow-lg` because elevation
+communicates that they sit above the current workspace. Static management
+sections use `.surface-flat` or `.flat-section-group` with no shadow. This
+keeps form and detail pages from reading as a stack of nested cards.
 
 ## Borders vs Shadows
 

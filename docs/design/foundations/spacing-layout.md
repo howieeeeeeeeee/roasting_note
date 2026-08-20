@@ -27,19 +27,23 @@ Spacing is exposed as CSS custom properties (`--space-*`) in [static/css/tokens.
 
 ## Touch Targets
 
-Tablet-first interaction rules:
+RoastLogger has two deliberate density contexts:
 
-- **Minimum 44px** height for any interactive control (stepper, form input in live-roast rows).
-- **54px+** preferred for primary touch targets during a live roast.
+- **Browse and manage:** `--control-min: 44px` is the minimum target for navigation, forms, list actions, and Settings.
+- **Live roasting:** `--control-live-min: 54px` protects primary roast controls and is never reduced by management density rules.
 - **88px** top-bar height on the live screen (`.live-topbar`) — values must be readable from ~60 cm.
-- **Steppers** (`.stepper-control`) use a fixed 44px height with 0.75rem internal gap and 6px padding for the +/- tap area.
+- **Steppers** (`.stepper-control`) use the protected 54px live target.
+
+Management layouts use `--manage-gap`, `--manage-section-gap`, and
+`--manage-section-padding`. The reusable `.manage-stack`, `.manage-grid`, and
+`.surface-flat` hooks tighten vertical rhythm without shrinking controls.
 
 ## Containers
 
 | Container | Max width | Notes |
 |---|---|---|
-| `.nav-container` | `1600px` | Navbar inner wrapper |
-| `.container` | `1600px`, `2rem 1.5rem` padding | Main content wrapper on most pages |
+| `.nav-container` | `1440px` | Navbar inner wrapper, fixed at 56px high |
+| `.container` | `1440px`, token-based padding | Main content wrapper on most pages |
 | `.live-roast-container` | `100%` | Live screen takes full viewport width — no horizontal max |
 
 ## Grids
@@ -66,22 +70,19 @@ RoastLogger uses a small, pragmatic set of media queries. Keep new CSS aligned w
 
 Safe-area insets (`env(safe-area-inset-*)`) are applied on fullscreen panels for notched devices.
 
-## Card & Shadow Pattern
+## Surface Pattern
 
-Cards and panels share a consistent recipe:
-
-```css
-background: var(--card-bg);
-border-radius: 8px;
-box-shadow: var(--shadow);
-padding: 1.75rem; /* or 1.5rem for smaller cards */
-```
-
-On hover (when applicable):
+Static management groups prefer a flat surface:
 
 ```css
-box-shadow: var(--shadow-hover);
-transform: translateY(-2px);
+background: var(--surf);
+border: 1px solid var(--bd);
+border-radius: var(--radius-xl);
+box-shadow: none;
+padding: var(--manage-section-padding);
 ```
+
+Shadows and hover lift remain available when they communicate clickable or
+overlay hierarchy. Do not nest elevated cards inside another elevated card.
 
 See [../components/cards-surfaces.md](../components/cards-surfaces.md) for the full component.

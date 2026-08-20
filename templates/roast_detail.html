@@ -248,7 +248,7 @@
                                 {% if event.note %}
                                 <span class="temp-note">{{ event.note }}</span>
                                 {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="text-muted">-</span>
                                 {% endif %}
                                 {% endif %}
                             </td>
@@ -256,18 +256,18 @@
                                 {% if event.temperature %}
                                 {{ event.temperature }}°C
                                 {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if event.ror is not none %}
                                 {{ event.ror }}
                                 {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
-                            <td>{{ event.fan_setting if event.fan_setting is not none else '—' }}</td>
-                            <td>{{ event.power_setting if event.power_setting is not none else '—' }}</td>
+                            <td>{{ event.fan_setting if event.fan_setting is not none else '-' }}</td>
+                            <td>{{ event.power_setting if event.power_setting is not none else '-' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -22,9 +22,23 @@ The stylesheet uses CSS custom properties throughout ([color.md](./color.md) has
 --card-bg:        #171512;
 --border-color:   #2A2620;
 --text-color:     #EDE9E3;
+--txt2:           #B8B1A8;
+--txt3:           #9A948C;
 ```
 
 Any component that uses these variables automatically adapts. Explicit `body.dark-mode` rules are only needed for elements with **hardcoded colours** or that need special treatment (e.g. chart colours, which are set in JavaScript).
+
+## Hierarchy and contrast parity
+
+Light and dark modes use the same semantic hierarchy. Body copy uses `--txt`,
+supporting copy uses `--txt2`, and tertiary visible text uses `--txt3`. Both
+secondary roles meet WCAG AA on `--bg`, `--surf`, and `--surf2`. Borders use
+`--bd` or `--bd2` and may be intentionally quieter because they do not carry
+text.
+
+Navigation, Settings, and management surfaces keep the same accent and
+elevation meaning across themes. A section never switches to an inverted local
+theme. Reduced-motion behavior is also identical in both modes.
 
 ## Toggle Implementation
 

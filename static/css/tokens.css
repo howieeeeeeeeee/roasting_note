@@ -4,8 +4,6 @@
    shadows. Components must consume var(--*) — no hardcoded hex.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Raleway:wght@400;600;800;900&family=Playfair+Display:wght@400;700;900&family=Barlow+Condensed:wght@400;600;700;800&family=Roboto+Slab:wght@300;400;500;700&display=swap');
-
 /* ── BASE PALETTE ─────────────────────────────────────────── */
 :root {
   --color-pr-900:  #3A2E26;
@@ -29,6 +27,7 @@
   --color-n-800:  #2C2C2C;
   --color-n-700:  #484440;
   --color-n-600:  #666666;
+  --color-n-550:  #726D69;
   --color-n-500:  #777370;
   --color-n-400:  #8A8680;
   --color-n-300:  #B0ACA8;
@@ -48,8 +47,8 @@
   --color-dk-surf2: #201D18;
   --color-dk-bd:    #2A2620;
   --color-dk-txt:   #EDE9E3;
-  --color-dk-txt2:  #8A8680;
-  --color-dk-txt3:  #484440;
+  --color-dk-txt2:  #B8B1A8;
+  --color-dk-txt3:  #9A948C;
 }
 
 /* ── SEMANTIC TOKENS — LIGHT ──────────────────────────────── */
@@ -73,8 +72,8 @@
   --bd2:      var(--color-n-150);
 
   --txt:      var(--color-n-800);
-  --txt2:     var(--color-n-500);
-  --txt3:     var(--color-n-300);
+  --txt2:     var(--color-n-600);
+  --txt3:     var(--color-n-550);
 
   --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md:    0 2px 6px rgba(0, 0, 0, 0.12);
@@ -180,4 +179,25 @@ body.dark-mode {
   --radius-xl:   9px;
   --radius-pill: 20px;
   --radius-full: 9999px;
+
+  --control-min:      44px;
+  --control-live-min: 54px;
+
+  --manage-gap:             var(--space-3);
+  --manage-section-gap:     var(--space-4);
+  --manage-section-padding: var(--space-5);
+
+  --motion-fast: 140ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0.01ms;
+    --motion-base: 0.01ms;
+    --motion-slow: 0.01ms;
+  }
 }

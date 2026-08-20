@@ -88,7 +88,7 @@
   flex-shrink: 0;
   background: var(--surf);
 }
-.tb-end .btn-lg { min-height: 54px; padding: 0.7rem 1.4rem; font-size: var(--text-md); }
+.tb-end .btn-lg { min-height: var(--control-live-min); padding: 0.7rem 1.4rem; font-size: var(--text-md); }
 
 .fc-time-badge {
   display: inline-block;
@@ -150,7 +150,7 @@
   gap: var(--space-2);
 }
 .live-ev-btn {
-  height: 54px;
+  height: var(--control-live-min);
   background: var(--surf2);
   border: 1.5px solid var(--bd);
   color: var(--txt);
@@ -223,7 +223,7 @@
   border: 1.5px solid var(--bd);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  height: 54px;
+  height: var(--control-live-min);
 }
 .stepper-control .btn-stepper { width: 44px; height: 100%; }
 .stepper-value {
@@ -237,7 +237,7 @@
 }
 
 .live-note-input {
-  height: 54px;
+  height: var(--control-live-min);
   width: 100%;
   background: var(--surf2);
   border: 1.5px solid var(--bd);
@@ -252,7 +252,7 @@
 .live-note-input:focus { border-color: var(--pr); background: var(--surf); }
 .live-note-input::placeholder { color: var(--txt3); }
 
-.live-log-event-btn { height: 54px; min-width: 130px; }
+.live-log-event-btn { height: var(--control-live-min); min-width: 130px; }
 
 /* ── HIDDEN TIMELINE LIST (legacy structure) ─────────────── */
 .timeline-list { display: flex; flex-direction: column; gap: var(--space-2); }

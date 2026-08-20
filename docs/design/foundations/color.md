@@ -13,7 +13,8 @@ RoastLogger uses a warm, earth-toned palette. Colours are defined as CSS custom 
 | `--success-color` | `#6B8E6F` | `#7FB385` | Fired event buttons, RoR line, success toasts |
 | `--danger-color` | `#B85C5C` | `#D07070` | End Roast button, FC badge, destructive actions |
 | `--text-color` | `#2C2C2C` | `#EDE9E3` | Body text |
-| `--text-light` | `#666` | `#8A8680` | Labels, meta, secondary text |
+| `--txt2` / `--text-light` | `#666666` | `#B8B1A8` | Secondary labels, helper text, and metadata |
+| `--txt3` | `#726D69` | `#9A948C` | Tertiary text, placeholders, and inactive navigation |
 | `--bg-color` | `#FAFAF9` | `#0E0D0B` | Page background |
 | `--card-bg` | `#FFFFFF` | `#171512` | Cards, panels, navbar, modals |
 | `--border-color` | `#E8E6E3` | `#2A2620` | Borders, dividers |
@@ -32,6 +33,14 @@ The browser favicon (`static/img/favicon.svg`) uses the Material `local_cafe` gl
 
 **Bean accent colours** are user-defined per bean (stored in `bean.color`) and flow through to the bean color indicator dot, the left accent band on Strip labels, corner dots on Washi labels, etc. They are independent of the palette above.
 
+### Text and decorative contrast
+
+`--txt2` and `--txt3` are both readable text colors. Each reaches WCAG AA on
+the documented page, primary surface, and secondary surface backgrounds in
+light and dark modes. Use `--bd` and `--bd2` for intentionally faint borders,
+rules, and other non-text decoration. Do not lower visible text contrast to
+make a separator quieter.
+
 ## Warm-Earth Rationale
 
 Both palettes share a brown/tan undertone rather than a neutral grey. The light background `#FAFAF9` is not pure white; the dark background `#0E0D0B` is not pure black. This matches the coffee/roastery aesthetic and avoids the sterile feel of a pure-neutral UI.
@@ -41,3 +50,4 @@ Both palettes share a brown/tan undertone rather than a neutral grey. The light 
 1. **Never hardcode a palette colour in new CSS.** Use `var(--primary-color)` etc. Dark mode will then adapt automatically.
 2. **Canvas and chart colours** (which cannot consume CSS variables) must listen for the `darkmodechange` event and swap their own palette. See [dark-mode.md](./dark-mode.md#chart-colours).
 3. **Bean accent colours are user-provided** — treat them as arbitrary hex values. Do not assume sufficient contrast; the label renderer pairs them with light or dark template backgrounds that already provide contrast.
+4. **Text tokens remain text-safe.** Placeholders, small headings, inactive navigation, and helper text use `--txt2` or `--txt3`; decorative marks use border tokens.

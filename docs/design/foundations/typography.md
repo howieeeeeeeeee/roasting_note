@@ -1,6 +1,6 @@
 # Typography
 
-Six typefaces are loaded from Google Fonts in [templates/base.html](../../../templates/base.html). Each has a specific role — they are not interchangeable.
+Three shared typefaces are loaded globally from Google Fonts in [templates/base.html](../../../templates/base.html). Three label-only faces are requested by [templates/beans_detail.html](../../../templates/beans_detail.html), the only page that can open the label creator. Each has a specific role.
 
 ## Font Stack
 
@@ -8,10 +8,10 @@ Six typefaces are loaded from Google Fonts in [templates/base.html](../../../tem
 |---|---|---|
 | **Inter** | 300, 400, 500, 600, 700 | Body text, default UI font, label-creator body text |
 | **DM Mono** | 400, 500 | All instrument-panel numerics (timer, temperature, RoR, steppers); Technical label preset |
-| **Raleway** | 400, 500, 600, 700, 800, 900 | Record titles (bean/roast names) and Modern label preset |
+| **Raleway** | 400, 600, 800, 900 | Record titles (bean/roast names) and Modern label preset |
 | **Playfair Display** | 400, 700, 900 | Editorial label preset (bean name) |
 | **Barlow Condensed** | 400, 600, 700, 800 | Bold label preset (bean name) |
-| **Roboto Slab** | 100–900 (variable) | Craft label preset (bean name + body) |
+| **Roboto Slab** | 300, 400, 500, 700 | Craft label preset (bean name + body) |
 
 The body font stack in [static/css/style.css](../../../static/css/style.css) is:
 
@@ -77,4 +77,11 @@ Sizes used across the UI, from largest to smallest:
 
 ## Loading
 
-All six faces are requested in one Google Fonts `<link>` tag. The label-creator defers canvas drawing until `document.fonts.ready` resolves — see [static/js/label-creator.js](../../../static/js/label-creator.js) `ensureFontsReady()`. Without that guard, Canvas falls back silently to system sans-serif and labels look wrong.
+`templates/base.html` requests Inter, Raleway, and DM Mono once. The token
+stylesheet contains no remote font import, so ordinary Roasts, Beans, forms,
+Settings, and live-roast pages do not duplicate the request. Bean detail adds
+Playfair Display, Barlow Condensed, and Roboto Slab through its `extra_head`
+block. The label creator still waits for `document.fonts.ready` in
+[static/js/label-creator.js](../../../static/js/label-creator.js) before canvas
+drawing, preserving every printable preset without loading label-only faces on
+unrelated pages.

@@ -1,5 +1,5 @@
 /**
- * label-creator.js — RoastLogger Bean Label System
+ * label-creator.js - RoastLogger Bean Label System
  * Templates: nova, ink, strip, washi
  * Font presets: modern, editorial, technical, bold, craft
  * Aspect ratios: 2:1, 5:3, 5:4, 4:3, 3:4
@@ -32,7 +32,7 @@ var LabelCreator = (function () {
         nova: {
             id: 'nova',
             name: 'Nova',
-            description: 'Split layout — text left, image right',
+            description: 'Split layout - text left, image right',
             defaultRatio: '5:4',
             exportWidthCm: 12.7,
             exportHeightCm: 10.16,
@@ -179,12 +179,12 @@ var LabelCreator = (function () {
     // ── Main render ──────────────────────────────────────────────────
     /**
      * @param {HTMLCanvasElement} canvas
-     * @param {string} templateId   — 'nova' | 'ink' | 'strip' | 'washi'
-     * @param {Object} fields       — { name, origin, process, roastLevel, flavorNotes, roastDate }
-     * @param {string} accentColor  — hex e.g. '#9B6A6A'
-     * @param {string} imageSrc     — URL or '' (for nova: right panel; for ink/washi: bg)
-     * @param {string} fontPreset   — key from FONT_PRESETS
-     * @param {string} aspectRatio  — key from ASPECT_RATIOS e.g. '5:4'
+     * @param {string} templateId   - 'nova' | 'ink' | 'strip' | 'washi'
+     * @param {Object} fields       - { name, origin, process, roastLevel, flavorNotes, roastDate }
+     * @param {string} accentColor  - hex e.g. '#9B6A6A'
+     * @param {string} imageSrc     - URL or '' (for nova: right panel; for ink/washi: bg)
+     * @param {string} fontPreset   - key from FONT_PRESETS
+     * @param {string} aspectRatio  - key from ASPECT_RATIOS e.g. '5:4'
      */
     function renderLabel(canvas, templateId, fields, accentColor, imageSrc, fontPreset, aspectRatio) {
         var preset  = fontPreset  || 'modern';
@@ -223,7 +223,7 @@ var LabelCreator = (function () {
     }
 
     // ════════════════════════════════════════════════════
-    // T1 — Nova (split left-text / right-image)
+    // T1 - Nova (split left-text / right-image)
     // ════════════════════════════════════════════════════
     function renderNova(ctx, w, h, f, accent, img, preset) {
         var isPortrait = h > w * 0.9;
@@ -249,7 +249,7 @@ var LabelCreator = (function () {
             drawImageContain(ctx, img, imgX + imgW * 0.05, imgY + imgH * 0.05, imgW * 0.9, imgH * 0.9);
             ctx.restore();
         } else {
-            // Clean warm gradient fallback — blends into the label background
+            // Clean warm gradient fallback - blends into the label background
             var grd = ctx.createLinearGradient(imgX, imgY, imgX + imgW, imgY + imgH);
             grd.addColorStop(0, '#F5F2ED');
             grd.addColorStop(1, '#E8E1D6');
@@ -264,12 +264,12 @@ var LabelCreator = (function () {
         else            { ctx.moveTo(w * 0.5, h * 0.03); ctx.lineTo(w * 0.5, h * 0.97); }
         ctx.stroke(); ctx.setLineDash([]); ctx.restore();
 
-        // Accent bar — wider strip for more visual weight
+        // Accent bar - wider strip for more visual weight
         var barW = Math.max(8, w * 0.018);
         var barX = 12, barY = h * 0.08, barH = h * 0.62;
         roundRect(ctx, barX, barY, barW, barH, barW / 2, accent);
 
-        // Text area — keep name restrained; bump sub & body ~15-20%
+        // Text area - keep name restrained; bump sub & body ~15-20%
         var textW = isPortrait ? w : w * 0.5;
         var tx     = 26 + (barW - 5);
         var nameSz = Math.max(20, Math.min(40, textW * 0.17));
@@ -278,7 +278,7 @@ var LabelCreator = (function () {
         // Lift the full text block noticeably to avoid crowding the lower divider zone.
         var contentShiftY = -Math.max(16, h * 0.06);
 
-        // Name — explicit user line breaks win; otherwise auto-wrap a single
+        // Name - explicit user line breaks win; otherwise auto-wrap a single
         // long line to 2 lines so it doesn't run off the panel.
         ctx.font = nameFontStr(preset, nameSz);
         var maxNameW  = textW - tx - 14;
@@ -307,7 +307,7 @@ var LabelCreator = (function () {
         var origY = nameEndY + subSz * 1.8;
         txt(ctx, (f.origin || '').toUpperCase(), tx, origY, bodyFontStr(preset, subSz, 600), '#999590');
 
-        // Process — sits between origin and the rule
+        // Process - sits between origin and the rule
         var procY = origY + subSz * 1.8;
         txt(ctx, f.process, tx, procY, bodyFontStr(preset, bodySz, 500), '#777370');
 
@@ -325,10 +325,10 @@ var LabelCreator = (function () {
     }
 
     // ════════════════════════════════════════════════════
-    // T2 — Ink (dark, full-bleed bg or rich gradient)
+    // T2 - Ink (dark, full-bleed bg or rich gradient)
     // ════════════════════════════════════════════════════
     function renderInk(ctx, w, h, f, accent, img, preset) {
-        // Background — image or dark gradient
+        // Background - image or dark gradient
         if (img) {
             ctx.save();
             ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
@@ -399,7 +399,7 @@ var LabelCreator = (function () {
     }
 
     // ════════════════════════════════════════════════════
-    // T4 — Strip (minimal Swiss, left accent band)
+    // T4 - Strip (minimal Swiss, left accent band)
     // ════════════════════════════════════════════════════
     function renderStrip(ctx, w, h, f, accent, img, preset) {
         ctx.fillStyle = '#FDFCFB'; ctx.fillRect(0, 0, w, h);
@@ -460,10 +460,10 @@ var LabelCreator = (function () {
     }
 
     // ════════════════════════════════════════════════════
-    // T5 — Washi (craft paper, centred, ornamental)
+    // T5 - Washi (craft paper, centred, ornamental)
     // ════════════════════════════════════════════════════
     function renderWashi(ctx, w, h, f, accent, img, preset) {
-        // Background — image or kraft gradient
+        // Background - image or kraft gradient
         if (img) {
             ctx.save();
             ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.clip();
@@ -506,7 +506,7 @@ var LabelCreator = (function () {
         txt(ctx, (f.origin||'').toUpperCase(), w / 2, topY2,
             bodyFontStr(preset, Math.max(9, w * 0.022), 600), '#9A8060', 'center', 'middle');
 
-        // Name — multi-line breaks honor user newlines, centered around h*0.38
+        // Name - multi-line breaks honor user newlines, centered around h*0.38
         var nameSz = Math.max(20, Math.min(52, w * 0.112));
         var washiNameLines = splitLines(f.name);
         if (!washiNameLines.length) washiNameLines = [''];
