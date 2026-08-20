@@ -25,7 +25,10 @@ padding: var(--space-7);
 box-shadow: var(--shadow-sm);
 ```
 
-Each section has a subtle primary accent rule on the left edge and an uppercase H2 divider. Section headings are labels for scanability, not marketing copy.
+Each section uses a neutral token border in both light and dark modes, with no
+decorative color strip or other accent along its edge. The uppercase H2 divider
+provides hierarchy; section headings are labels for scanability, not marketing
+copy.
 
 ## Form Group (`.form-group`)
 
