@@ -3,11 +3,21 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import re
 from uuid import uuid4
 
 from bson.objectid import ObjectId
 
 import roastlogger.blueprints.beans as bean_blueprint
+
+
+def _bean_list_row(html: str, bean_name: str) -> str:
+    rows = re.findall(
+        r'<tr class="bean-row clickable-row".*?</tr>',
+        html,
+        flags=re.DOTALL,
+    )
+    return next(row for row in rows if bean_name in row)
 
 
 def test_label_image_and_recent_preferences_contract(client, beans_collection):
@@ -158,6 +168,94 @@ def test_bean_list_out_of_stock_filter_labels_match_visibility(
     ).get_data(as_text=True)
     assert "Hide Out of Stock" in revealed_view
     assert f"/beans/detail/{bean_id}" in revealed_view
+
+
+def test_bean_list_stock_remaining_meter_contract(client, beans_collection):
+    marker = f"stock-meter-{uuid4().hex[:10]}"
+    cases = [
+        (f"{marker}-ratio", 300, 2000),
+        (f"{marker}-zero", 0, 2000),
+        (f"{marker}-negative", -35, 2000),
+        (f"{marker}-above", 2500, 2000),
+        (f"{marker}-missing", 450, None),
+        (f"{marker}-zero-baseline", 450, 0),
+        (f"{marker}-negative-baseline", 450, -100),
+        (f"{marker}-non-integer-baseline", 450, 2000.0),
+    ]
+    documents = []
+    for name, stock_grams, purchase_weight_grams in cases:
+        document = {
+            "name": name,
+            "stock_grams": stock_grams,
+            "archived": False,
+            "test_data": True,
+        }
+        if purchase_weight_grams is not None:
+            document["purchase_weight_grams"] = purchase_weight_grams
+        documents.append(document)
+
+    result = beans_collection.insert_many(documents)
+    try:
+        html = client.get(
+            "/beans?filter_out_of_stock=false"
+        ).get_data(as_text=True)
+
+        ratio_row = _bean_list_row(html, f"{marker}-ratio")
+        assert "300g left" in ratio_row
+        assert 'role="progressbar"' in ratio_row
+        assert 'aria-valuemin="0"' in ratio_row
+        assert 'aria-valuemax="100"' in ratio_row
+        assert 'aria-valuenow="15.0"' in ratio_row
+        assert (
+            'aria-valuetext="300g remaining of 2000g original (15.0%)"'
+            in ratio_row
+        )
+        assert '--stock-remaining-percent: 15.0%;' in ratio_row
+        visible_ratio_copy = re.sub(r"<[^>]+>", " ", ratio_row)
+        assert "%" not in visible_ratio_copy
+        assert "consumed" not in visible_ratio_copy.lower()
+
+        zero_row = _bean_list_row(html, f"{marker}-zero")
+        assert "0g left" in zero_row
+        assert 'aria-valuenow="0"' in zero_row
+        assert '--stock-remaining-percent: 0%;' in zero_row
+
+        negative_row = _bean_list_row(html, f"{marker}-negative")
+        assert "-35g left" in negative_row
+        assert 'class="stock-badge stock-low"' in negative_row
+        assert 'aria-valuenow="0"' in negative_row
+        assert '--stock-remaining-percent: 0%;' in negative_row
+
+        above_row = _bean_list_row(html, f"{marker}-above")
+        assert "2500g left" in above_row
+        assert 'aria-valuenow="100"' in above_row
+        assert '--stock-remaining-percent: 100%;' in above_row
+
+        for suffix in (
+            "missing",
+            "zero-baseline",
+            "negative-baseline",
+            "non-integer-baseline",
+        ):
+            fallback_row = _bean_list_row(html, f"{marker}-{suffix}")
+            assert "450g left" in fallback_row
+            assert 'role="progressbar"' not in fallback_row
+
+        sorted_html = client.get(
+            "/beans?filter_out_of_stock=false&sort_by=stock&sort_order=asc"
+        ).get_data(as_text=True)
+        assert sorted_html.index(f"{marker}-negative") < sorted_html.index(
+            f"{marker}-zero"
+        )
+        assert sorted_html.index(f"{marker}-zero") < sorted_html.index(
+            f"{marker}-ratio"
+        )
+        assert sorted_html.index(f"{marker}-ratio") < sorted_html.index(
+            f"{marker}-above"
+        )
+        assert f"/beans/detail/{result.inserted_ids[0]}" in ratio_row
+    finally:
+        beans_collection.delete_many({"_id": {"$in": result.inserted_ids}})
 
 
 def test_invalid_and_missing_identifiers_return_stable_errors(

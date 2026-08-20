@@ -102,7 +102,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 
 | Module | Primary coverage |
 | --- | --- |
-| `test_api_contracts.py` | Labels, preferences, Settings, rendered stock-history states, identifiers, and payload failures |
+| `test_api_contracts.py` | Labels, preferences, Settings, rendered stock-history and Beans-list remaining-meter states, identifiers, and payload failures |
 | `test_app_factory.py` | Route manifest, configuration boundaries, and live-roast module entry |
 | `test_beans_api.py` | Bean CRUD, stock, labels, pricing, and validation |
 | `test_database_backup.py` | Complete backups, BSON round trips, and incomplete-backup safety |
@@ -128,6 +128,14 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 - Stock deduction/restoration and atomic positive/negative set-to-zero history
 - Unit price calculation
 - Form validation and data handling
+
+### Rendered Bean Contracts (`test_api_contracts.py`)
+
+- Beans-list stock pills retain signed, uncapped gram values and raw-stock
+  sorting.
+- Remaining meters expose clamped 0–100 values for positive integer purchase
+  baselines and omit the progressbar for missing or invalid baselines.
+- Existing out-of-stock labels and visibility remain stable.
 
 ### Roast Operations (`test_roasts_api.py`)
 - Create draft roast

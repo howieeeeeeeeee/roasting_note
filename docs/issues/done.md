@@ -6,6 +6,7 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RN-0027 | [IMPROVEMENT] | Medium | bean-inventory | [Add Bean Stock Remaining Meter](./resolved/RN-0027-bean-stock-remaining-meter.md) | - | - | 2026-08-20 | 2026-08-20 |
 | RN-0026 | [IMPROVEMENT] | Low | design-system | [Remove Form Panel Accent Strips](./resolved/RN-0026-remove-form-panel-accent-strips.md) | - | - | 2026-08-20 | 2026-08-20 |
 | RN-0025 | [FEATURE] | Medium | bean-inventory | [Set Non-Zero Bean Stock to Zero](./resolved/RN-0025-zero-bean-stock-with-history.md) | - | - | 2026-08-20 | 2026-08-20 |
 | RN-0024 | [IMPROVEMENT] | Medium | testing | [Make UI Browser Testing Proportional](./resolved/RN-0024-proportional-ui-browser-testing.md) | - | - | 2026-07-29 | 2026-07-29 |

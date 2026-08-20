@@ -107,10 +107,32 @@
                 </td>
                 <td>{{ bean.process or '-' }}</td>
                 <td>{{ bean.supplier or '-' }}</td>
-                <td>
-                    <span class="stock-badge {% if bean.stock_grams and bean.stock_grams < 100 %}stock-low{% endif %}">
-                        {{ bean.stock_grams or 0 }}g
-                    </span>
+                <td class="bean-stock-cell">
+                    {% set stock_grams = bean.stock_grams if bean.stock_grams is integer else 0 %}
+                    {% set purchase_weight_grams = bean.purchase_weight_grams %}
+                    <div class="stock-indicator {% if stock_grams and stock_grams < 100 %}stock-low{% endif %}">
+                        <span class="stock-badge {% if stock_grams and stock_grams < 100 %}stock-low{% endif %}">
+                            {{ stock_grams }}g left
+                        </span>
+                        {% if purchase_weight_grams is integer and purchase_weight_grams > 0 %}
+                            {% set raw_remaining_percent = stock_grams / purchase_weight_grams * 100 %}
+                            {% set remaining_percent = 0 if raw_remaining_percent <= 0 else 100 if raw_remaining_percent >= 100 else raw_remaining_percent %}
+                            {% set remaining_percent_display = remaining_percent | round(2) %}
+                            <span
+                                class="stock-remaining-meter"
+                                role="progressbar"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-valuenow="{{ remaining_percent_display }}"
+                                aria-valuetext="{{ stock_grams }}g remaining of {{ purchase_weight_grams }}g original ({{ remaining_percent_display }}%)"
+                            >
+                                <span
+                                    class="stock-remaining-meter-fill"
+                                    style="--stock-remaining-percent: {{ remaining_percent_display }}%;"
+                                ></span>
+                            </span>
+                        {% endif %}
+                    </div>
                 </td>
                 <td class="date-cell">
                     {{ bean.purchase_date.strftime('%Y-%m-%d') if bean.purchase_date else '-' }}

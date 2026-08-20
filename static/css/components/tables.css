@@ -159,6 +159,7 @@
 .beans-table tbody tr:last-child { border-bottom: none; }
 .beans-table tbody tr:hover { background: var(--pr-ll); }
 .beans-table td { padding: 1rem 1.1rem; vertical-align: middle; }
+.beans-table td.bean-stock-cell { padding: 0.9rem var(--space-1); }
 .bean-name-cell { min-width: 240px; }
 .bean-name-with-color {
   display: flex;

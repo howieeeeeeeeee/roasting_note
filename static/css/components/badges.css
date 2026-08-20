@@ -49,6 +49,31 @@ body.dark-mode .roast-status-draft { background: rgba(212, 196, 152, 0.16); colo
 }
 .stock-badge.stock-low { background: var(--err-l); color: var(--err); font-weight: 700; }
 
+.stock-indicator {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+}
+.stock-indicator .stock-badge { white-space: nowrap; }
+.stock-remaining-meter {
+  display: block;
+  width: calc(100% - var(--space-3));
+  height: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surf2);
+}
+.stock-remaining-meter-fill {
+  display: block;
+  width: var(--stock-remaining-percent);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ok);
+}
+.stock-indicator.stock-low .stock-remaining-meter-fill { background: var(--err); }
+
 .loss-badge {
   display: inline-block;
   padding: 0.16rem 0.55rem;

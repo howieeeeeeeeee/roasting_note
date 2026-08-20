@@ -145,6 +145,24 @@ Use Codex's in-app browser, not a standalone browser driver.
 9. Edit the bean back to positive stock for the following Live Roast workflow.
    Confirm its history remains and **More actions** is available again.
 
+#### Bean Stock Remaining Meter (Targeted)
+
+1. For run `rn-0027-stock-meter-a`, create or edit the run-marked bean so its
+   original purchase weight is `2000g` and its current stock is `300g`.
+2. Return to Beans and confirm the Stock cell shows `300g left` in the existing
+   pill with a separate thin meter beneath it. Inspect the progressbar and
+   confirm its accessible value is 15% with remaining/original context.
+3. Confirm the cell shows no visible consumed weight, original-weight fraction,
+   or percentage. Sort the Stock column and verify the row follows its raw
+   `300g` balance, then open the bean through the clickable row.
+4. Capture the Stock cell at desktop and narrow widths in light and dark modes.
+   Confirm the 9% column remains aligned, the pill and meter do not clip or
+   overlap another column, and narrow layouts retain horizontal scrolling.
+5. Treat an incorrect accessible value, visible ratio copy, clipping, column
+   overlap, broken horizontal scrolling, console errors, or failed network
+   requests as failures. Save both viewport screenshots and the findings in
+   `tests/e2e/artifacts/rn-0027-stock-meter-a/summary.md`.
+
 ### Live Roast
 
 1. Choose **New Roast**, select the test bean, set a run-unique title, green

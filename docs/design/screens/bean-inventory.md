@@ -34,10 +34,33 @@ Table-style inventory view (not a card grid — density matters when managing do
 | Table | `.beans-table` (sortable via `.sort-btn-inline` + `.sortable-header`) |
 | Row | `.bean-row.clickable-row` — whole row links to detail |
 | Color cell | `.bean-name-cell` containing `.bean-color-indicator`, `.bean-record-title`, and `.bean-short-flavor-preview` chips when `short_flavor_notes` exists |
+| Stock cell | `.stock-indicator` containing the exact `.stock-badge` above an optional `.stock-remaining-meter` |
 
 The bean **color indicator** (the dot next to each name) is the first use of the user-defined `bean.color` field — users pick a hex value that then flows through to the bean detail header and the label creator's accent colour.
 
 Bean names use the shared record-title typography (`--font-display`) so they carry more character than utility text. Short flavor notes render as small rounded chips below the bean name. They are intentionally compact and use `short_flavor_notes` only; the longer `notes` field stays on the bean detail page.
+
+### Stock Cell
+
+The centered 9% Stock column uses a compact two-tier stack. The existing
+monospace green pill reads `<signed stock_grams>g left`; balances below the
+existing low-stock threshold retain the red `.stock-low` treatment. When a
+positive integer purchase-weight baseline exists, a separate 4px rounded
+neutral track sits 4px below the pill. Its green fill represents the clamped
+remaining percentage and switches to the low-stock foreground with the pill.
+
+Do not fuse the track into the pill or add visible original weight, consumed
+weight, a fraction, percentage, legend, icon, tooltip, border, gradient, or
+animation. The meter exposes `role="progressbar"`, a 0–100 range, the clamped
+value, and remaining/original context in `aria-valuetext`. Invalid or absent
+purchase-weight baselines omit the progressbar entirely, so the pill remains a
+complete readable fallback.
+
+The fixed colgroup, 9% Stock allocation, 1040px table minimum, and horizontal
+overflow behavior remain unchanged. The stock cell reduces only its own
+horizontal padding so the wider pill and thin meter fit without overlapping
+adjacent columns at the table minimum. Color tokens supply equivalent contrast
+in light and dark modes.
 
 ## Bean Form
 

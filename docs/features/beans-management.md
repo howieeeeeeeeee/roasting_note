@@ -36,6 +36,22 @@ do not have the field remain valid and render an empty history.
 Those existing operations do not add `stock_change_log` entries. The log is
 currently reserved for the explicit set-to-zero action.
 
+## Beans List Remaining Meter
+
+Each Beans-list Stock cell keeps the exact signed balance in a compact
+`<stock_grams>g left` pill. When `purchase_weight_grams` is a positive integer,
+a separate thin meter beneath the pill shows the remaining share of the
+original purchase:
+
+`clamp((stock_grams / purchase_weight_grams) * 100, 0, 100)`
+
+The clamp affects only the meter. Zero and negative balances produce an empty
+meter, balances above the original purchase produce a full meter, and the pill
+continues to show the uncapped value. A missing, non-integer, zero, or negative
+purchase weight omits the meter and leaves the signed pill as the complete
+fallback. Sorting and out-of-stock filtering continue to use raw
+`stock_grams`; the indicator does not store or change inventory data.
+
 ## Set Stock To Zero
 
 Bean detail shows **More actions** only while `stock_grams` is a non-zero
