@@ -1,0 +1,359 @@
+/* ============================================================
+   Compact management screens: Bean and Roast browse, forms,
+   and detail pages. Live roasting and printable tools are excluded.
+   ============================================================ */
+
+.management-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.management-page.manage-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--manage-section-gap, var(--space-4));
+}
+
+.management-page-header {
+  margin-bottom: 0;
+  padding-bottom: var(--space-3);
+}
+
+.management-page .btn,
+.management-page .btn-icon,
+.management-page .dropdown-item,
+.management-page .sort-btn-inline,
+.management-page .panel-tab {
+  min-height: var(--control-min, 44px);
+}
+
+.management-page .btn-icon {
+  width: var(--control-min, 44px);
+  min-width: var(--control-min, 44px);
+  height: var(--control-min, 44px);
+}
+
+.management-page .roast-link,
+.management-page .bean-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min, 44px);
+}
+
+.management-table-container {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
+  box-shadow: none;
+}
+
+.management-page--list .roasts-table td {
+  padding: var(--space-1) var(--space-4);
+}
+
+.management-page--list .roasts-table thead th {
+  padding-inline: var(--space-4);
+}
+
+.management-page--list .empty-state {
+  padding: var(--space-8) var(--space-5);
+  gap: var(--space-4);
+  box-shadow: none;
+}
+
+.management-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--manage-gap, var(--space-4));
+  width: 100%;
+  max-width: none;
+  padding-bottom: var(--space-3);
+}
+
+.management-form-section {
+  min-width: 0;
+  margin: 0;
+  padding: var(--manage-section-padding, var(--space-5));
+  overflow: visible;
+  box-shadow: none;
+}
+
+.management-form-section h2,
+.management-detail-section h2 {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+}
+
+.management-form-section .form-group {
+  min-width: 0;
+  margin-bottom: var(--space-3);
+}
+
+.management-form-section .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.management-form input,
+.management-form select,
+.management-form textarea,
+.management-form .short-flavor-editor,
+.management-form .calc-display {
+  scroll-margin-block-end: calc(var(--control-min, 44px) + var(--space-8));
+}
+
+.management-form .short-flavor-remove {
+  min-width: var(--control-min, 44px);
+  min-height: var(--control-min, 44px);
+  margin: 0;
+}
+
+.management-form .short-flavor-edit-tag {
+  min-height: var(--control-min, 44px);
+  padding-block: 0;
+  padding-right: 0;
+}
+
+.management-form .color-picker-input {
+  width: var(--control-min, 44px);
+  min-width: var(--control-min, 44px);
+  height: var(--control-min, 44px);
+}
+
+.management-form .color-picker-wrapper {
+  padding: var(--space-1);
+}
+
+.management-form-actions {
+  position: sticky;
+  z-index: 1;
+  bottom: 0;
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: var(--space-3) 0 calc(var(--space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--bd);
+  background: var(--bg);
+}
+
+.management-form-actions .btn {
+  min-width: 7rem;
+}
+
+.management-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--manage-section-gap, var(--space-3));
+  min-width: 0;
+}
+
+.management-detail-section {
+  min-width: 0;
+  padding: var(--manage-section-padding, var(--space-5));
+  box-shadow: none;
+}
+
+.management-detail-section .detail-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-3) var(--space-5);
+}
+
+.management-detail-section .stock-history {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+}
+
+.management-detail-section .notes-content,
+.management-detail-section .markdown-content {
+  padding: var(--space-3);
+}
+
+.management-detail-section .reviews-list-full {
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.management-detail-section--history .roasts-table td {
+  padding: var(--space-1) var(--space-4);
+}
+
+@media (min-width: 1024px) {
+  .management-form {
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.85fr);
+  }
+
+  .management-form--bean .management-form-section--profile {
+    grid-column: 1;
+  }
+
+  .management-form--bean .management-form-section--flavor {
+    grid-column: 2;
+  }
+
+  .management-form--bean .management-form-section--inventory,
+  .management-form--roast .management-form-section--basics,
+  .management-form--roast .management-form-section--data {
+    grid-column: 1 / -1;
+  }
+
+  .management-form--roast .management-form-section--weights {
+    grid-column: 1;
+  }
+
+  .management-form--roast .management-form-section--notes {
+    grid-column: 2;
+  }
+
+  .management-form-section--profile,
+  .management-form-section--inventory,
+  .management-form-section--basics,
+  .management-form-section--weights {
+    display: grid;
+    align-content: start;
+    gap: var(--manage-gap, var(--space-3));
+  }
+
+  .management-form-section--profile,
+  .management-form-section--weights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-form-section--inventory {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .management-form-section--basics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .management-form-section--profile h2,
+  .management-form-section--profile .form-group-title,
+  .management-form-section--inventory h2,
+  .management-form-section--basics h2,
+  .management-form-section--basics .form-group-title,
+  .management-form-section--weights h2,
+  .management-form-section--weights > .form-group {
+    grid-column: 1 / -1;
+  }
+
+  .management-form-section--profile .form-row,
+  .management-form-section--inventory .form-row,
+  .management-form-section--basics .form-row,
+  .management-form-section--weights .form-row {
+    display: contents;
+  }
+
+  .management-form-section--profile .form-group,
+  .management-form-section--inventory .form-group,
+  .management-form-section--basics .form-group,
+  .management-form-section--weights .form-group {
+    margin-bottom: 0;
+  }
+
+  .management-form-section--notes textarea {
+    height: 104px;
+  }
+
+  .management-detail {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .management-detail--bean .management-detail-section--information {
+    grid-column: span 5;
+  }
+
+  .management-detail--bean .management-detail-section--stock {
+    grid-column: span 7;
+  }
+
+  .management-detail--bean .management-detail-section--flavor {
+    grid-column: span 4;
+  }
+
+  .management-detail--bean .management-detail-section--notes {
+    grid-column: span 8;
+  }
+
+  .management-detail--bean .management-detail-section--history,
+  .management-detail--roast .management-detail-section--reviews,
+  .management-detail--roast .management-detail-section--data,
+  .management-detail--roast .management-detail-section--notes {
+    grid-column: 1 / -1;
+  }
+
+  .management-detail--roast .management-detail-section--information {
+    grid-column: span 6;
+  }
+
+  .management-detail--roast .management-detail-section--weights,
+  .management-detail--roast .management-detail-section--duration {
+    grid-column: span 3;
+  }
+}
+
+@media (max-width: 767px) {
+  .management-page {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .management-page-header {
+    align-items: flex-start;
+    margin-bottom: 0;
+  }
+
+  .management-page-header .header-actions {
+    width: 100%;
+  }
+
+  .management-form,
+  .management-detail,
+  .management-form-section,
+  .management-detail-section,
+  .management-detail-section .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .management-form-section {
+    margin-bottom: 0;
+  }
+
+  .management-form-actions {
+    flex-wrap: nowrap;
+  }
+
+  .management-form-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 768px) {
+  .management-page-header {
+    margin-bottom: 0;
+    padding-bottom: var(--space-2);
+  }
+
+  .management-form,
+  .management-detail {
+    gap: var(--space-3);
+  }
+
+  .management-form-section,
+  .management-detail-section {
+    padding: var(--space-4);
+  }
+}
+
+@media print {
+  .management-form-actions {
+    position: static;
+    padding-bottom: var(--space-3);
+    background: transparent;
+  }
+
+  .management-detail-section,
+  .management-form-section {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}

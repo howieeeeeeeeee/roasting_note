@@ -2,10 +2,10 @@
 id: RN-0029
 title: Deliver Quiet Compact UI Refresh
 type: epic
-status: pending
+status: resolved
 priority: high
 created: 2026-08-20
-resolved:
+resolved: 2026-08-20
 area: design-system
 parent:
 decisions: []
@@ -102,29 +102,29 @@ if that work lands first.
 
 ## Acceptance Criteria
 
-- [ ] All four child tickets are resolved and their declared documentation,
+- [x] All four child tickets are resolved and their declared documentation,
   automated tests, browser scenarios, and evidence are complete.
-- [ ] Roasts and Beans retain their URLs and top-navigation labels while the
+- [x] Roasts and Beans retain their URLs and top-navigation labels while the
   navbar remains visually stable and the selected-tab indicator and main
   content transition as one restrained state change.
-- [ ] Reduced-motion users receive an instant, stable navigation update with
+- [x] Reduced-motion users receive an instant, stable navigation update with
   no opacity, translation, or shared-element choreography.
-- [ ] Settings is a viewport-bounded, keyboard-complete sectioned sheet; its
+- [x] Settings is a viewport-bounded, keyboard-complete sectioned sheet; its
   default Sensor and Data states do not require outer-page scrolling at
   `1024x768` or `1280x640`, and mobile uses a full-screen layout.
-- [ ] Browse-and-manage forms and detail screens use less vertical chrome,
+- [x] Browse-and-manage forms and detail screens use less vertical chrome,
   keep actions reachable, preserve minimum `44px` interactive targets, and
   collapse to one logical column below `768px`.
-- [ ] Normal visible text, placeholders, table headings, and inactive
+- [x] Normal visible text, placeholders, table headings, and inactive
   navigation text meet WCAG AA contrast in both light and dark modes.
-- [ ] Ordinary pages no longer request the complete printable-label font set
+- [x] Ordinary pages no longer request the complete printable-label font set
   twice, and label rendering retains every documented font preset.
-- [ ] Live roasting preserves chart dominance, existing setup and event
+- [x] Live roasting preserves chart dominance, existing setup and event
   interactions, monospaced readings, critical target sizes, and sensor states.
-- [ ] No route, form field name, data model, database operation, synchronization
+- [x] No route, form field name, data model, database operation, synchronization
   contract, destructive confirmation, or analytics-sensitive label changes.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
@@ -172,6 +172,29 @@ RN-0028.
 - None. Variant A is finalized: retain the top navigation and warm brand,
   introduce restrained progressive transitions, use a sectioned Settings
   sheet, compact management surfaces, and protect live roasting.
+
+## Resolution
+
+- Delivered the selected Quiet Compact direction across shared foundations,
+  primary navigation, Settings, and Bean/Roast management screens while
+  preserving routes, form payloads, guarded-sync behavior, and the live-roast
+  instrument workspace.
+- The aggregate in-app-browser run `rn-0029-quiet-compact-a` passed the light,
+  dark, desktop, short-height, tablet, and mobile workflow. It verified
+  navigation/history fallback, Settings keyboard and responsive behavior,
+  compact forms and details, stock compatibility, and live-roast isolation.
+- Browser feedback was incorporated before resolution: contextual Add Bean and
+  New Roast labels remain readable, and global toasts use one neutral border
+  without a colored left rail.
+- The in-app browser exposed partial View Transition support, so the complete
+  feature gate selected clean native navigation without console errors.
+  Reduced-motion behavior was verified by the static design contract because
+  the harness could not emulate that preference.
+- Guarded-sync checks used only the artifact-local fake executor and recorded
+  `database_access: false`; no real mirror or destructive cleanup ran. Scoped
+  E2E cleanup deleted one test roast and one test bean and left zero run records.
+- The complete automated suite passed (`213 passed`), JavaScript and diff
+  checks passed, and no backup payload is tracked.
 
 ## Related Files
 

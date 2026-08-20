@@ -26,11 +26,13 @@
 @import url('components/badges.css');
 @import url('components/reviews.css');
 @import url('components/modals.css');
+@import url('components/settings-sheet.css');
 @import url('components/data-tabs.css');
 @import url('components/toasts.css');
 @import url('components/flatpickr.css');
 
 /* Screens */
+@import url('screens/management.css');
 @import url('screens/live-roasting.css');
 @import url('screens/live-fullscreen.css');
 @import url('screens/label-creator.css');

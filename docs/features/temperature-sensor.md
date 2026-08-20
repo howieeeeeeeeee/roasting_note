@@ -84,9 +84,11 @@ Accurate temperature fetch with retry logic.
 
 ### GET /api/temp/test_connection
 
-Settings-modal connection test. It retries internally and checks the ESP32
-`/diagnostics` endpoint when temperature reads fail. The response includes the
-same fields as `/api/temp/current`, plus `diagnostics` when available.
+Settings Sensor-section connection test. The control lives in the responsive
+[Settings sheet](../design/screens/settings.md) with the sensor URL and save
+action. It retries internally and checks the ESP32 `/diagnostics` endpoint when
+temperature reads fail. The response includes the same fields as
+`/api/temp/current`, plus `diagnostics` when available.
 
 ## Frontend Integration
 

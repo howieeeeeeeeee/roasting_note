@@ -91,6 +91,28 @@ justify-content: flex-end;
 
 Primary action goes first (`.btn-primary`). Destructive actions go last (or are moved to the page-header dropdown menu).
 
+## Compact Management Forms
+
+Bean add/edit and Roast edit add `.management-form` to the existing `.form`
+contract. Sections retain their semantic headings, field names, labels,
+validation, and DOM order while the layout uses available width.
+
+- Bean Profile and Flavor Notes sit side by side from `1024px`; Inventory then
+  spans the full form and exposes its four fields as a source-ordered grid.
+- Roast Basic Information spans the form and uses three columns; Weights and
+  Notes share the next row. Historical Roast Data remains full width so its
+  chart and tables do not shrink.
+- `.management-form-section` applies compact padding and removes unnecessary
+  elevation. Labels stay above controls and all interactive targets remain at
+  least `var(--control-min)`.
+- `.management-form-actions` is sticky at the viewport bottom on screen. It
+  includes `env(safe-area-inset-bottom)`, stays after the final field in the
+  DOM, and returns to `position: static` for print.
+- Inputs receive a scroll margin larger than the action row so browser focus
+  and validation navigation can reveal the complete field.
+- Below `768px`, the form and every nested grid collapse to one logical column;
+  Save/Add remains before Cancel.
+
 ## Live-Roast Settings Rows
 
 The live-roast screen reuses `.form-group` but packs rows tighter:

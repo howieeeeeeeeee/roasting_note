@@ -23,6 +23,9 @@ padding: 1.5rem to 2rem;
 | `.form-section` | Full-page edit form panels (add/edit bean, roast edit) | `var(--space-7)` |
 | `.roast-detail` | Detail page container | `2rem` |
 | `.modal-content` | Modal body | variable (see form/modal patterns) |
+| `.surface-flat` | Static management section | `var(--manage-section-padding)` |
+| `.flat-section-group` | Several related static sections in one shell | One shared border with sparse internal dividers |
+| `.settings-sheet` | Viewport-bounded Settings surface | section-specific |
 
 ## Grid Layout
 
@@ -65,6 +68,11 @@ Card lists use auto-filling grids so they reflow to the container width without 
 
 Hover lift is reserved for **clickable** cards (the whole card is a link). Static cards (form panels, chart containers) don't lift.
 
+Dialogs and menus may use `--shadow-modal` or `--shadow-lg` because elevation
+communicates that they sit above the current workspace. Static management
+sections use `.surface-flat` or `.flat-section-group` with no shadow. This
+keeps form and detail pages from reading as a stack of nested cards.
+
 ## Borders vs Shadows
 
 RoastLogger prefers quiet elevation with a border and low shadow for durable work surfaces. Borders are used for:
@@ -74,6 +82,35 @@ RoastLogger prefers quiet elevation with a border and low shadow for durable wor
 - Instrument panels sitting *inside* a card, where a subtle border helps them read as distinct sub-surfaces.
 
 Full-page forms should not put a card around other cards. The `.form` wrapper only constrains width; each `.form-section` is the visible surface.
+
+## Settings Side Sheet
+
+Settings is the one modal surface that uses a viewport edge as structural
+hierarchy. `.settings-sheet-overlay` aligns `.settings-sheet` to the right.
+The sheet is no wider than `560px`, fills `100dvh`, and uses a left border plus
+the modal shadow instead of a floating card margin. Below `768px`, it becomes a
+full-screen surface with no radius or side border.
+
+The title and section navigation occupy fixed grid rows. Only
+`.settings-sheet-body` scrolls, with contained overscroll, so the page and
+overlay remain stationary. Internal groups use one divider between related
+topics rather than nested cards.
+
+## Flat Management Surfaces
+
+Management pages add `.surface-flat` to form and detail sections where a
+shadow does not communicate hierarchy. The section keeps the shared surface,
+border, radius, and semantic tokens but removes elevation and uses
+`--manage-section-padding`.
+
+Tables do not use `.surface-flat` because their existing containers already
+own the surface and border. `.management-table-container` only removes the
+shadow and preserves internal horizontal scrolling. This is especially
+important for the fixed-width Beans columns and the RN-0027 Stock meter.
+
+Compact detail screens use a 12-column outer grid from `1024px` and one column
+below that threshold. Sections remain separate semantic regions; only their
+placement, gap, and padding change.
 
 ## Dark Mode
 

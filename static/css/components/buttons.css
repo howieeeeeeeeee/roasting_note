@@ -15,21 +15,22 @@
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
+  min-height: var(--control-min);
   white-space: nowrap;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, filter 0.12s ease, transform 0.06s ease;
+  transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), filter var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-emphasized);
   text-decoration: none;
 }
 .btn:active:not(:disabled) { transform: scale(0.98); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn .material-icons { font-size: 1.05rem; }
 
-.btn-primary   { background: var(--pr);   color: #fff; border-color: var(--pr); }
+.btn-primary   { background: var(--pr);   color: var(--on-pr); border-color: var(--pr); }
 .btn-primary:hover:not(:disabled)   { filter: brightness(1.10); }
 .btn-secondary { background: var(--surf); color: var(--txt2); border-color: var(--bd); }
 .btn-secondary:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); }
-.btn-success   { background: var(--ok);   color: #fff; border-color: var(--ok); }
+.btn-success   { background: var(--ok-text); color: var(--on-ok); border-color: var(--ok-text); }
 .btn-success:hover:not(:disabled)   { filter: brightness(1.10); }
-.btn-danger    { background: var(--err);  color: #fff; border-color: var(--err); }
+.btn-danger    { background: var(--err-text); color: var(--on-err); border-color: var(--err-text); }
 .btn-danger:hover:not(:disabled)    { filter: brightness(1.10); }
 
 .btn-sm { padding: 0.32rem 0.7rem; font-size: var(--text-sm); }
@@ -39,8 +40,8 @@
 
 /* Icon-only ghost button */
 .btn-icon {
-  width: 36px;
-  height: 36px;
+  width: var(--control-min);
+  height: var(--control-min);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
@@ -49,12 +50,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard);
 }
 .btn-icon .material-icons { font-size: 1.1rem; }
 .btn-icon:hover { background: var(--surf2); color: var(--txt); }
-.btn-icon-danger { color: var(--err); }
-.btn-icon-danger:hover { background: var(--err-l); color: var(--err); }
+.btn-icon-danger { color: var(--err-text); }
+.btn-icon-danger:hover { background: var(--err-l); color: var(--err-text); }
 
 .dark-mode-toggle.active { color: var(--pr); background: var(--pr-l); }
 

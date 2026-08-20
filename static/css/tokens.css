@@ -4,8 +4,6 @@
    shadows. Components must consume var(--*) — no hardcoded hex.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Raleway:wght@400;600;800;900&family=Playfair+Display:wght@400;700;900&family=Barlow+Condensed:wght@400;600;700;800&family=Roboto+Slab:wght@300;400;500;700&display=swap');
-
 /* ── BASE PALETTE ─────────────────────────────────────────── */
 :root {
   --color-pr-900:  #3A2E26;
@@ -29,6 +27,7 @@
   --color-n-800:  #2C2C2C;
   --color-n-700:  #484440;
   --color-n-600:  #666666;
+  --color-n-550:  #726D69;
   --color-n-500:  #777370;
   --color-n-400:  #8A8680;
   --color-n-300:  #B0ACA8;
@@ -48,8 +47,8 @@
   --color-dk-surf2: #201D18;
   --color-dk-bd:    #2A2620;
   --color-dk-txt:   #EDE9E3;
-  --color-dk-txt2:  #8A8680;
-  --color-dk-txt3:  #484440;
+  --color-dk-txt2:  #B8B1A8;
+  --color-dk-txt3:  #9A948C;
 }
 
 /* ── SEMANTIC TOKENS — LIGHT ──────────────────────────────── */
@@ -60,10 +59,16 @@
   --pr-ll:    var(--color-pr-050);
   --ok:       var(--color-ok-500);
   --ok-l:     var(--color-ok-100);
+  --ok-text:  #486A4D;
   --err:      var(--color-err-500);
   --err-l:    var(--color-err-100);
+  --err-text: #974646;
   --warn:     var(--color-warn-500);
   --warn-l:   var(--color-warn-100);
+  --warn-text: #8A5C1F;
+  --on-pr:    var(--color-white);
+  --on-ok:    var(--color-white);
+  --on-err:   var(--color-white);
 
   --bg:       var(--color-n-050);
   --surf:     var(--color-white);
@@ -73,8 +78,8 @@
   --bd2:      var(--color-n-150);
 
   --txt:      var(--color-n-800);
-  --txt2:     var(--color-n-500);
-  --txt3:     var(--color-n-300);
+  --txt2:     var(--color-n-600);
+  --txt3:     var(--color-n-550);
 
   --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md:    0 2px 6px rgba(0, 0, 0, 0.12);
@@ -86,9 +91,9 @@
   --primary-hover:   var(--pr-h);
   --secondary-color: var(--color-pr-400);
   --accent-color:    var(--color-pr-300);
-  --success-color:   var(--ok);
-  --danger-color:    var(--err);
-  --warn-color:      var(--warn);
+  --success-color:   var(--ok-text);
+  --danger-color:    var(--err-text);
+  --warn-color:      var(--warn-text);
   --text-color:      var(--txt);
   --text-light:      var(--txt2);
   --bg-color:        var(--bg);
@@ -106,10 +111,16 @@ body.dark-mode {
   --pr-ll:    rgba(201, 168, 122, 0.05);
   --ok:       var(--color-dk-ok);
   --ok-l:     rgba(127, 179, 133, 0.14);
+  --ok-text:  var(--color-dk-ok);
   --err:      var(--color-dk-err);
   --err-l:    rgba(208, 112, 112, 0.16);
+  --err-text: #DC8080;
   --warn:     var(--color-dk-warn);
   --warn-l:   rgba(212, 160, 96, 0.16);
+  --warn-text: var(--color-dk-warn);
+  --on-pr:    var(--color-n-900);
+  --on-ok:    var(--color-n-900);
+  --on-err:   var(--color-n-900);
 
   --bg:       var(--color-dk-bg);
   --surf:     var(--color-dk-surf);
@@ -131,9 +142,9 @@ body.dark-mode {
   --primary-hover:   var(--pr-h);
   --secondary-color: #9A8A78;
   --accent-color:    #7A6A58;
-  --success-color:   var(--ok);
-  --danger-color:    var(--err);
-  --warn-color:      var(--warn);
+  --success-color:   var(--ok-text);
+  --danger-color:    var(--err-text);
+  --warn-color:      var(--warn-text);
   --text-color:      var(--txt);
   --text-light:      var(--txt2);
   --bg-color:        var(--bg);
@@ -180,4 +191,25 @@ body.dark-mode {
   --radius-xl:   9px;
   --radius-pill: 20px;
   --radius-full: 9999px;
+
+  --control-min:      44px;
+  --control-live-min: 54px;
+
+  --manage-gap:             var(--space-3);
+  --manage-section-gap:     var(--space-4);
+  --manage-section-padding: var(--space-5);
+
+  --motion-fast: 140ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0.01ms;
+    --motion-base: 0.01ms;
+    --motion-slow: 0.01ms;
+  }
 }

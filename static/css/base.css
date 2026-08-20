@@ -16,8 +16,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  transition: background 0.25s ease, color 0.25s ease;
+  min-height: 100dvh;
+  transition: background var(--motion-slow) var(--ease-standard), color var(--motion-slow) var(--ease-standard);
 }
 
 a { color: var(--pr); text-decoration: none; transition: color 0.12s ease; }
@@ -29,6 +29,11 @@ input, button, textarea, select {
   font-family: inherit;
   font-size: inherit;
   color: inherit;
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--pr);
+  outline-offset: 2px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -67,7 +72,26 @@ h3 { font-size: var(--text-lg); }
   max-width: 1440px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-7);
-  animation: fadeUp 0.2s ease both;
+}
+
+.manage-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--manage-section-gap);
+}
+
+.manage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--manage-gap);
+}
+
+.surface-flat {
+  padding: var(--manage-section-padding);
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-xl);
+  box-shadow: none;
 }
 
 footer {
@@ -82,4 +106,14 @@ footer {
 
 @media (max-width: 768px) {
   .container { padding: var(--space-5); }
+  .manage-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

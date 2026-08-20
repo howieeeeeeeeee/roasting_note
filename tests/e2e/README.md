@@ -128,6 +128,111 @@ The control endpoint rejects non-loopback clients.
 
 Use Codex's in-app browser, not a standalone browser driver.
 
+### Quiet Compact UI
+
+#### Foundations
+
+1. Start run `rn-0029-foundations-a` and open Roasts, Beans, Add Bean,
+   Settings, and the live-roast shell at `1440x900` and `1024x768`.
+2. Repeat representative views in light and dark modes. Confirm small labels,
+   placeholders, inactive navigation, and table headings remain readable.
+3. Inspect computed fonts and network requests. Ordinary pages use Inter,
+   Raleway, DM Mono, and Material Icons without a duplicate stylesheet
+   request. Bean detail loads the three additional label faces before canvas
+   drawing.
+4. Measure representative management controls at 44px or larger and live-roast
+   controls at 54px or larger. Confirm the chart and instrument values retain
+   their previous geometry.
+5. Save representative light/dark screenshots and record font requests,
+   computed text colors, target measurements, console errors, failed network
+   requests, and cleanup in the run summary.
+
+#### Navigation continuity
+
+1. Start run `rn-0029-navigation-a`. Repeatedly activate Roasts and Beans,
+   then use Back and Forward and open a record before returning to its list.
+2. At `1440x900`, `1024x768`, and `390x844`, confirm the 56px navbar keeps the
+   same geometry, counts and contextual actions stay correct, and the active
+   link exposes `aria-current="page"`.
+3. With normal motion, confirm main content moves no more than 4px and completes
+   in 160-200ms without a second container entrance. Unsupported behavior must
+   fall back to an immediate native navigation.
+4. Enable reduced motion and repeat Roasts/Beans, Back, and Forward. Confirm
+   there is no route fade, translation, or active-indicator choreography.
+5. Enter the live-roast shell and verify its chart, readings, setup, sensor
+   state, and controls do not receive management content choreography.
+6. Verify direct loads and a failed URL remain truthful native document loads.
+   Record screenshots, motion observations, history results, console errors,
+   failed network requests, and cleanup in the run summary.
+
+### Quiet Compact Settings Sheet
+
+Use run ID `rn-0029-settings-sheet-a`. Start the harness with `--sync-fake`
+only when exercising the guarded phase states. Do not perform a live mirror or
+either destructive cleanup.
+
+1. At `1440x900`, focus the Settings gear and open it with Enter. Confirm a
+   right-aligned sheet no wider than `560px`, no page scroll, initial focus on
+   the remembered section tab, and no console error.
+2. Use Right Arrow, Left Arrow, Home, and End across Sensor, Data, and Advanced.
+   Confirm one selected tab and panel at a time, and confirm hidden panels are
+   absent from the Tab order.
+3. Tab forward and backward through each visible panel. Confirm focus remains
+   inside the sheet. Close with Escape and the close button in separate passes;
+   each must return focus to the Settings gear.
+4. In Sensor, load and save the URL, test a virtual-sensor success and failure,
+   and confirm each visible status is announced. Do not change route payloads.
+5. In Data, verify the local E2E label, disabled Online option, ordinary
+   fail-closed preflight, then every explicitly simulated backup, apply,
+   cancel, restore, terminal, and recovery state from the guarded workflow
+   below. Switch sections and close/reopen during a pending or restored state;
+   state must not clear, duplicate, or move focus into a hidden panel.
+6. In Advanced, confirm Danger Zone starts collapsed. Expand it, cancel both
+   existing confirmation paths, and verify no cleanup request is sent.
+7. Repeat the shell, focus, section, and overflow checks at `1280x640`,
+   `1024x768`, and `390x844`. At mobile width, confirm full-screen layout. In
+   short viewports, only the sheet body may scroll while title and tabs remain
+   available.
+8. Repeat in light and dark modes, then emulate reduced motion and confirm the
+   sheet opens without opacity or translation animation.
+
+Save Sensor, Data, expanded-result, Advanced-collapsed, confirmation-cancelled,
+short-height, mobile, and dark-mode screenshots. Record focus order and return,
+overflow measurements, console errors, failed requests, zero applied-mirror
+activity, and cleanup results in the run summary.
+
+#### Browse and Edit Density
+
+Use run ID `rn-0029-management-a` and complete the normal Bean and Roast
+workflows below. Repeat the layout checks at `1440x900`, `1280x640`,
+`1024x768`, and `390x844` in light and dark modes.
+
+1. Capture Bean and Roast list pages. Verify all existing columns, sorting,
+   filtering, row navigation, contextual actions, empty states, and internal
+   horizontal scrolling. Confirm the page itself has no horizontal overflow.
+2. Create and edit a Bean. Verify labels stay above fields, keyboard focus
+   follows the existing source order, every target is at least `44px`, and the
+   form becomes one column below `768px`.
+3. At the two short-height viewports, scroll through the Bean form and confirm
+   Add/Update Bean and Cancel remain reachable. Trigger native required-field
+   validation and confirm the invalid field is fully visible above the sticky
+   action row.
+4. On Beans, verify RN-0027 still shows the exact two-tier Stock cell,
+   accessible progressbar, fixed 9% column, raw-value sorting, and narrow-table
+   overflow without clipping.
+5. Open Bean detail and verify information, pricing, Stock History, flavor,
+   notes, and Roast History retain their order and content. Confirm every
+   multi-column fact cluster collapses to one column on mobile.
+6. Complete Roast edit and detail. Verify field order and payload behavior,
+   sticky Save Changes and Cancel, review content, notes, curve, and event data.
+   The curve and event tables must keep their existing full-width treatment.
+7. Smoke-test the live-roast screen at all four viewports. Record its top bar,
+   chart, event controls, sensor states, fullscreen geometry, and target sizes;
+   any management layout hook or geometry change is a failure.
+8. Record before/after page-height measurements, focus and validation results,
+   console errors, failed network requests, screenshots, and cleanup in
+   `tests/e2e/artifacts/rn-0029-management-a/summary.md`.
+
 ### Guarded Local Settings Sync
 
 First start an ordinary run without `--sync-fake` using run ID

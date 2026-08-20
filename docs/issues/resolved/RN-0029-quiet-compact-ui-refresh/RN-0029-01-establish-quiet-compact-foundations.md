@@ -2,10 +2,10 @@
 id: RN-0029-01
 title: Establish Quiet Compact UI Foundations
 type: improvement
-status: pending
+status: resolved
 priority: high
 created: 2026-08-20
-resolved:
+resolved: 2026-08-20
 area: design-system
 parent: RN-0029
 decisions: []
@@ -71,26 +71,26 @@ live-roast instrument sizing.
 
 ## Acceptance Criteria
 
-- [ ] Every normal visible text token used for body copy, placeholders, table
+- [x] Every normal visible text token used for body copy, placeholders, table
   headings, and inactive navigation reaches WCAG AA contrast on its documented
   light and dark surfaces.
-- [ ] Faint decorative borders and separators use non-text tokens rather than
+- [x] Faint decorative borders and separators use non-text tokens rather than
   weakening readable secondary or tertiary text.
-- [ ] The complete six-family Google Fonts request is not duplicated between
+- [x] The complete six-family Google Fonts request is not duplicated between
   `base.html` and `tokens.css`.
-- [ ] Ordinary Roasts, Beans, Settings, and form pages request only the global
+- [x] Ordinary Roasts, Beans, Settings, and form pages request only the global
   UI, record-title, mono, and icon resources they use; label-capable pages load
   the remaining documented label faces before canvas drawing.
-- [ ] Browse/manage density recipes preserve a minimum `44px` interactive
+- [x] Browse/manage density recipes preserve a minimum `44px` interactive
   target and do not change live-roast critical sizing or instrument typography.
-- [ ] Static sections have a documented flat grouping option, and shadows are
+- [x] Static sections have a documented flat grouping option, and shadows are
   reserved for real overlay or clickable hierarchy.
-- [ ] Light and dark modes retain one warm palette, one primary accent, and
+- [x] Light and dark modes retain one warm palette, one primary accent, and
   equivalent hierarchy without theme inversion between sections.
-- [ ] Shared motion tokens include a complete reduced-motion override and are
+- [x] Shared motion tokens include a complete reduced-motion override and are
   documented for the navigation child.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
@@ -130,6 +130,19 @@ write, schema change, migration, synchronization, backup, or audit operation.
 
 - None. Preserve the existing app type roles and warm palette; improve their
   delivery, contrast, density, and documented usage.
+
+## Resolution
+
+- Added warm, contrast-safe text and semantic roles, separate management and
+  live-control target tokens, shared motion fallbacks, and flat grouping
+  recipes without changing the established palette or live instrument sizing.
+- Removed duplicate global font delivery and scoped label-only families to the
+  label-capable Bean detail route while retaining required weights.
+- The parent aggregate browser run supplied the declared foundations matrix in
+  light and dark themes. It measured approximately `44px` management targets
+  and `54px` live targets and found no page-level horizontal overflow.
+- Automated contrast, typography, token, route-rendering, and file-size
+  contracts passed as part of the complete `213 passed` suite.
 
 ## Related Files
 

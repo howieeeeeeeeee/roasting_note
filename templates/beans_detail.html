@@ -2,10 +2,16 @@
 
 {% block title %}{{ bean.name }} - Howie's Roast Log{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Playfair+Display:wght@400;700;900&family=Roboto+Slab:wght@300;400;500;600;700&display=swap">
+{% endblock %}
+
 {% block nav_tab %}beans{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="management-page management-page--detail manage-stack">
+<div class="page-header management-page-header">
     <div class="header-left">
         <a href="{{ url_for('beans_list') }}" class="btn-icon" title="Back to Beans">
             <span class="material-icons">arrow_back</span>
@@ -50,8 +56,8 @@
     </div>
 </div>
 
-<div class="roast-detail">
-    <section class="detail-section">
+<div class="roast-detail management-detail management-detail--bean manage-grid">
+    <section class="detail-section management-detail-section management-detail-section--information surface-flat">
         <h2>Bean Information</h2>
         <div class="detail-grid">
             <div class="detail-item"><strong>Origin:</strong> {{ bean.origin or 'Not specified' }}</div>
@@ -61,7 +67,7 @@
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section management-detail-section management-detail-section--stock surface-flat">
         <h2>Stock &amp; Pricing</h2>
         <div class="detail-grid">
             <div class="detail-item">
@@ -112,7 +118,7 @@
     </section>
 
     {% if bean.short_flavor_notes %}
-    <section class="detail-section">
+    <section class="detail-section management-detail-section management-detail-section--flavor surface-flat">
         <h2>Short Flavor Notes</h2>
         <div class="short-flavor-note-list">
             {% if bean.short_flavor_notes is string %}
@@ -127,16 +133,16 @@
     {% endif %}
 
     {% if bean.notes %}
-    <section class="detail-section">
+    <section class="detail-section management-detail-section management-detail-section--notes surface-flat">
         <h2>Notes</h2>
         <div class="notes-content">{{ bean.notes }}</div>
     </section>
     {% endif %}
 
-    <section class="detail-section">
+    <section class="detail-section management-detail-section management-detail-section--history surface-flat">
         <h2>Roast History ({{ roasts|length }})</h2>
         {% if roasts %}
-        <div class="roasts-table-container">
+        <div class="roasts-table-container management-table-container">
             <table class="roasts-table">
                 <thead>
                     <tr>
@@ -202,6 +208,7 @@
         {% endif %}
     </section>
 </div>
+</div>
 
 <!-- ── Label Creator Modal ──────────────────────────────────────── -->
 <div id="labelModal" class="modal">
@@ -263,10 +270,10 @@
                         <div class="form-group">
                             <label for="labelTemplate">Template</label>
                             <select id="labelTemplate" class="form-control" onchange="onLabelStyleChange()">
-                                <option value="nova">Nova — Split layout</option>
-                                <option value="ink">Ink — Dark</option>
-                                <option value="strip">Strip — Minimal</option>
-                                <option value="washi">Washi — Craft paper</option>
+                                <option value="nova">Nova - Split layout</option>
+                                <option value="ink">Ink - Dark</option>
+                                <option value="strip">Strip - Minimal</option>
+                                <option value="washi">Washi - Craft paper</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -282,11 +289,11 @@
                         <div class="form-group">
                             <label for="labelAspectRatio">Aspect Ratio</label>
                             <select id="labelAspectRatio" class="form-control" onchange="onAspectRatioChange()">
-                                <option value="2:1">2:1 — Wide panoramic</option>
-                                <option value="5:3">5:3 — Landscape wide</option>
-                                <option value="5:4" selected>5:4 — Standard label</option>
-                                <option value="4:3">4:3 — Classic</option>
-                                <option value="3:4">3:4 — Portrait</option>
+                                <option value="2:1">2:1 - Wide panoramic</option>
+                                <option value="5:3">5:3 - Landscape wide</option>
+                                <option value="5:4" selected>5:4 - Standard label</option>
+                                <option value="4:3">4:3 - Classic</option>
+                                <option value="3:4">3:4 - Portrait</option>
                             </select>
                         </div>
                     </div>

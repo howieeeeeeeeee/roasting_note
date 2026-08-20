@@ -79,7 +79,7 @@
 }
 .tb-value-fc { font-size: 2rem; }
 .tb-unit { font-size: 1rem; color: var(--txt2); font-weight: 400; }
-.tb-sub  { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--err); margin-top: 4px; }
+.tb-sub  { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--err-text); margin-top: 4px; }
 .tb-end {
   display: flex;
   align-items: center;
@@ -88,14 +88,14 @@
   flex-shrink: 0;
   background: var(--surf);
 }
-.tb-end .btn-lg { min-height: 54px; padding: 0.7rem 1.4rem; font-size: var(--text-md); }
+.tb-end .btn-lg { min-height: var(--control-live-min); padding: 0.7rem 1.4rem; font-size: var(--text-md); }
 
 .fc-time-badge {
   display: inline-block;
   margin-left: var(--space-3);
   font-size: 1rem;
   font-family: var(--font-mono);
-  color: var(--err);
+  color: var(--err-text);
   background: var(--err-l);
   padding: 0.18rem 0.55rem;
   border-radius: var(--radius-pill);
@@ -113,9 +113,9 @@
   text-transform: uppercase;
 }
 .sensor-status-idle    { background: var(--surf2);  color: var(--txt3); }
-.sensor-status-reading { background: var(--ok-l);   color: var(--ok); }
-.sensor-status-error   { background: var(--err-l);  color: var(--err); }
-.sensor-status-fault   { background: var(--err-l);  color: var(--err); }
+.sensor-status-reading { background: var(--ok-l);   color: var(--ok-text); }
+.sensor-status-error   { background: var(--err-l);  color: var(--err-text); }
+.sensor-status-fault   { background: var(--err-l);  color: var(--err-text); }
 
 /* ── CHART AREA ───────────────────────────────────────────── */
 .live-chart-area {
@@ -150,7 +150,7 @@
   gap: var(--space-2);
 }
 .live-ev-btn {
-  height: 54px;
+  height: var(--control-live-min);
   background: var(--surf2);
   border: 1.5px solid var(--bd);
   color: var(--txt);
@@ -175,7 +175,7 @@
 .live-ev-btn.done {
   background: var(--ok-l);
   border-color: var(--ok);
-  color: var(--ok);
+  color: var(--ok-text);
 }
 .live-ev-btn .ev-abbr { font-size: 1.05rem; font-weight: 800; }
 .live-ev-btn .ev-full {
@@ -187,7 +187,7 @@
 }
 .live-ev-btn:hover:not(:disabled) .ev-full { color: var(--pr); }
 .live-ev-btn.fired .ev-full,
-.live-ev-btn.done .ev-full { color: var(--ok); opacity: 0.75; }
+.live-ev-btn.done .ev-full { color: var(--ok-text); opacity: 1; }
 
 .live-input-strip {
   display: flex;
@@ -223,7 +223,7 @@
   border: 1.5px solid var(--bd);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  height: 54px;
+  height: var(--control-live-min);
 }
 .stepper-control .btn-stepper { width: 44px; height: 100%; }
 .stepper-value {
@@ -237,7 +237,7 @@
 }
 
 .live-note-input {
-  height: 54px;
+  height: var(--control-live-min);
   width: 100%;
   background: var(--surf2);
   border: 1.5px solid var(--bd);
@@ -252,7 +252,7 @@
 .live-note-input:focus { border-color: var(--pr); background: var(--surf); }
 .live-note-input::placeholder { color: var(--txt3); }
 
-.live-log-event-btn { height: 54px; min-width: 130px; }
+.live-log-event-btn { height: var(--control-live-min); min-width: 130px; }
 
 /* ── HIDDEN TIMELINE LIST (legacy structure) ─────────────── */
 .timeline-list { display: flex; flex-direction: column; gap: var(--space-2); }

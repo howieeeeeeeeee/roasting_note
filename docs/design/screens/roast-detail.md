@@ -61,6 +61,19 @@ Short anatomy doc — no new design decisions. Built from standard [cards](../co
 
 The edit form uses the shared `.form` and `.form-section` recipe. The roast title field uses `.form-group-title` so it matches roast names in list rows and detail headers. Basic information, weights, notes, and read-only roast data stay in separate sections.
 
+`.management-form--roast` keeps those sections and their source order while
+using desktop width more efficiently. From `1024px`, Basic Information spans
+the form and lays its fields out in three columns; Weights and Notes share the
+next row; Roast Data remains full width. Save Changes stays before Cancel in a
+safe-area-aware sticky action row. All grids collapse to one column below
+`768px`, and the action row becomes static for print.
+
+The detail page uses `.management-detail--roast`: Basic Information occupies
+half of the first desktop row, while Weights and Roast Duration occupy one
+quarter each. Reviews, Roast Data, and General Notes stay full width so review
+content, the roast curve, event history, and notes retain their existing
+behavior. The chart dimensions and shared chart rendering are unchanged.
+
 ## Dark Mode
 
 Inherits automatically; no custom rules needed.

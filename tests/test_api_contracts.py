@@ -23,25 +23,26 @@ def _bean_list_row(html: str, bean_name: str) -> str:
 
 def test_guarded_settings_sync_markup_uses_typed_safe_phase_controls():
     template = Path("templates/base.html").read_text(encoding="utf-8")
+    script = Path("static/js/settings-sheet.js").read_text(encoding="utf-8")
 
     assert "Guarded Database Sync" in template
-    assert "data.backup_confirmation" in template
-    assert "data.apply_confirmation" in template
-    assert "'/api/sync/runs/active'" in template
-    assert "`/api/sync/runs/${runId}/backup`" in template
-    assert "`/api/sync/runs/${runId}/apply`" in template
-    assert "`/api/sync/runs/${runId}/cancel`" in template
-    assert "required.textContent = token" in template
-    assert "line.appendChild(document.createTextNode(value))" in template
-    assert "Object.entries(data.sync.collections)" in template
-    assert "'Verified manifest SHA-256'" in template
-    assert "data.status === 'cancelled_after_backup'" in template
-    assert "'Cancellation audit needs recovery attention'" in template
-    assert "body: JSON.stringify(body)" in template
-    assert "const expectedExistingRun = syncRunActive" in template
-    assert "expectedExistingRun" in template
-    assert "renderAwaitingApply(data.active, phaseError)" in template
-    assert "queueMicrotask(() => input.focus())" in template
+    assert "data.backup_confirmation" in script
+    assert "data.apply_confirmation" in script
+    assert 'fetch("/api/sync/runs/active")' in script
+    assert "`/api/sync/runs/${runId}/backup`" in script
+    assert "`/api/sync/runs/${runId}/apply`" in script
+    assert "`/api/sync/runs/${runId}/cancel`" in script
+    assert "required.textContent = token" in script
+    assert "line.appendChild(document.createTextNode(value))" in script
+    assert "Object.entries(data.sync.collections)" in script
+    assert '"Verified manifest SHA-256"' in script
+    assert 'data.status === "cancelled_after_backup"' in script
+    assert '"Cancellation audit needs recovery attention"' in script
+    assert "body: JSON.stringify(body)" in script
+    assert "const expectedExistingRun = syncRunActive" in script
+    assert "expectedExistingRun" in script
+    assert "renderAwaitingApply(data.active, phaseError)" in script
+    assert "focusVisibleSyncControl(input)" in script
 
 
 def test_label_image_and_recent_preferences_contract(client, beans_collection):
@@ -119,6 +120,48 @@ def test_page_routes_render_for_existing_records(
     assert created.status_code == 302
     generated_id = ObjectId(created.location.rsplit("/", 1)[-1])
     roasts_collection.delete_one({"_id": generated_id})
+
+
+def test_quiet_compact_fonts_and_navigation_render_by_route(
+    client,
+    created_test_bean,
+    created_test_roast,
+):
+    roasts = client.get("/").get_data(as_text=True)
+    beans = client.get("/beans").get_data(as_text=True)
+    bean_detail = client.get(
+        f"/beans/detail/{created_test_bean}"
+    ).get_data(as_text=True)
+    live = client.get(
+        f"/roast/live/{created_test_roast['roast_id']}"
+    ).get_data(as_text=True)
+
+    for ordinary_page in (roasts, beans, live):
+        assert ordinary_page.count("fonts.googleapis.com/css2") == 1
+        assert "Barlow+Condensed" not in ordinary_page
+        assert "Playfair+Display" not in ordinary_page
+        assert "Roboto+Slab" not in ordinary_page
+
+    assert bean_detail.count("fonts.googleapis.com/css2") == 2
+    assert "Barlow+Condensed" in bean_detail
+    assert "Playfair+Display" in bean_detail
+    assert "Roboto+Slab" in bean_detail
+
+    assert re.search(
+        r'data-nav-tab="roasts"[^>]*aria-current="page"',
+        roasts,
+    )
+    assert re.search(
+        r'data-nav-tab="beans"[^>]*aria-current="page"',
+        beans,
+    )
+    assert roasts.count('class="nav-tab-count"') == 2
+    assert beans.count('class="nav-tab-count"') == 2
+    assert roasts.count('class="nav-active-indicator"') == 1
+    assert beans.count('class="nav-active-indicator"') == 1
+    assert 'href="/" data-nav-tab="roasts"' in beans
+    assert 'href="/beans" data-nav-tab="beans"' in roasts
+    assert 'class="container no-route-transition"' in live
 
 
 def test_bean_detail_stock_zero_action_and_history_contract(

@@ -8,7 +8,7 @@ Read [principles.md](./principles.md) first if you are new to the project.
 
 ```text
 design/
-├── principles.md              Five design principles
+├── principles.md              Six design principles
 ├── foundations/               Design tokens
 │   ├── color.md               Palette, CSS variables, semantic roles
 │   ├── typography.md          Font stack, type scale, instrument numerics
@@ -18,12 +18,13 @@ design/
 │   ├── buttons.md             .btn variants, sizes, states
 │   ├── instrument-displays.md Top-bar tiles, steppers, event buttons
 │   ├── cards-surfaces.md      Cards, panels, shadows, elevation
-│   └── forms.md               Inputs, selects, form rows
+│   ├── forms.md               Inputs, selects, form rows
+│   └── navigation.md          Stable header and route transitions
 ├── screens/                   Screen-specific design specs
 │   ├── live-roasting.md       Top-bar layout for the live roast view
 │   ├── label-creator.md       Modal canvas editor for bean labels
 │   ├── sticker-sheet.md       Modal editor for US-4 sticker sheets
-│   ├── settings.md            Settings modal and sync preflight states
+│   ├── settings.md            Responsive Settings sheet and guarded states
 │   ├── roast-detail.md        Read-only roast view
 │   └── bean-inventory.md      Beans list + bean detail
 └── patterns/                  Recurring design systems
@@ -38,19 +39,21 @@ design/
 **"How big should this touch target be?"** → [foundations/spacing-layout.md](./foundations/spacing-layout.md)
 **"How do I make this dark-mode aware?"** → [foundations/dark-mode.md](./foundations/dark-mode.md)
 **"How does the live roast screen work?"** → [screens/live-roasting.md](./screens/live-roasting.md)
+**"How should Roasts and Beans transition?"** → [components/navigation.md](./components/navigation.md)
 **"How does sync preflight appear in Settings?"** → [screens/settings.md](./screens/settings.md)
 **"How do I add a new label template?"** → [../features/adding-label-templates.md](../features/adding-label-templates.md) (step-by-step) + [patterns/label-templates.md](./patterns/label-templates.md) (design system)
 **"How is US-4 sticker stock laid out?"** → [patterns/sticker-templates.md](./patterns/sticker-templates.md)
 
 ## Design Philosophy
 
-RoastLogger is a **tablet-first instrument panel** for home coffee roasters. The five governing principles are covered in full in [principles.md](./principles.md):
+RoastLogger is a **tablet-first instrument panel** for home coffee roasters. The six governing principles are covered in full in [principles.md](./principles.md):
 
-1. **Tablet-first for live roasting** — ≥ 54px touch targets, thumb-reachable controls.
+1. **Two density contexts** — compact 44px management controls and protected 54px live-roast controls.
 2. **Chart dominance** — the roast curve is always the largest thing on screen.
 3. **Glanceable readings** — instrument numerics legible from ~60 cm, monospaced so digits don't jitter.
 4. **Minimal chrome during a roast** — collapse anything that isn't about the active roast.
 5. **Dark mode is first-class** — roasteries are dim; the dark palette is a peer, not a theme.
+6. **Stable workspace continuity** — native Roasts/Beans navigation uses restrained, optional motion without changing URLs.
 
 ## Conventions for Design Docs
 

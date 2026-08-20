@@ -27,20 +27,25 @@ Spacing is exposed as CSS custom properties (`--space-*`) in [static/css/tokens.
 
 ## Touch Targets
 
-Tablet-first interaction rules:
+RoastLogger has two deliberate density contexts:
 
-- **Minimum 44px** height for any interactive control (stepper, form input in live-roast rows).
-- **54px+** preferred for primary touch targets during a live roast.
+- **Browse and manage:** `--control-min: 44px` is the minimum target for navigation, forms, list actions, and Settings.
+- **Live roasting:** `--control-live-min: 54px` protects primary roast controls and is never reduced by management density rules.
 - **88px** top-bar height on the live screen (`.live-topbar`) — values must be readable from ~60 cm.
-- **Steppers** (`.stepper-control`) use a fixed 44px height with 0.75rem internal gap and 6px padding for the +/- tap area.
+- **Steppers** (`.stepper-control`) use the protected 54px live target.
+
+Management layouts use `--manage-gap`, `--manage-section-gap`, and
+`--manage-section-padding`. The reusable `.manage-stack`, `.manage-grid`, and
+`.surface-flat` hooks tighten vertical rhythm without shrinking controls.
 
 ## Containers
 
 | Container | Max width | Notes |
 |---|---|---|
-| `.nav-container` | `1600px` | Navbar inner wrapper |
-| `.container` | `1600px`, `2rem 1.5rem` padding | Main content wrapper on most pages |
+| `.nav-container` | `1440px` | Navbar inner wrapper, fixed at 56px high |
+| `.container` | `1440px`, token-based padding | Main content wrapper on most pages |
 | `.live-roast-container` | `100%` | Live screen takes full viewport width — no horizontal max |
+| `.settings-sheet` | `560px` desktop, `100%` mobile | Fixed right sheet with internal scrolling |
 
 ## Grids
 
@@ -50,6 +55,30 @@ Common grid patterns found in the codebase:
 - **Form row** (`.form-row`): `1fr 1fr` + `var(--space-4)` gap, collapsed to one column below 768px.
 - **Detail grid** (`.detail-grid`): fixed `repeat(2, 1fr)` with `0.75rem 2rem` gaps.
 - **Compact event buttons** (`.event-buttons-compact`): fixed `repeat(5, 1fr)` — one row across the live controls bar.
+
+## Compact Management Layout
+
+Bean and Roast browse, edit, and detail pages use a management-only density
+layer. The live-roast screen keeps its separate tablet-first dimensions.
+
+- `.management-page` scopes the compact treatment so label, sticker, Settings,
+  and live-roast surfaces do not inherit it.
+- `.manage-stack`, `.manage-grid`, and `.surface-flat` supply the shared shell,
+  grid, and non-elevated surface recipes. Management selectors refine their
+  placement without changing routes or source order.
+- `--manage-gap`, `--manage-section-gap`, and `--manage-section-padding` keep
+  management rhythm compact while `--control-min` keeps interactions at least
+  `44px`.
+- At `1024px` and wider, compatible form groups and detail clusters share the
+  available width. At widths below `768px`, every form and detail grid becomes
+  one source-ordered column.
+- At heights of `700px` or less, section padding and gaps tighten without
+  reducing control targets. This is the short-height treatment for
+  `1280x640` and similar viewports.
+- Operational tables stay tables. Their bordered container owns horizontal
+  overflow, so a narrow viewport scrolls the table rather than the page.
+- Long forms use a bottom-sticky action row with safe-area padding. The row
+  remains in document flow, and print restores it to static positioning.
 
 ## Breakpoints
 
@@ -66,22 +95,29 @@ RoastLogger uses a small, pragmatic set of media queries. Keep new CSS aligned w
 
 Safe-area insets (`env(safe-area-inset-*)`) are applied on fullscreen panels for notched devices.
 
-## Card & Shadow Pattern
+## Settings Viewport Contract
 
-Cards and panels share a consistent recipe:
+Settings uses `height: 100dvh` and three grid rows: title, section navigation,
+and `minmax(0, 1fr)` content. Body scrolling is locked while it is open. Only
+the content row has `overflow-y: auto` and `overscroll-behavior: contain`.
+
+At heights up to `680px`, the title row and section padding tighten while
+interactive controls remain at least `44px`. Below `768px` wide, the sheet is
+full-screen and multi-action rows collapse to one column.
+
+## Surface Pattern
+
+Static management groups prefer a flat surface:
 
 ```css
-background: var(--card-bg);
-border-radius: 8px;
-box-shadow: var(--shadow);
-padding: 1.75rem; /* or 1.5rem for smaller cards */
+background: var(--surf);
+border: 1px solid var(--bd);
+border-radius: var(--radius-xl);
+box-shadow: none;
+padding: var(--manage-section-padding);
 ```
 
-On hover (when applicable):
-
-```css
-box-shadow: var(--shadow-hover);
-transform: translateY(-2px);
-```
+Shadows and hover lift remain available when they communicate clickable or
+overlay hierarchy. Do not nest elevated cards inside another elevated card.
 
 See [../components/cards-surfaces.md](../components/cards-surfaces.md) for the full component.

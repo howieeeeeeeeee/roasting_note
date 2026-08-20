@@ -15,7 +15,6 @@
 .toast {
   background: var(--surf);
   border: 1px solid var(--bd);
-  border-left: 3px solid var(--pr);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-base);
@@ -26,7 +25,7 @@
   animation: toastIn 0.18s ease both;
   pointer-events: auto;
 }
-.toast-success { border-left-color: var(--ok); }
-.toast-error   { border-left-color: var(--err); }
-.toast-warning { border-left-color: var(--warn); }
+.toast-success { color: var(--txt); }
+.toast-error   { color: var(--err-text); }
+.toast-warning { color: var(--warn-text); }
 .toast-fade-out { animation: toastOut 0.3s ease forwards; }

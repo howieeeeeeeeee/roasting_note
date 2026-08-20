@@ -83,6 +83,8 @@ uv run pytest tests/test_database_sync_web.py
 uv run pytest tests/test_e2e_runtime.py
 uv run pytest tests/test_virtual_sensor.py
 uv run pytest tests/test_api_contracts.py
+uv run pytest tests/test_design_contracts.py
+uv run pytest tests/test_management_design_contracts.py
 ```
 
 Run specific test class or method:
@@ -111,11 +113,14 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_database_sync_cli.py` | Confirmations, cancellation, backups, and audit behavior |
 | `test_database_sync_routes.py` | Audited Settings preflight, overlap prevention, and fail-closed routes |
 | `test_database_sync_web.py` | Phased backup/apply/cancel state, resume, endpoint-drift rejection, exclusive claims, replay, and recovery |
+| `test_design_contracts.py` | Quiet Compact contrast, font scope, density, reduced motion, and navigation transition contracts |
 | `test_datetime_formatting.py` | UTC and operator-timezone formatting |
 | `test_e2e_runtime.py` | Isolated database, run markers, cleanup, and online exclusion |
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
+| `test_management_design_contracts.py` | Compact management hooks, responsive grids, sticky actions, field order, table and RN-0027 preservation, and live-roast exclusion |
 | `test_reviews_api.py` | Review CRUD and validation |
 | `test_roasts_api.py` | Roast lifecycle, events, temperature, stock, and weight loss |
+| `test_settings_sheet_contracts.py` | Settings dialog semantics, section tabs, focus/state behavior, and responsive sheet geometry |
 | `test_sync_api.py` | Timestamp-aware document synchronization, including embedded bean stock history |
 | `test_temperature_api.py` | Temperature endpoints, timeouts, settings, and RoR |
 | `test_ticket_system.py` | Tracker validation, policy, generation, and dashboard |
@@ -138,6 +143,29 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 - Remaining meters expose clamped 0–100 values for positive integer purchase
   baselines and omit the progressbar for missing or invalid baselines.
 - Existing out-of-stock labels and visibility remain stable.
+
+### Quiet Compact Design Contracts (`test_design_contracts.py`)
+
+- Secondary and tertiary text colors meet WCAG AA on documented light and
+  dark surfaces.
+- Global and label-only font resources stay route-scoped without duplicate
+  token imports.
+- Management and live-roast target sizes remain separate at 44px and 54px.
+- Flat grouping, motion tokens, and reduced-motion overrides remain present.
+- Roasts/Beans navigation retains named progressive transitions, native link
+  semantics, and the live-roast content opt-out.
+
+### Compact Management Contracts (`test_management_design_contracts.py`)
+
+- Every Bean and Roast browse, form, and detail route renders its scoped
+  management hook; the live-roast template does not.
+- Bean and Roast form names, section order, submit-before-cancel order, and
+  table semantics stay stable.
+- CSS contracts cover the `1024px` desktop grid, single-column mobile
+  fallback, `44px` controls, sticky safe-area actions, print fallback, and
+  internal table overflow.
+- RN-0027 Stock progressbar markup, fixed Stock column, and management-screen
+  isolation remain explicit regressions.
 
 ### Roast Operations (`test_roasts_api.py`)
 - Create draft roast
@@ -221,6 +249,7 @@ uv run pytest \
   tests/test_sync_api.py \
   tests/test_app_factory.py \
   tests/test_e2e_runtime.py \
+  tests/test_settings_sheet_contracts.py \
   tests/test_api_contracts.py \
   tests/test_file_size_policy.py
 ```
@@ -236,6 +265,10 @@ uv run pytest \
   representative retry/fault/recovery behavior through RoastLogger APIs.
 - `test_api_contracts.py` covers label assets/preferences, database settings,
   rendered pages, malformed identifiers, missing records, and payload errors.
+- `test_settings_sheet_contracts.py` locks the rendered dialog/tab
+  relationships, session section restoration, focus containment and return,
+  hidden-panel exclusion, body scroll lock, viewport geometry, mobile
+  full-screen fallback, and reduced-motion contract.
 - `tests/e2e/README.md` is the Codex in-app-browser runbook.
 
 Start and cleanup commands:
