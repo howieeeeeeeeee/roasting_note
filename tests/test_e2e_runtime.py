@@ -135,6 +135,16 @@ def test_browser_creation_marks_and_updates_e2e_documents(tmp_path):
         updated_bean = beans.find_one({"_id": bean["_id"]})
         assert updated_bean["test_run_id"] == run_id
 
+        response = client.post(
+            f"/api/beans/{bean['_id']}/set-stock-zero"
+        )
+        assert response.status_code == 200
+        zeroed_bean = beans.find_one({"_id": bean["_id"]})
+        assert zeroed_bean["stock_grams"] == 0
+        assert zeroed_bean["test_data"] is True
+        assert zeroed_bean["test_run_id"] == run_id
+        assert len(zeroed_bean["stock_change_log"]) == 1
+
         response = client.post("/api/roast/create")
         roast_id = ObjectId(response.json["new_roast_id"])
         roast = roasts.find_one({"_id": roast_id})

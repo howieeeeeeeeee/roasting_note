@@ -134,6 +134,16 @@ Use Codex's in-app browser, not a standalone browser driver.
 3. Confirm the bean appears in inventory and its detail page.
 4. Edit several fields and save.
 5. Reopen detail and confirm the changes.
+6. Open **More actions**, choose **Set stock to zero**, cancel the confirmation,
+   and confirm no request was sent and neither stock nor history changed.
+7. Repeat and confirm the action. Verify exactly one successful request, a
+   `0g` stock display, the exact signed transition at the top of Stock History,
+   a success toast, and removal of the now-empty **More actions** menu. Treat
+   duplicate requests, console errors, or failed network requests as failures.
+8. Return to Beans and confirm the default inventory hides the bean. Enable
+   **Show Out of Stock**, reopen it, and confirm the stock history persisted.
+9. Edit the bean back to positive stock for the following Live Roast workflow.
+   Confirm its history remains and **More actions** is available again.
 
 ### Live Roast
 
@@ -167,8 +177,10 @@ tests/e2e/artifacts/<run-id>/
 └── docs/audit_history/...
 ```
 
-Save screenshots for Settings safety, bean detail, live healthy state,
-retry/offline/fault state, and final roast detail. Update `summary.md` with:
+Save screenshots for Settings safety, the open bean **More actions** menu,
+the zero-stock history result, the out-of-stock inventory result, live healthy
+state, retry/offline/fault state, and final roast detail. Update `summary.md`
+with:
 
 - scenarios exercised;
 - browser assertions passed or failed;

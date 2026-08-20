@@ -30,6 +30,23 @@
                 Archive
             </button>
         </form>
+        {% if (bean.stock_grams or 0) != 0 %}
+        <div class="dropdown-menu-container" id="beanMoreActions">
+            <button type="button" class="btn-icon dropdown-toggle" id="beanMoreToggle"
+                onclick="toggleBeanActions(event)" title="More actions"
+                aria-label="More bean actions" aria-haspopup="true" aria-expanded="false"
+                aria-controls="beanActionDropdown">
+                <span class="material-icons">more_vert</span>
+            </button>
+            <div class="dropdown-menu" id="beanActionDropdown" role="menu">
+                <button type="button" class="dropdown-item dropdown-item-danger"
+                    id="setStockZeroButton" role="menuitem" onclick="setBeanStockToZero()">
+                    <span class="material-icons">remove_circle_outline</span>
+                    Set stock to zero
+                </button>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -49,7 +66,7 @@
         <div class="detail-grid">
             <div class="detail-item">
                 <strong>Current Stock:</strong>
-                <span class="stock-badge {% if bean.stock_grams and bean.stock_grams < 100 %}stock-low{% endif %}">
+                <span class="stock-badge {% if bean.stock_grams and bean.stock_grams < 100 %}stock-low{% endif %}" id="currentStockBadge">
                     {{ bean.stock_grams or 0 }}g
                 </span>
             </div>
@@ -62,6 +79,35 @@
                 <strong>Price per kg:</strong>
                 {% if bean.unit_price_per_kg %}${{ bean.unit_price_per_kg.to_decimal() | round(2) }}{% else %}Not calculated{% endif %}
             </div>
+        </div>
+        {% set stock_changes = bean.stock_change_log or [] %}
+        <div class="stock-history" id="stockHistory" aria-live="polite">
+            <h3 class="stock-history-title">Stock History</h3>
+            <div class="stock-history-table-container" id="stockHistoryTableContainer"{% if not stock_changes %} hidden{% endif %}>
+                <table class="stock-history-table">
+                    <thead>
+                        <tr>
+                            <th>Recorded</th>
+                            <th>Previous</th>
+                            <th>Change</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockHistoryBody">
+                        {% for change in stock_changes | reverse %}
+                        <tr>
+                            <td>{{ change.recorded_at | format_date }}</td>
+                            <td>{{ change.previous_stock_grams }}g</td>
+                            <td class="{% if change.change_grams > 0 %}stock-change-positive{% elif change.change_grams < 0 %}stock-change-negative{% endif %}">
+                                {% if change.change_grams > 0 %}+{% endif %}{{ change.change_grams }}g
+                            </td>
+                            <td>{{ change.resulting_stock_grams }}g</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="stock-history-empty" id="stockHistoryEmpty"{% if stock_changes %} hidden{% endif %}>No stock changes recorded.</p>
         </div>
     </section>
 
@@ -353,9 +399,27 @@
         currentRoastId = null;
     }
 
+    function toggleBeanActions(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('beanActionDropdown');
+        const toggle = document.getElementById('beanMoreToggle');
+        if (!dropdown || !toggle) return;
+        const willOpen = !dropdown.classList.contains('show');
+        dropdown.classList.toggle('show', willOpen);
+        toggle.setAttribute('aria-expanded', String(willOpen));
+    }
+
+    function closeBeanActions() {
+        const dropdown = document.getElementById('beanActionDropdown');
+        const toggle = document.getElementById('beanMoreToggle');
+        if (dropdown) dropdown.classList.remove('show');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    }
+
     window.onclick = function (event) {
         if (event.target === document.getElementById('reviewsModal')) closeReviewsModal();
         if (event.target === document.getElementById('labelModal'))   closeLabelModal();
+        if (!event.target.closest('#beanMoreActions')) closeBeanActions();
     };
 </script>
 
@@ -367,9 +431,87 @@
         origin: {{ (bean.origin or '') | tojson }},
         process: {{ (bean.process or '') | tojson }},
         shortFlavorNotes: {{ (bean.short_flavor_notes or []) | tojson }},
+        stockGrams: {{ (bean.stock_grams or 0) | tojson }},
         color: {{ (bean.color or '#6B8E6F') | tojson }},
         label: {{ (bean.label or {}) | tojson }}
     };
+
+    function formatSignedGrams(value) {
+        return `${value > 0 ? '+' : ''}${value}g`;
+    }
+
+    function formatStockChangeDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return new Intl.DateTimeFormat(undefined, {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+        }).format(date);
+    }
+
+    function prependStockChange(stockChange) {
+        const tableContainer = document.getElementById('stockHistoryTableContainer');
+        const historyBody = document.getElementById('stockHistoryBody');
+        const emptyState = document.getElementById('stockHistoryEmpty');
+        if (!tableContainer || !historyBody || !emptyState) return;
+
+        const row = document.createElement('tr');
+        const values = [
+            formatStockChangeDate(stockChange.recorded_at),
+            `${stockChange.previous_stock_grams}g`,
+            formatSignedGrams(stockChange.change_grams),
+            `${stockChange.resulting_stock_grams}g`
+        ];
+        values.forEach(function (value, index) {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            if (index === 2 && stockChange.change_grams > 0) {
+                cell.className = 'stock-change-positive';
+            } else if (index === 2 && stockChange.change_grams < 0) {
+                cell.className = 'stock-change-negative';
+            }
+            row.appendChild(cell);
+        });
+        historyBody.prepend(row);
+        tableContainer.hidden = false;
+        emptyState.hidden = true;
+    }
+
+    async function setBeanStockToZero() {
+        closeBeanActions();
+        const confirmed = window.confirm(
+            `${beanData.name}: Set stock from ${formatSignedGrams(beanData.stockGrams)} to 0g? `
+            + 'This records the change and cannot be undone automatically.'
+        );
+        if (!confirmed) return;
+
+        const button = document.getElementById('setStockZeroButton');
+        if (button) button.disabled = true;
+        try {
+            const response = await fetch(`/api/beans/${beanData.id}/set-stock-zero`, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Unable to set bean stock to zero');
+            }
+
+            beanData.stockGrams = data.stock_grams;
+            const stockBadge = document.getElementById('currentStockBadge');
+            stockBadge.textContent = `${data.stock_grams}g`;
+            stockBadge.classList.remove('stock-low');
+            prependStockChange(data.stock_change);
+            document.getElementById('beanMoreActions')?.remove();
+            showToast(
+                `Stock changed from ${data.previous_stock_grams}g to 0g`,
+                'success'
+            );
+        } catch (error) {
+            showToast(error.message || 'Unable to set bean stock to zero', 'error');
+            if (button) button.disabled = false;
+        }
+    }
 
     var selectedImageSrc = '';
     var DEFAULT_EXPORT_SIZE_BY_RATIO_CM = {

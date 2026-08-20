@@ -8,11 +8,14 @@ Tests cover:
 - Stock management
 - Unit price calculation
 """
-import pytest
 from datetime import datetime
+from types import SimpleNamespace
+
+import pytest
 from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 
+from models.bean_helpers import set_bean_stock_to_zero
 from tests.conftest import TEST_DATA_MARKER
 
 
@@ -42,6 +45,7 @@ class TestBeanCreate:
             'Dark Chocolate',
         ]
         assert int(bean['stock_grams']) == int(test_bean_data['stock_grams'])
+        assert bean['stock_change_log'] == []
         assert bean['archived'] == False
 
         # Cleanup - mark and delete
@@ -247,6 +251,7 @@ class TestBeanStock:
         # Verify stock decreased
         bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
         assert bean['stock_grams'] == initial_stock - 150
+        assert bean.get('stock_change_log', []) == []
 
         # Cleanup roast
         from app import db_local
@@ -286,6 +291,154 @@ class TestBeanStock:
         # Verify stock restored
         bean_after_delete = beans_collection.find_one({'_id': ObjectId(bean_id)})
         assert bean_after_delete['stock_grams'] == stock_after_start + 150
+        assert bean_after_delete.get('stock_change_log', []) == []
+
+    @pytest.mark.parametrize(
+        ('initial_stock', 'expected_change'),
+        [(275, -275), (-25, 25)],
+    )
+    def test_set_non_zero_stock_to_zero_records_exact_change(
+        self,
+        client,
+        beans_collection,
+        created_test_bean,
+        initial_stock,
+        expected_change,
+    ):
+        bean_id = ObjectId(created_test_bean)
+        beans_collection.update_one(
+            {'_id': bean_id},
+            {
+                '$set': {'stock_grams': initial_stock},
+                '$unset': {'stock_change_log': ''},
+            },
+        )
+
+        response = client.post(
+            f'/api/beans/{bean_id}/set-stock-zero'
+        )
+
+        assert response.status_code == 200
+        assert response.json['success'] is True
+        assert response.json['previous_stock_grams'] == initial_stock
+        assert response.json['change_grams'] == expected_change
+        assert response.json['stock_grams'] == 0
+        assert response.json['stock_change'] == {
+            'event_type': 'set_to_zero',
+            'previous_stock_grams': initial_stock,
+            'change_grams': expected_change,
+            'resulting_stock_grams': 0,
+            'recorded_at': response.json['stock_change']['recorded_at'],
+        }
+        assert datetime.fromisoformat(
+            response.json['stock_change']['recorded_at']
+        ).utcoffset() is not None
+
+        bean = beans_collection.find_one({'_id': bean_id})
+        assert bean['stock_grams'] == 0
+        assert bean['archived'] is False
+        assert bean['test_data'] is True
+        assert len(bean['stock_change_log']) == 1
+        assert bean['stock_change_log'][0]['previous_stock_grams'] == initial_stock
+        assert bean['stock_change_log'][0]['change_grams'] == expected_change
+        assert bean['updated_at'] == bean['stock_change_log'][0]['recorded_at']
+
+    def test_set_zero_stock_rejects_repeated_requests_without_duplicate_history(
+        self,
+        client,
+        beans_collection,
+        created_test_bean,
+    ):
+        bean_id = ObjectId(created_test_bean)
+
+        first = client.post(f'/api/beans/{bean_id}/set-stock-zero')
+        repeated = client.post(f'/api/beans/{bean_id}/set-stock-zero')
+
+        assert first.status_code == 200
+        assert repeated.status_code == 409
+        assert repeated.json == {
+            'success': False,
+            'error': 'Bean stock is already zero',
+        }
+        bean = beans_collection.find_one({'_id': bean_id})
+        assert len(bean['stock_change_log']) == 1
+
+    def test_set_stock_zero_rejects_missing_and_archived_beans(
+        self,
+        client,
+        beans_collection,
+        created_test_bean,
+    ):
+        missing = client.post(
+            f'/api/beans/{ObjectId()}/set-stock-zero'
+        )
+        assert missing.status_code == 404
+        assert missing.json == {'success': False, 'error': 'Bean not found'}
+
+        bean_id = ObjectId(created_test_bean)
+        beans_collection.update_one(
+            {'_id': bean_id},
+            {'$set': {'archived': True}},
+        )
+        archived = client.post(f'/api/beans/{bean_id}/set-stock-zero')
+        assert archived.status_code == 404
+        assert archived.json == {'success': False, 'error': 'Bean not found'}
+        assert beans_collection.find_one({'_id': bean_id})['stock_grams'] != 0
+
+    def test_manual_restock_preserves_history_and_allows_another_zero_event(
+        self,
+        client,
+        beans_collection,
+        created_test_bean,
+    ):
+        bean_id = ObjectId(created_test_bean)
+        first = client.post(f'/api/beans/{bean_id}/set-stock-zero')
+        assert first.status_code == 200
+
+        client.post(
+            f'/api/beans/edit/{bean_id}',
+            data={'name': 'Restocked Bean', 'stock_grams': '-40'},
+        )
+        second = client.post(f'/api/beans/{bean_id}/set-stock-zero')
+
+        assert second.status_code == 200
+        bean = beans_collection.find_one({'_id': bean_id})
+        assert [
+            entry['previous_stock_grams']
+            for entry in bean['stock_change_log']
+        ] == [1000, -40]
+        assert [entry['change_grams'] for entry in bean['stock_change_log']] == [
+            -1000,
+            40,
+        ]
+
+    def test_concurrent_stock_change_returns_conflict_without_append(self):
+        bean_id = ObjectId()
+        update_calls = []
+
+        class ConcurrentCollection:
+            def __init__(self):
+                self.read_count = 0
+
+            def find_one(self, query):
+                self.read_count += 1
+                stock = 200 if self.read_count == 1 else 150
+                return {'_id': bean_id, 'archived': False, 'stock_grams': stock}
+
+            def update_one(self, query, update):
+                update_calls.append((query, update))
+                return SimpleNamespace(modified_count=0)
+
+        result = set_bean_stock_to_zero(
+            ConcurrentCollection(),
+            str(bean_id),
+        )
+
+        assert result == {'status': 'conflict'}
+        assert update_calls[0][0]['stock_grams'] == 200
+        assert update_calls[0][1]['$push']['stock_change_log'][
+            'previous_stock_grams'
+        ] == 200
 
 
 class TestBeanLabel:

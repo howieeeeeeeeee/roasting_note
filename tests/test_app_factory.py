@@ -21,6 +21,11 @@ EXPECTED_ROUTES = {
     ("/api/beans/add", "POST", "api_beans_add"),
     ("/api/beans/edit/<bean_id>", "POST", "api_beans_edit"),
     ("/api/beans/delete/<bean_id>", "POST", "api_beans_delete"),
+    (
+        "/api/beans/<bean_id>/set-stock-zero",
+        "POST",
+        "api_beans_set_stock_zero",
+    ),
     ("/api/beans/<bean_id>/label", "POST", "api_beans_label"),
     ("/api/label/images", "GET", "api_label_images"),
     ("/api/label/preferences", "GET", "api_label_preferences"),

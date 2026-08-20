@@ -7,7 +7,7 @@ import os
 from bson.objectid import ObjectId
 from flask import Blueprint, current_app, jsonify, redirect, request, url_for
 
-from models.bean_helpers import create_bean, update_bean
+from models.bean_helpers import create_bean, set_bean_stock_to_zero, update_bean
 from roastlogger.database import get_beans_collection
 from roastlogger.e2e import document_markers
 from roastlogger.routing import register_unprefixed_routes
@@ -37,6 +37,36 @@ def api_beans_delete(bean_id):
         {"$set": {"archived": True, "updated_at": get_current_time_with_tz()}},
     )
     return redirect(url_for("beans_list"))
+
+
+def api_beans_set_stock_zero(bean_id):
+    result = set_bean_stock_to_zero(get_beans_collection(), bean_id)
+    status = result.pop("status")
+    if status == "not_found":
+        return jsonify({"success": False, "error": "Bean not found"}), 404
+    if status == "already_zero":
+        return jsonify(
+            {"success": False, "error": "Bean stock is already zero"}
+        ), 409
+    if status == "conflict":
+        return jsonify(
+            {
+                "success": False,
+                "error": "Bean stock changed; refresh and try again",
+            }
+        ), 409
+
+    stock_change = dict(result["stock_change"])
+    stock_change["recorded_at"] = stock_change["recorded_at"].isoformat()
+    return jsonify(
+        {
+            "success": True,
+            "previous_stock_grams": result["previous_stock_grams"],
+            "change_grams": result["change_grams"],
+            "stock_grams": result["stock_grams"],
+            "stock_change": stock_change,
+        }
+    )
 
 
 def api_label_images():
@@ -109,6 +139,12 @@ register_unprefixed_routes(
             "/api/beans/delete/<bean_id>",
             "api_beans_delete",
             api_beans_delete,
+            ["POST"],
+        ),
+        (
+            "/api/beans/<bean_id>/set-stock-zero",
+            "api_beans_set_stock_zero",
+            api_beans_set_stock_zero,
             ["POST"],
         ),
         ("/api/label/images", "api_label_images", api_label_images, ["GET"]),
