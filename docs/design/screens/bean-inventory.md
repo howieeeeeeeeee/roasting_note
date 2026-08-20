@@ -72,6 +72,17 @@ The add/edit bean form is grouped into three `.form-section` panels:
 
 The bean name field uses `.form-group-title` so it matches record-title typography. The `short_flavor_notes` chip editor still submits newline-separated text so the backend can normalize it into the stored array.
 
+The form also uses `.management-form--bean`. At `1024px` and wider, Bean
+Profile and Flavor Notes share the first row, then Inventory spans the form
+with a four-column field grid. Existing wrapper rows use `display: contents`
+only at that breakpoint, so focus and DOM order remain name, sourcing, color,
+flavor, notes, then inventory. Below `768px`, all sections and field groups are
+one column.
+
+Add/Update Bean stays before Cancel in a sticky action row. The row includes
+mobile safe-area padding, does not remove the actions from document flow, and
+becomes static for print.
+
 ## Bean Detail
 
 **Template:** [templates/beans_detail.html](../../../templates/beans_detail.html)
@@ -99,6 +110,12 @@ The bean name field uses `.form-group-title` so it matches record-title typograp
 | Create Label | `.btn.btn-primary` with a Material icon — opens the [label creator modal](./label-creator.md) |
 | More actions | `.dropdown-menu-container` + `.dropdown-menu`; present only for non-zero stock |
 | Stock history | `.stock-history-table` inside a horizontally scrollable bordered container |
+
+The compact detail shell places Bean Information and Stock & Pricing beside
+each other from `1024px`, with Stock receiving more width for its history
+table. Optional flavor and notes sections use the same flat section treatment,
+and Roast History always spans the full detail width. Below `768px`, the
+sections and all fact clusters become one column.
 
 ### Set Stock To Zero Interaction
 

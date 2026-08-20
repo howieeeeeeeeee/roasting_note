@@ -13,7 +13,8 @@
 {% block nav_tab %}roasts{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="management-page management-page--detail manage-stack">
+<div class="page-header management-page-header">
     <div class="header-left">
         <a href="{{ url_for('index') }}" class="btn-icon" title="Back to Roasts">
             <span class="material-icons">arrow_back</span>
@@ -43,8 +44,8 @@
     </div>
 </div>
 
-<div class="roast-detail">
-    <section class="detail-section">
+<div class="roast-detail management-detail management-detail--roast manage-grid">
+    <section class="detail-section management-detail-section management-detail-section--information surface-flat">
         <h2>Basic Information</h2>
         <div class="detail-grid">
             <div class="detail-item">
@@ -70,7 +71,7 @@
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section management-detail-section management-detail-section--weights surface-flat">
         <h2>Weights & Loss</h2>
         <div class="detail-grid">
             <div class="detail-item">
@@ -88,7 +89,7 @@
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section management-detail-section management-detail-section--duration surface-flat">
         <h2>Roast Duration</h2>
         <div class="detail-grid">
             <div class="detail-item">
@@ -106,7 +107,7 @@
         </div>
     </section>
 
-    <section class="detail-section">
+    <section class="detail-section management-detail-section management-detail-section--reviews surface-flat">
         <h2>Reviews</h2>
         {% if roast.reviews %}
         <div class="reviews-list-full">
@@ -169,7 +170,7 @@
     </section>
 
     {% if roast.key_timings or roast.temp_curve %}
-    <section class="detail-section roast-data-section">
+    <section class="detail-section roast-data-section management-detail-section management-detail-section--data surface-flat">
         <h2>Roast Data</h2>
 
         <!-- Tabs -->
@@ -278,11 +279,12 @@
     {% endif %}
 
     {% if roast.general_notes %}
-    <section class="detail-section">
+    <section class="detail-section management-detail-section management-detail-section--notes surface-flat">
         <h2>General Notes</h2>
         <div class="notes-content markdown-content" id="generalNotes" data-markdown="{{ roast.general_notes }}"></div>
     </section>
     {% endif %}
+</div>
 </div>
 
 <!-- Review Modal -->

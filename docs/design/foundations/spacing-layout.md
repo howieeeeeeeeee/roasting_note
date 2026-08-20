@@ -56,6 +56,30 @@ Common grid patterns found in the codebase:
 - **Detail grid** (`.detail-grid`): fixed `repeat(2, 1fr)` with `0.75rem 2rem` gaps.
 - **Compact event buttons** (`.event-buttons-compact`): fixed `repeat(5, 1fr)` — one row across the live controls bar.
 
+## Compact Management Layout
+
+Bean and Roast browse, edit, and detail pages use a management-only density
+layer. The live-roast screen keeps its separate tablet-first dimensions.
+
+- `.management-page` scopes the compact treatment so label, sticker, Settings,
+  and live-roast surfaces do not inherit it.
+- `.manage-stack`, `.manage-grid`, and `.surface-flat` supply the shared shell,
+  grid, and non-elevated surface recipes. Management selectors refine their
+  placement without changing routes or source order.
+- `--manage-gap`, `--manage-section-gap`, and `--manage-section-padding` keep
+  management rhythm compact while `--control-min` keeps interactions at least
+  `44px`.
+- At `1024px` and wider, compatible form groups and detail clusters share the
+  available width. At widths below `768px`, every form and detail grid becomes
+  one source-ordered column.
+- At heights of `700px` or less, section padding and gaps tighten without
+  reducing control targets. This is the short-height treatment for
+  `1280x640` and similar viewports.
+- Operational tables stay tables. Their bordered container owns horizontal
+  overflow, so a narrow viewport scrolls the table rather than the page.
+- Long forms use a bottom-sticky action row with safe-area padding. The row
+  remains in document flow, and print restores it to static positioning.
+
 ## Breakpoints
 
 RoastLogger uses a small, pragmatic set of media queries. Keep new CSS aligned with these thresholds rather than inventing new ones.

@@ -32,6 +32,7 @@
 @import url('components/flatpickr.css');
 
 /* Screens */
+@import url('screens/management.css');
 @import url('screens/live-roasting.css');
 @import url('screens/live-fullscreen.css');
 @import url('screens/label-creator.css');

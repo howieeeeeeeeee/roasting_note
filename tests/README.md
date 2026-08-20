@@ -84,6 +84,7 @@ uv run pytest tests/test_e2e_runtime.py
 uv run pytest tests/test_virtual_sensor.py
 uv run pytest tests/test_api_contracts.py
 uv run pytest tests/test_design_contracts.py
+uv run pytest tests/test_management_design_contracts.py
 ```
 
 Run specific test class or method:
@@ -116,6 +117,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_datetime_formatting.py` | UTC and operator-timezone formatting |
 | `test_e2e_runtime.py` | Isolated database, run markers, cleanup, and online exclusion |
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
+| `test_management_design_contracts.py` | Compact management hooks, responsive grids, sticky actions, field order, table and RN-0027 preservation, and live-roast exclusion |
 | `test_reviews_api.py` | Review CRUD and validation |
 | `test_roasts_api.py` | Roast lifecycle, events, temperature, stock, and weight loss |
 | `test_settings_sheet_contracts.py` | Settings dialog semantics, section tabs, focus/state behavior, and responsive sheet geometry |
@@ -152,6 +154,18 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 - Flat grouping, motion tokens, and reduced-motion overrides remain present.
 - Roasts/Beans navigation retains named progressive transitions, native link
   semantics, and the live-roast content opt-out.
+
+### Compact Management Contracts (`test_management_design_contracts.py`)
+
+- Every Bean and Roast browse, form, and detail route renders its scoped
+  management hook; the live-roast template does not.
+- Bean and Roast form names, section order, submit-before-cancel order, and
+  table semantics stay stable.
+- CSS contracts cover the `1024px` desktop grid, single-column mobile
+  fallback, `44px` controls, sticky safe-area actions, print fallback, and
+  internal table overflow.
+- RN-0027 Stock progressbar markup, fixed Stock column, and management-screen
+  isolation remain explicit regressions.
 
 ### Roast Operations (`test_roasts_api.py`)
 - Create draft roast

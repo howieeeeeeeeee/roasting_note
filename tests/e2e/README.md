@@ -201,6 +201,38 @@ short-height, mobile, and dark-mode screenshots. Record focus order and return,
 overflow measurements, console errors, failed requests, zero applied-mirror
 activity, and cleanup results in the run summary.
 
+#### Browse and Edit Density
+
+Use run ID `rn-0029-management-a` and complete the normal Bean and Roast
+workflows below. Repeat the layout checks at `1440x900`, `1280x640`,
+`1024x768`, and `390x844` in light and dark modes.
+
+1. Capture Bean and Roast list pages. Verify all existing columns, sorting,
+   filtering, row navigation, contextual actions, empty states, and internal
+   horizontal scrolling. Confirm the page itself has no horizontal overflow.
+2. Create and edit a Bean. Verify labels stay above fields, keyboard focus
+   follows the existing source order, every target is at least `44px`, and the
+   form becomes one column below `768px`.
+3. At the two short-height viewports, scroll through the Bean form and confirm
+   Add/Update Bean and Cancel remain reachable. Trigger native required-field
+   validation and confirm the invalid field is fully visible above the sticky
+   action row.
+4. On Beans, verify RN-0027 still shows the exact two-tier Stock cell,
+   accessible progressbar, fixed 9% column, raw-value sorting, and narrow-table
+   overflow without clipping.
+5. Open Bean detail and verify information, pricing, Stock History, flavor,
+   notes, and Roast History retain their order and content. Confirm every
+   multi-column fact cluster collapses to one column on mobile.
+6. Complete Roast edit and detail. Verify field order and payload behavior,
+   sticky Save Changes and Cancel, review content, notes, curve, and event data.
+   The curve and event tables must keep their existing full-width treatment.
+7. Smoke-test the live-roast screen at all four viewports. Record its top bar,
+   chart, event controls, sensor states, fullscreen geometry, and target sizes;
+   any management layout hook or geometry change is a failure.
+8. Record before/after page-height measurements, focus and validation results,
+   console errors, failed network requests, screenshots, and cleanup in
+   `tests/e2e/artifacts/rn-0029-management-a/summary.md`.
+
 ### Guarded Local Settings Sync
 
 First start an ordinary run without `--sync-fake` using run ID

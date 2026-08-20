@@ -5,7 +5,8 @@
 {% block nav_tab %}beans{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="management-page management-page--form manage-stack">
+<div class="page-header management-page-header">
     <div class="header-left">
         <a href="{% if is_edit %}{{ url_for('beans_detail', bean_id=bean._id) }}{% else %}{{ url_for('beans_list') }}{% endif %}" class="btn-icon" title="Back">
             <span class="material-icons">arrow_back</span>
@@ -14,8 +15,8 @@
     </div>
 </div>
 
-<form action="{% if is_edit %}{{ url_for('api_beans_edit', bean_id=bean._id) }}{% else %}{{ url_for('api_beans_add') }}{% endif %}" method="POST" class="form">
-    <section class="form-section">
+<form action="{% if is_edit %}{{ url_for('api_beans_edit', bean_id=bean._id) }}{% else %}{{ url_for('api_beans_add') }}{% endif %}" method="POST" class="form management-form management-form--bean manage-grid">
+    <section class="form-section management-form-section management-form-section--profile surface-flat">
         <h2>Bean Profile</h2>
 
         <div class="form-group form-group-title">
@@ -50,7 +51,7 @@
         </div>
     </section>
 
-    <section class="form-section">
+    <section class="form-section management-form-section management-form-section--flavor surface-flat">
         <h2>Flavor Notes</h2>
 
         <div class="form-group">
@@ -71,7 +72,7 @@
         </div>
     </section>
 
-    <section class="form-section">
+    <section class="form-section management-form-section management-form-section--inventory surface-flat">
         <h2>Inventory</h2>
 
         <div class="form-row">
@@ -101,11 +102,12 @@
         </div>
     </section>
 
-    <div class="form-actions">
+    <div class="form-actions management-form-actions">
         <button type="submit" class="btn btn-primary">{% if is_edit %}Update{% else %}Add{% endif %} Bean</button>
         <a href="{{ url_for('beans_list') }}" class="btn btn-secondary">Cancel</a>
     </div>
 </form>
+</div>
 
 <script>
     const shortFlavorHidden = document.getElementById('short_flavor_notes');

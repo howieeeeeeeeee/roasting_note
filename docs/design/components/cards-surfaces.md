@@ -96,6 +96,22 @@ The title and section navigation occupy fixed grid rows. Only
 overlay remain stationary. Internal groups use one divider between related
 topics rather than nested cards.
 
+## Flat Management Surfaces
+
+Management pages add `.surface-flat` to form and detail sections where a
+shadow does not communicate hierarchy. The section keeps the shared surface,
+border, radius, and semantic tokens but removes elevation and uses
+`--manage-section-padding`.
+
+Tables do not use `.surface-flat` because their existing containers already
+own the surface and border. `.management-table-container` only removes the
+shadow and preserves internal horizontal scrolling. This is especially
+important for the fixed-width Beans columns and the RN-0027 Stock meter.
+
+Compact detail screens use a 12-column outer grid from `1024px` and one column
+below that threshold. Sections remain separate semantic regions; only their
+placement, gap, and padding change.
+
 ## Dark Mode
 
 Card surfaces (`.card-bg`) are `#171512` in dark mode — slightly lighter than the page background (`#0E0D0B`). The 7-step delta between them is enough to separate a card from the page without needing a border. Shadows become deeper (`rgba(0,0,0,0.4)`) so cards still visually float.

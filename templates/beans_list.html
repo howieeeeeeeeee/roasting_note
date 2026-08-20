@@ -20,8 +20,9 @@
 {% endblock %}
 
 {% block content %}
+<div class="management-page management-page--list manage-stack">
 {% if beans %}
-<div class="beans-table-container">
+<div class="beans-table-container management-table-container">
     <table class="beans-table">
         <colgroup>
             <col class="beans-col-name">
@@ -155,6 +156,7 @@
     <a href="{{ url_for('beans_add_form') }}" class="btn btn-primary">Add Your First Bean</a>
 </div>
 {% endif %}
+</div>
 
 <!-- Sticker Sheet Modal -->
 <div id="stickerSheetModal" class="modal">
