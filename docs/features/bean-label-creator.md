@@ -63,5 +63,10 @@ See [docs/architecture/data-models.md](../architecture/data-models.md).
 
 - **Renderer:** [static/js/label-creator.js](../../static/js/label-creator.js) — IIFE exposing `LabelCreator.renderLabel`, `loadImage`, presets, ratios. Defers drawing until `document.fonts.ready` resolves.
 - **Modal markup and wiring:** [templates/beans_detail.html](../../templates/beans_detail.html).
-- **Fonts:** Raleway, Playfair Display, Barlow Condensed, Inter, Roboto Slab, DM Mono loaded in [templates/base.html](../../templates/base.html).
+- **Fonts:** Inter, Raleway, and DM Mono load globally from
+  [templates/base.html](../../templates/base.html). Playfair Display, Barlow
+  Condensed, and Roboto Slab are scoped to
+  [templates/beans_detail.html](../../templates/beans_detail.html), the only
+  route that opens the label creator. Both requests include every weight used
+  by the canvas renderer before `document.fonts.ready` resolves.
 - **Adding a new template:** [adding-label-templates.md](./adding-label-templates.md).

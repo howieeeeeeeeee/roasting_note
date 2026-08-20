@@ -8,10 +8,10 @@ Three shared typefaces are loaded globally from Google Fonts in [templates/base.
 |---|---|---|
 | **Inter** | 300, 400, 500, 600, 700 | Body text, default UI font, label-creator body text |
 | **DM Mono** | 400, 500 | All instrument-panel numerics (timer, temperature, RoR, steppers); Technical label preset |
-| **Raleway** | 400, 600, 800, 900 | Record titles (bean/roast names) and Modern label preset |
+| **Raleway** | 400, 600, 700, 800, 900 | Record titles (bean/roast names) and Modern label preset |
 | **Playfair Display** | 400, 700, 900 | Editorial label preset (bean name) |
 | **Barlow Condensed** | 400, 600, 700, 800 | Bold label preset (bean name) |
-| **Roboto Slab** | 300, 400, 500, 700 | Craft label preset (bean name + body) |
+| **Roboto Slab** | 300, 400, 500, 600, 700 | Craft label preset (bean name + body) |
 
 The body font stack in [static/css/style.css](../../../static/css/style.css) is:
 

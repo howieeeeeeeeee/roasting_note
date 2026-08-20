@@ -17,12 +17,12 @@
 }
 /* Class names mirror app.annotate_roast_lifecycle: completed | started | draft */
 .roast-status-completed,
-.roast-status-complete            { background: var(--ok-l);  color: var(--ok); }
-.roast-status-draft               { background: var(--warn-l); color: var(--warn); }
+.roast-status-complete            { background: var(--ok-l);  color: var(--ok-text); }
+.roast-status-draft               { background: var(--warn-l); color: var(--warn-text); }
 .roast-status-started,
 .roast-status-active,
-.roast-status-live                { background: var(--err-l); color: var(--err); }
-body.dark-mode .roast-status-draft { background: rgba(212, 196, 152, 0.16); color: var(--warn); }
+.roast-status-live                { background: var(--err-l); color: var(--err-text); }
+body.dark-mode .roast-status-draft { background: rgba(212, 196, 152, 0.16); color: var(--warn-text); }
 
 .bean-label,
 .origin-label {
@@ -45,9 +45,9 @@ body.dark-mode .roast-status-draft { background: rgba(212, 196, 152, 0.16); colo
   font-size: var(--text-sm);
   font-weight: 500;
   background: var(--ok-l);
-  color: var(--ok);
+  color: var(--ok-text);
 }
-.stock-badge.stock-low { background: var(--err-l); color: var(--err); font-weight: 700; }
+.stock-badge.stock-low { background: var(--err-l); color: var(--err-text); font-weight: 700; }
 
 .stock-indicator {
   display: inline-flex;

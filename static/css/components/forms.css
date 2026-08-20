@@ -93,6 +93,7 @@
 .form-control::placeholder,
 .input-field::placeholder {
   color: var(--txt3);
+  opacity: 1;
 }
 .form-group textarea {
   resize: vertical;

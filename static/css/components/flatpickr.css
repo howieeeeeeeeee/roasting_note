@@ -29,7 +29,7 @@
 .flatpickr-day.selected.inRange {
   background: var(--pr) !important;
   border-color: var(--pr) !important;
-  color: #fff !important;
+  color: var(--on-pr) !important;
 }
 .flatpickr-day:hover    { background: var(--pr-l) !important; color: var(--pr) !important; }
 .flatpickr-day.prevMonthDay,

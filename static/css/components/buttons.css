@@ -24,13 +24,13 @@
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn .material-icons { font-size: 1.05rem; }
 
-.btn-primary   { background: var(--pr);   color: #fff; border-color: var(--pr); }
+.btn-primary   { background: var(--pr);   color: var(--on-pr); border-color: var(--pr); }
 .btn-primary:hover:not(:disabled)   { filter: brightness(1.10); }
 .btn-secondary { background: var(--surf); color: var(--txt2); border-color: var(--bd); }
 .btn-secondary:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); }
-.btn-success   { background: var(--ok);   color: #fff; border-color: var(--ok); }
+.btn-success   { background: var(--ok-text); color: var(--on-ok); border-color: var(--ok-text); }
 .btn-success:hover:not(:disabled)   { filter: brightness(1.10); }
-.btn-danger    { background: var(--err);  color: #fff; border-color: var(--err); }
+.btn-danger    { background: var(--err-text); color: var(--on-err); border-color: var(--err-text); }
 .btn-danger:hover:not(:disabled)    { filter: brightness(1.10); }
 
 .btn-sm { padding: 0.32rem 0.7rem; font-size: var(--text-sm); }
@@ -54,8 +54,8 @@
 }
 .btn-icon .material-icons { font-size: 1.1rem; }
 .btn-icon:hover { background: var(--surf2); color: var(--txt); }
-.btn-icon-danger { color: var(--err); }
-.btn-icon-danger:hover { background: var(--err-l); color: var(--err); }
+.btn-icon-danger { color: var(--err-text); }
+.btn-icon-danger:hover { background: var(--err-l); color: var(--err-text); }
 
 .dark-mode-toggle.active { color: var(--pr); background: var(--pr-l); }
 

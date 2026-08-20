@@ -148,8 +148,8 @@ body.settings-sheet-open { overflow: hidden; }
 
 .settings-status { min-height: 1.5em; }
 
-.status-success { color: var(--ok); font-weight: 600; }
-.status-error { color: var(--err); font-weight: 600; }
+.status-success { color: var(--ok-text); font-weight: 600; }
+.status-error { color: var(--err-text); font-weight: 600; }
 
 .sensor-url-container {
   display: grid;
@@ -282,7 +282,7 @@ body.settings-sheet-open { overflow: hidden; }
   justify-content: space-between;
   min-height: 48px;
   padding: var(--space-3) var(--space-4);
-  color: var(--err);
+  color: var(--err-text);
   font-weight: 700;
   cursor: pointer;
   list-style: none;

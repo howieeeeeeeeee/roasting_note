@@ -258,8 +258,8 @@
 }
 .stock-history-table th:not(:first-child),
 .stock-history-table td:not(:first-child) { text-align: right; }
-.stock-change-positive { color: var(--ok) !important; font-weight: 700; }
-.stock-change-negative { color: var(--err) !important; font-weight: 700; }
+.stock-change-positive { color: var(--ok-text) !important; font-weight: 700; }
+.stock-change-negative { color: var(--err-text) !important; font-weight: 700; }
 .stock-history-empty { margin: 0; color: var(--txt3); }
 
 /* Sortable column header */

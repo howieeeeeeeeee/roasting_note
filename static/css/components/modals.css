@@ -39,7 +39,7 @@
   padding: 0 var(--space-2);
   transition: color 0.12s ease;
 }
-.modal-close:hover { color: var(--err); }
+.modal-close:hover { color: var(--err-text); }
 .modal-body { padding: var(--space-6); }
 .modal-actions {
   display: flex;
@@ -84,8 +84,8 @@
 }
 .dropdown-item:hover { background: var(--surf2); }
 .dropdown-item .material-icons { font-size: 1.05rem; color: var(--txt3); }
-.dropdown-item-danger { color: var(--err); }
+.dropdown-item-danger { color: var(--err-text); }
 .dropdown-item-danger:hover { background: var(--err-l); }
-.dropdown-item-danger .material-icons { color: var(--err); }
+.dropdown-item-danger .material-icons { color: var(--err-text); }
 .dropdown-item-form { display: block; margin: 0; padding: 0; }
 .dropdown-item-form .dropdown-item { width: 100%; }

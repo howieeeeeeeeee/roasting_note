@@ -15,7 +15,9 @@ The desktop header remains on one line at 1024px:
 
 The active link carries `aria-current="page"`. Mobile keeps the same
 information architecture behind a 44px menu button with synchronized
-`aria-expanded` state.
+`aria-expanded` state. Page-specific actions move into that collapsed menu;
+the top row keeps only the brand, menu toggle, dark-mode control, and Settings
+entry so it remains usable without horizontal overflow at `390px`.
 
 ## Workspace continuity
 
@@ -31,11 +33,14 @@ Named transition roles are:
 | --- | --- | --- |
 | Stable header | `app-navbar` | No entrance or exit animation |
 | Main content | `app-content` | 180ms opacity plus at most 4px translation |
-| Active rule | `active-nav-indicator` | Shared position change between tabs |
+| Active rule | `active-nav-indicator` | Fixed-width shared position change between tabs |
 
 The blanket `.container` page-load animation is removed so it cannot compete
 with the named transition. Unsupported browsers render the next document
-immediately.
+immediately. The browser-generated root, header, and content-group geometry
+animations are disabled. Only the old and new content images receive the
+documented opacity and `4px` transform; the fixed-width active rule may move by
+transform without morphing its dimensions.
 
 ## Reduced motion and live roasting
 

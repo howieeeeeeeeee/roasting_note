@@ -59,10 +59,16 @@
   --pr-ll:    var(--color-pr-050);
   --ok:       var(--color-ok-500);
   --ok-l:     var(--color-ok-100);
+  --ok-text:  #486A4D;
   --err:      var(--color-err-500);
   --err-l:    var(--color-err-100);
+  --err-text: #974646;
   --warn:     var(--color-warn-500);
   --warn-l:   var(--color-warn-100);
+  --warn-text: #8A5C1F;
+  --on-pr:    var(--color-white);
+  --on-ok:    var(--color-white);
+  --on-err:   var(--color-white);
 
   --bg:       var(--color-n-050);
   --surf:     var(--color-white);
@@ -85,9 +91,9 @@
   --primary-hover:   var(--pr-h);
   --secondary-color: var(--color-pr-400);
   --accent-color:    var(--color-pr-300);
-  --success-color:   var(--ok);
-  --danger-color:    var(--err);
-  --warn-color:      var(--warn);
+  --success-color:   var(--ok-text);
+  --danger-color:    var(--err-text);
+  --warn-color:      var(--warn-text);
   --text-color:      var(--txt);
   --text-light:      var(--txt2);
   --bg-color:        var(--bg);
@@ -105,10 +111,16 @@ body.dark-mode {
   --pr-ll:    rgba(201, 168, 122, 0.05);
   --ok:       var(--color-dk-ok);
   --ok-l:     rgba(127, 179, 133, 0.14);
+  --ok-text:  var(--color-dk-ok);
   --err:      var(--color-dk-err);
   --err-l:    rgba(208, 112, 112, 0.16);
+  --err-text: #DC8080;
   --warn:     var(--color-dk-warn);
   --warn-l:   rgba(212, 160, 96, 0.16);
+  --warn-text: var(--color-dk-warn);
+  --on-pr:    var(--color-n-900);
+  --on-ok:    var(--color-n-900);
+  --on-err:   var(--color-n-900);
 
   --bg:       var(--color-dk-bg);
   --surf:     var(--color-dk-surf);
@@ -130,9 +142,9 @@ body.dark-mode {
   --primary-hover:   var(--pr-h);
   --secondary-color: #9A8A78;
   --accent-color:    #7A6A58;
-  --success-color:   var(--ok);
-  --danger-color:    var(--err);
-  --warn-color:      var(--warn);
+  --success-color:   var(--ok-text);
+  --danger-color:    var(--err-text);
+  --warn-color:      var(--warn-text);
   --text-color:      var(--txt);
   --text-light:      var(--txt2);
   --bg-color:        var(--bg);

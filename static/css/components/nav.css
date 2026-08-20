@@ -15,6 +15,9 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+::view-transition-group(root),
+::view-transition-group(app-navbar),
+::view-transition-group(app-content),
 ::view-transition-old(root),
 ::view-transition-new(root),
 ::view-transition-old(app-navbar),
@@ -23,10 +26,16 @@
   mix-blend-mode: normal;
 }
 
-::view-transition-group(app-content),
 ::view-transition-group(active-nav-indicator) {
   animation-duration: var(--motion-base);
   animation-timing-function: var(--ease-emphasized);
+}
+
+::view-transition-old(active-nav-indicator),
+::view-transition-new(active-nav-indicator) {
+  animation-duration: var(--motion-base);
+  animation-timing-function: var(--ease-standard);
+  mix-blend-mode: normal;
 }
 
 ::view-transition-old(app-content) {
@@ -106,6 +115,12 @@
   padding: 0;
 }
 .nav-menu li { display: flex; }
+.nav-context-actions {
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+  padding-left: var(--space-4);
+}
 .nav-menu a {
   display: inline-flex;
   align-items: center;
@@ -121,10 +136,11 @@
 }
 .nav-active-indicator {
   position: absolute;
-  left: var(--space-3);
-  right: var(--space-3);
+  left: 50%;
+  width: 32px;
   bottom: 0;
   height: 2px;
+  transform: translateX(-50%);
   border-radius: 2px 2px 0 0;
   background: var(--pr);
   view-transition-name: active-nav-indicator;
@@ -192,7 +208,24 @@
   }
   .nav-menu.active { display: flex; }
   .nav-menu a { padding: var(--space-3) var(--space-5); }
-  .nav-active-indicator { left: 0; right: auto; top: 0; bottom: 0; width: 3px; height: auto; }
+  .nav-context-actions {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding: var(--space-3) var(--space-5);
+    border-top: 1px solid var(--bd);
+  }
+  .nav-context-actions:empty { display: none; }
+  .nav-context-actions .btn { flex: 1 1 auto; }
+  .nav-active-indicator {
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    height: auto;
+    transform: none;
+    view-transition-name: none;
+  }
   .nav-brand-divider { display: none; }
 }
 

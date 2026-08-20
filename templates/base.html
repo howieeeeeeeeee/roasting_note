@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Raleway:wght@400;600;800;900&display=swap">
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Raleway:wght@400;600;700;800;900&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -55,9 +55,11 @@
                         {% if active_tab == 'beans' %}<span class="nav-active-indicator" aria-hidden="true"></span>{% endif %}
                     </a>
                 </li>
+                <li class="nav-context-actions">
+                    {% block nav_actions %}{% endblock %}
+                </li>
             </ul>
             <div class="nav-actions">
-                {% block nav_actions %}{% endblock %}
                 <button class="btn-icon dark-mode-toggle" id="darkModeToggle" onclick="toggleDarkMode()"
                     title="Toggle dark mode" aria-label="Toggle dark mode">
                     <span class="material-icons" id="darkModeIcon">dark_mode</span>

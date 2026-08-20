@@ -197,9 +197,9 @@
   border-top: 1px solid var(--bd2);
   margin-top: var(--space-3);
 }
-.sticker-validation { font-size: var(--text-base); color: var(--err); font-weight: 500; }
-.sticker-validation.is-ready   { color: var(--ok); }
-.sticker-validation.is-warning { color: var(--warn); }
+.sticker-validation { font-size: var(--text-base); color: var(--err-text); font-weight: 500; }
+.sticker-validation.is-ready   { color: var(--ok-text); }
+.sticker-validation.is-warning { color: var(--warn-text); }
 
 @media (max-width: 900px) {
   .sticker-sheet-modal-content .modal-body { overflow-y: auto; }

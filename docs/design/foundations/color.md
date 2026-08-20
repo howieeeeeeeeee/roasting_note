@@ -10,8 +10,9 @@ RoastLogger uses a warm, earth-toned palette. Colours are defined as CSS custom 
 | `--primary-hover` | `#5A4A3D` | `#D9B88A` | Primary button hover |
 | `--secondary-color` | `#8B7D6B` | `#9A8A78` | Secondary buttons, input hover borders |
 | `--accent-color` | `#A89884` | `#7A6A58` | Supporting accents |
-| `--success-color` | `#6B8E6F` | `#7FB385` | Fired event buttons, RoR line, success toasts |
-| `--danger-color` | `#B85C5C` | `#D07070` | End Roast button, FC badge, destructive actions |
+| `--ok` / `--ok-text` | `#6B8E6F` / `#486A4D` | `#7FB385` | Positive graphics and text-safe status copy |
+| `--err` / `--err-text` | `#B85C5C` / `#974646` | `#D07070` / `#DC8080` | Danger graphics and text-safe status copy |
+| `--warn` / `--warn-text` | `#C4893A` / `#8A5C1F` | `#D4A060` | Warning graphics and text-safe status copy |
 | `--text-color` | `#2C2C2C` | `#EDE9E3` | Body text |
 | `--txt2` / `--text-light` | `#666666` | `#B8B1A8` | Secondary labels, helper text, and metadata |
 | `--txt3` | `#726D69` | `#9A948C` | Tertiary text, placeholders, and inactive navigation |
@@ -27,19 +28,29 @@ RoastLogger uses a warm, earth-toned palette. Colours are defined as CSS custom 
 
 The browser favicon (`static/img/favicon.svg`) uses the Material `local_cafe` glyph filled with the light primary brown (`#6B5B4D`). It is hardcoded in the SVG because browser favicon rendering cannot reliably consume CSS variables or respond to app dark mode.
 
-**`--success-color`** is reserved for **positive confirmation of user action** (a fired event button) and the **RoR line** on the chart. It is not used for generic "success" toasts without prior user action.
+**`--success-color`** aliases the text-safe success role and is reserved for
+**positive confirmation of user action** (a fired event button) and the **RoR
+line** on the chart. `--ok` remains available for non-text fills and borders.
+It is not used for generic "success" toasts without prior user action.
 
-**`--danger-color`** is reserved for **destructive or irreversible** actions (End Roast, Archive Bean, Delete) and for the **First Crack badge** on the live screen. Using it anywhere else dilutes the signal.
+**`--danger-color`** aliases `--err-text` and is reserved for **destructive or
+irreversible** actions (End Roast, Archive Bean, Delete) and for the **First
+Crack badge** on the live screen. `--err` remains the decorative fill and
+border role. Using danger anywhere else dilutes the signal.
 
 **Bean accent colours** are user-defined per bean (stored in `bean.color`) and flow through to the bean color indicator dot, the left accent band on Strip labels, corner dots on Washi labels, etc. They are independent of the palette above.
 
 ### Text and decorative contrast
 
-`--txt2` and `--txt3` are both readable text colors. Each reaches WCAG AA on
+`--txt2`, `--txt3`, and the `--*-text` semantic roles are readable text
+colors. Each reaches WCAG AA on
 the documented page, primary surface, and secondary surface backgrounds in
-light and dark modes. Use `--bd` and `--bd2` for intentionally faint borders,
-rules, and other non-text decoration. Do not lower visible text contrast to
-make a separator quieter.
+light and dark modes, including semantic tinted backgrounds. Filled buttons
+pair the stronger text-safe semantic fill with `--on-*` foreground tokens so
+their labels remain readable in either theme. Use `--bd`, `--bd2`, and the
+base semantic tokens for intentionally faint borders, rules, and other
+non-text decoration. Do not lower visible text contrast to make a separator
+quieter.
 
 ## Warm-Earth Rationale
 

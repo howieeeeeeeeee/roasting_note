@@ -66,7 +66,7 @@ body.fullscreen-mode .live-topbar { display: none; }
   gap: var(--space-2);
 }
 .fs-unit { font-size: 1rem; color: var(--txt2); }
-.fs-fc-badge { font-size: 0.95rem; color: var(--err); margin-left: var(--space-2); }
+.fs-fc-badge { font-size: 0.95rem; color: var(--err-text); margin-left: var(--space-2); }
 .fs-sensor-status { font-size: var(--text-xxs); }
 .fs-action-btn { min-height: 54px; padding: 0.7rem 1.5rem; font-size: var(--text-md); }
 .exit-fullscreen-btn {
