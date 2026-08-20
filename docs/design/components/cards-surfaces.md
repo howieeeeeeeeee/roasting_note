@@ -25,6 +25,7 @@ padding: 1.5rem to 2rem;
 | `.modal-content` | Modal body | variable (see form/modal patterns) |
 | `.surface-flat` | Static management section | `var(--manage-section-padding)` |
 | `.flat-section-group` | Several related static sections in one shell | One shared border with sparse internal dividers |
+| `.settings-sheet` | Viewport-bounded Settings surface | section-specific |
 
 ## Grid Layout
 
@@ -81,6 +82,19 @@ RoastLogger prefers quiet elevation with a border and low shadow for durable wor
 - Instrument panels sitting *inside* a card, where a subtle border helps them read as distinct sub-surfaces.
 
 Full-page forms should not put a card around other cards. The `.form` wrapper only constrains width; each `.form-section` is the visible surface.
+
+## Settings Side Sheet
+
+Settings is the one modal surface that uses a viewport edge as structural
+hierarchy. `.settings-sheet-overlay` aligns `.settings-sheet` to the right.
+The sheet is no wider than `560px`, fills `100dvh`, and uses a left border plus
+the modal shadow instead of a floating card margin. Below `768px`, it becomes a
+full-screen surface with no radius or side border.
+
+The title and section navigation occupy fixed grid rows. Only
+`.settings-sheet-body` scrolls, with contained overscroll, so the page and
+overlay remain stationary. Internal groups use one divider between related
+topics rather than nested cards.
 
 ## Dark Mode
 

@@ -25,7 +25,10 @@ cleanup step, or implicit consequence of changing database mode.
 
 ## Settings Guarded Flow
 
-Both Settings direction buttons begin with the existing audited, non-mutating
+The complete guarded browser flow lives in the Data section of the responsive
+[Settings sheet](../design/screens/settings.md). Switching sections or closing
+the sheet changes presentation only and never cancels, clears, or advances a
+run. Both direction buttons begin with the existing audited, non-mutating
 preflight:
 
 ```text
@@ -54,7 +57,7 @@ first backup attempt. A wrong first token, competing request, application
 restart, or worker loss requires a fresh preview and causes no backup or
 applied-attempt audit. Once backup begins, an exclusive filesystem claim and
 atomic sanitized run state are written under `db_backup/database_mirrors/`.
-An awaiting-apply run survives modal closure, page reload, and application
+An awaiting-apply run survives sheet closure, page reload, and application
 restart. Only one claimed run may proceed across application processes;
 another preview loses cleanly at the claim and cannot overwrite the active run.
 

@@ -24,7 +24,7 @@ design/
 │   ├── live-roasting.md       Top-bar layout for the live roast view
 │   ├── label-creator.md       Modal canvas editor for bean labels
 │   ├── sticker-sheet.md       Modal editor for US-4 sticker sheets
-│   ├── settings.md            Settings modal and sync preflight states
+│   ├── settings.md            Responsive Settings sheet and guarded states
 │   ├── roast-detail.md        Read-only roast view
 │   └── bean-inventory.md      Beans list + bean detail
 └── patterns/                  Recurring design systems

@@ -152,22 +152,22 @@ def test_audit_write_failure_is_prominent_and_returns_server_error(
 
     assert response.status_code == 500
     assert response.json["audit_recorded"] is False
-    template = Path("templates/base.html").read_text(encoding="utf-8")
-    assert "'Audit failure'" in template
-    assert "preflight audit record was not persisted" in template
+    script = Path("static/js/settings-sheet.js").read_text(encoding="utf-8")
+    assert '"Audit failure"' in script
+    assert "preflight audit record was not persisted" in script
 
 
 def test_settings_markup_prevents_overlapping_preflight_requests():
-    template = Path("templates/base.html").read_text(encoding="utf-8")
-    function = template.split("async function syncData(direction)", 1)[1]
-    function = function.split("// Toast Notifications", 1)[0]
+    script = Path("static/js/settings-sheet.js").read_text(encoding="utf-8")
+    function = script.split("async function syncData(direction)", 1)[1]
+    function = function.split("async function runSyncBackup", 1)[0]
 
     assert "if (syncRequestActive || syncRunActive)" in function
     assert "setSyncPreviewButtons(true, true)" in function
     assert "setSyncPreviewButtons(false)" in function
     assert "`/api/sync/preflight/${direction}`" in function
-    assert "onlineButton.disabled = disabled" in template
-    assert "localButton.disabled = disabled" in template
+    assert "onlineButton.disabled = disabled" in script
+    assert "localButton.disabled = disabled" in script
 
 
 def test_loopback_json_same_origin_flow_requires_both_exact_tokens(tmp_path):
@@ -357,7 +357,7 @@ def test_recovery_failures_keep_settings_sync_blocked(tmp_path, corruption):
         for database in (connections.online_db, connections.local_db)
         for collection in database.collections.values()
     )
-    template = Path("templates/base.html").read_text(encoding="utf-8")
-    assert "data.stage !== 'recovery_required'" in template
-    assert "syncRunActive = true" in template
-    assert "setSyncPreviewButtons(true)" in template
+    script = Path("static/js/settings-sheet.js").read_text(encoding="utf-8")
+    assert 'data.stage !== "recovery_required"' in script
+    assert "syncRunActive = true" in script
+    assert "setSyncPreviewButtons(true)" in script

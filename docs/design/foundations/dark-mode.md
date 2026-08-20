@@ -109,6 +109,19 @@ To make a new UI component automatically support dark mode:
    }
    ```
 
+## Settings Sheet
+
+The Settings sheet consumes only semantic surface, border, text, primary,
+success, and error tokens. It therefore keeps the same section hierarchy in
+both themes without a component-specific palette. Selected tabs, focus rings,
+sync results, and Danger Zone severity must remain distinguishable without
+relying on color alone: selection also has an underline, focus has an outline,
+and statuses retain visible text labels.
+
+Check the sheet at both standard and short viewports. The backdrop may darken
+the page, but it must not change the sheet's theme or reduce text and focus
+contrast.
+
 ## Palette Rationale
 
 The dark palette is **warm**, not cold. Pure `#000000` backgrounds feel sterile; `#0E0D0B` has a faint warm undertone that matches the coffee/roastery aesthetic. Primary accents shift from muted brown (`#6B5B4D`) to warm tan (`#C9A87A`) — still earthy, but readable against dark surfaces without being garish.

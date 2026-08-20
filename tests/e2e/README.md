@@ -165,6 +165,42 @@ Use Codex's in-app browser, not a standalone browser driver.
    Record screenshots, motion observations, history results, console errors,
    failed network requests, and cleanup in the run summary.
 
+### Quiet Compact Settings Sheet
+
+Use run ID `rn-0029-settings-sheet-a`. Start the harness with `--sync-fake`
+only when exercising the guarded phase states. Do not perform a live mirror or
+either destructive cleanup.
+
+1. At `1440x900`, focus the Settings gear and open it with Enter. Confirm a
+   right-aligned sheet no wider than `560px`, no page scroll, initial focus on
+   the remembered section tab, and no console error.
+2. Use Right Arrow, Left Arrow, Home, and End across Sensor, Data, and Advanced.
+   Confirm one selected tab and panel at a time, and confirm hidden panels are
+   absent from the Tab order.
+3. Tab forward and backward through each visible panel. Confirm focus remains
+   inside the sheet. Close with Escape and the close button in separate passes;
+   each must return focus to the Settings gear.
+4. In Sensor, load and save the URL, test a virtual-sensor success and failure,
+   and confirm each visible status is announced. Do not change route payloads.
+5. In Data, verify the local E2E label, disabled Online option, ordinary
+   fail-closed preflight, then every explicitly simulated backup, apply,
+   cancel, restore, terminal, and recovery state from the guarded workflow
+   below. Switch sections and close/reopen during a pending or restored state;
+   state must not clear, duplicate, or move focus into a hidden panel.
+6. In Advanced, confirm Danger Zone starts collapsed. Expand it, cancel both
+   existing confirmation paths, and verify no cleanup request is sent.
+7. Repeat the shell, focus, section, and overflow checks at `1280x640`,
+   `1024x768`, and `390x844`. At mobile width, confirm full-screen layout. In
+   short viewports, only the sheet body may scroll while title and tabs remain
+   available.
+8. Repeat in light and dark modes, then emulate reduced motion and confirm the
+   sheet opens without opacity or translation animation.
+
+Save Sensor, Data, expanded-result, Advanced-collapsed, confirmation-cancelled,
+short-height, mobile, and dark-mode screenshots. Record focus order and return,
+overflow measurements, console errors, failed requests, zero applied-mirror
+activity, and cleanup results in the run summary.
+
 ### Guarded Local Settings Sync
 
 First start an ordinary run without `--sync-fake` using run ID

@@ -56,6 +56,22 @@ All buttons use `inline-flex` so a Material icon and a label can sit on the same
 
 Material icons inside sit at `1.125rem`. Danger variant (`.btn-icon-danger:hover`) uses a light red background.
 
+### Settings Controls
+
+The Settings gear declares `aria-haspopup="dialog"`, names the sheet with
+`aria-controls`, and reflects open state with `aria-expanded`. The
+`.settings-close` control is a real button with a visible Material close icon,
+an accessible **Close Settings** name, and a fixed `44px` target.
+
+The Sensor, Data, and Advanced controls use `.settings-tab`, not pill buttons.
+They form a single-select tablist with one selected tab and one keyboard tab
+stop. The selected state uses a two-pixel primary underline. Arrow keys, Home,
+and End change the selected section. All Settings actions retain at least a
+`44px` target, a non-wrapping label, and a visible `:focus-visible` outline.
+
+See [Settings sheet](../screens/settings.md) for the complete focus and section
+behavior.
+
 ## States
 
 - **Hover**: default `.btn` shifts its border to `--primary-color` and its background to `--bg-color`. Variant buttons darken their fill (see `.btn-primary:hover`, `.btn-success:hover`). `.btn-success:hover` uses `!important`-free hardcoded darker value `#5d7d61` with a comment explaining why it must beat the base `.btn:hover` border.

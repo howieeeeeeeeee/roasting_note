@@ -45,6 +45,7 @@ Management layouts use `--manage-gap`, `--manage-section-gap`, and
 | `.nav-container` | `1440px` | Navbar inner wrapper, fixed at 56px high |
 | `.container` | `1440px`, token-based padding | Main content wrapper on most pages |
 | `.live-roast-container` | `100%` | Live screen takes full viewport width — no horizontal max |
+| `.settings-sheet` | `560px` desktop, `100%` mobile | Fixed right sheet with internal scrolling |
 
 ## Grids
 
@@ -69,6 +70,16 @@ RoastLogger uses a small, pragmatic set of media queries. Keep new CSS aligned w
 | `@media print` | Print styles (reviews, roast detail) |
 
 Safe-area insets (`env(safe-area-inset-*)`) are applied on fullscreen panels for notched devices.
+
+## Settings Viewport Contract
+
+Settings uses `height: 100dvh` and three grid rows: title, section navigation,
+and `minmax(0, 1fr)` content. Body scrolling is locked while it is open. Only
+the content row has `overflow-y: auto` and `overscroll-behavior: contain`.
+
+At heights up to `680px`, the title row and section padding tighten while
+interactive controls remain at least `44px`. Below `768px` wide, the sheet is
+full-screen and multi-action rows collapse to one column.
 
 ## Surface Pattern
 

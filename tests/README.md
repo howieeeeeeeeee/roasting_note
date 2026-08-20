@@ -118,6 +118,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
 | `test_reviews_api.py` | Review CRUD and validation |
 | `test_roasts_api.py` | Roast lifecycle, events, temperature, stock, and weight loss |
+| `test_settings_sheet_contracts.py` | Settings dialog semantics, section tabs, focus/state behavior, and responsive sheet geometry |
 | `test_sync_api.py` | Timestamp-aware document synchronization, including embedded bean stock history |
 | `test_temperature_api.py` | Temperature endpoints, timeouts, settings, and RoR |
 | `test_ticket_system.py` | Tracker validation, policy, generation, and dashboard |
@@ -234,6 +235,7 @@ uv run pytest \
   tests/test_sync_api.py \
   tests/test_app_factory.py \
   tests/test_e2e_runtime.py \
+  tests/test_settings_sheet_contracts.py \
   tests/test_api_contracts.py \
   tests/test_file_size_policy.py
 ```
@@ -249,6 +251,10 @@ uv run pytest \
   representative retry/fault/recovery behavior through RoastLogger APIs.
 - `test_api_contracts.py` covers label assets/preferences, database settings,
   rendered pages, malformed identifiers, missing records, and payload errors.
+- `test_settings_sheet_contracts.py` locks the rendered dialog/tab
+  relationships, session section restoration, focus containment and return,
+  hidden-panel exclusion, body scroll lock, viewport geometry, mobile
+  full-screen fallback, and reduced-motion contract.
 - `tests/e2e/README.md` is the Codex in-app-browser runbook.
 
 Start and cleanup commands:
