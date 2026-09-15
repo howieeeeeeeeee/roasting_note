@@ -1,0 +1,115 @@
+{
+  "DEVICE": "howie-macbook-pro",
+  "destination": {
+    "database": "roastlogger",
+    "host": "cluster0.ni3d51g.mongodb.net",
+    "role": "online"
+  },
+  "direction": "local-to-online",
+  "event": "sync_button_clicked",
+  "git": {
+    "branch": "improve/rn-0030-click-sync-forecast",
+    "commit": "4c18687e173f586345cc9f2c69cc9d04a9b0e316",
+    "dirty": true
+  },
+  "preflight": {
+    "failure": null,
+    "plan": {
+      "audit_path": "/Users/howieee/Personal/roasting_note/docs/audit_history/database_mirrors/2026/08/20260820T194132Z__howie-macbook-pro__local-to-online__20260820T194132Z-161259f3.json",
+      "backup": {
+        "collections": [
+          "beans",
+          "roasts"
+        ],
+        "counts": {
+          "beans": 13,
+          "roasts": 53
+        },
+        "path": "/Users/howieee/Personal/roasting_note/db_backup/database_mirrors/online/roastlogger/20260820T194132Z__20260820T194132Z-161259f3",
+        "scope": "complete_destination_database"
+      },
+      "batch_size": 500,
+      "cli_command": "uv run python scripts/sync_database.py --direction local-to-online",
+      "destination": {
+        "database": "roastlogger",
+        "host": "cluster0.ni3d51g.mongodb.net",
+        "role": "online"
+      },
+      "destination_counts": {
+        "beans": 13,
+        "roasts": 53
+      },
+      "device": "howie-macbook-pro",
+      "direction": "local-to-online",
+      "forecast": {
+        "aggregate": {
+          "added": 0,
+          "conflicts": 0,
+          "destination_after": 66,
+          "destination_documents": 66,
+          "destination_only": 24,
+          "source_documents": 42,
+          "unchanged": 39,
+          "updated": 3,
+          "will_change": 3,
+          "will_stay_unchanged": 63
+        },
+        "collections": {
+          "beans": {
+            "added": 0,
+            "conflicts": 0,
+            "destination_after": 13,
+            "destination_documents": 13,
+            "destination_only": 0,
+            "source_documents": 13,
+            "unchanged": 10,
+            "updated": 3,
+            "will_change": 3,
+            "will_stay_unchanged": 10
+          },
+          "roasts": {
+            "added": 0,
+            "conflicts": 0,
+            "destination_after": 53,
+            "destination_documents": 53,
+            "destination_only": 24,
+            "source_documents": 29,
+            "unchanged": 29,
+            "updated": 0,
+            "will_change": 0,
+            "will_stay_unchanged": 53
+          }
+        }
+      },
+      "requested_collections": [
+        "beans",
+        "roasts"
+      ],
+      "resolved_collections": [
+        "beans",
+        "roasts"
+      ],
+      "run_id": "20260820T194132Z-161259f3",
+      "schema_version": 1,
+      "source": {
+        "database": "roastlogger",
+        "host": "localhost:27017",
+        "role": "local"
+      },
+      "source_counts": {
+        "beans": 13,
+        "roasts": 29
+      }
+    },
+    "status": "success"
+  },
+  "run_id": "20260820T194132Z-161259f3",
+  "schema_version": 1,
+  "source": {
+    "database": "roastlogger",
+    "host": "localhost:27017",
+    "role": "local"
+  },
+  "timestamp": "2026-08-20T19:41:32.232968Z",
+  "trigger": "settings_ui"
+}

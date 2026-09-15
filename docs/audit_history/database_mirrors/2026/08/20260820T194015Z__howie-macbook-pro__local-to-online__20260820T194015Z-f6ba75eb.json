@@ -1,0 +1,137 @@
+{
+  "DEVICE": "howie-macbook-pro",
+  "backup": {
+    "collection_count": 2,
+    "collections": [
+      {
+        "bytes": 17427,
+        "documents": 13,
+        "filename": "YmVhbnM.jsonl",
+        "name": "beans",
+        "sha256": "8074c6746b2c587f20ca6210512a3ee50ccfa98b5eb8b91a548e4d50f6e2516d"
+      },
+      {
+        "bytes": 1739960,
+        "documents": 53,
+        "filename": "cm9hc3Rz.jsonl",
+        "name": "roasts",
+        "sha256": "52201e8635d82b1c948381975fd6bcc32454f3d77bd0eff5cfab254b1f844cb3"
+      }
+    ],
+    "document_count": 66,
+    "manifest_path": "/Users/howieee/Personal/roasting_note/db_backup/database_mirrors/online/roastlogger/20260820T194015Z__20260820T194015Z-f6ba75eb/manifest.json",
+    "manifest_sha256": "2e6f41d352db22cf713c2cde33506af4ff3c40d3960ba15541c0194600584be0",
+    "path": "/Users/howieee/Personal/roasting_note/db_backup/database_mirrors/online/roastlogger/20260820T194015Z__20260820T194015Z-f6ba75eb",
+    "status": "complete"
+  },
+  "batch_size": 500,
+  "destination": {
+    "database": "roastlogger",
+    "host": "cluster0.ni3d51g.mongodb.net",
+    "role": "online"
+  },
+  "direction": "local-to-online",
+  "duration_seconds": 13.093,
+  "ended_at": "2026-08-20T19:40:38.390811Z",
+  "git": {
+    "branch": "improve/rn-0030-click-sync-forecast",
+    "commit": "4c18687e173f586345cc9f2c69cc9d04a9b0e316",
+    "dirty": true
+  },
+  "preflight": {
+    "destination_counts": {
+      "beans": 13,
+      "roasts": 53
+    },
+    "forecast": {
+      "aggregate": {
+        "added": 0,
+        "conflicts": 0,
+        "destination_after": 66,
+        "destination_documents": 66,
+        "destination_only": 24,
+        "source_documents": 42,
+        "unchanged": 41,
+        "updated": 1,
+        "will_change": 1,
+        "will_stay_unchanged": 65
+      },
+      "collections": {
+        "beans": {
+          "added": 0,
+          "conflicts": 0,
+          "destination_after": 13,
+          "destination_documents": 13,
+          "destination_only": 0,
+          "source_documents": 13,
+          "unchanged": 12,
+          "updated": 1,
+          "will_change": 1,
+          "will_stay_unchanged": 12
+        },
+        "roasts": {
+          "added": 0,
+          "conflicts": 0,
+          "destination_after": 53,
+          "destination_documents": 53,
+          "destination_only": 24,
+          "source_documents": 29,
+          "unchanged": 29,
+          "updated": 0,
+          "will_change": 0,
+          "will_stay_unchanged": 53
+        }
+      }
+    },
+    "source_counts": {
+      "beans": 13,
+      "roasts": 29
+    }
+  },
+  "requested_collections": [
+    "beans",
+    "roasts"
+  ],
+  "resolved_collections": [
+    "beans",
+    "roasts"
+  ],
+  "run_id": "20260820T194015Z-f6ba75eb",
+  "schema_version": 1,
+  "source": {
+    "database": "roastlogger",
+    "host": "localhost:27017",
+    "role": "local"
+  },
+  "started_at": "2026-08-20T19:40:25.297486Z",
+  "status": "success",
+  "sync": {
+    "aggregate": {
+      "added": 0,
+      "conflicts": 0,
+      "skipped": 41,
+      "updated": 1
+    },
+    "collections": {
+      "beans": {
+        "added": 0,
+        "conflict_ids": [],
+        "conflicts": 0,
+        "post_run_count": 13,
+        "skipped": 12,
+        "updated": 1
+      },
+      "roasts": {
+        "added": 0,
+        "conflict_ids": [],
+        "conflicts": 0,
+        "post_run_count": 53,
+        "skipped": 29,
+        "updated": 0
+      }
+    },
+    "verified": true
+  },
+  "sync_mode": "timestamp_aware",
+  "trigger": "settings_ui"
+}
