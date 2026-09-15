@@ -129,26 +129,26 @@ and BSON backup utilities where practical; do not call a mirror to migrate.
 
 ## Acceptance Criteria
 
-- [ ] Two or more purchases share one bean identity and retain the existing
+- [x] Two or more purchases share one bean identity and retain the existing
   profile, label, and roast history; users can add and correct purchase rows.
-- [ ] Date/weight/total-price history, latest date, cumulative weight/cost, and
+- [x] Date/weight/total-price history, latest date, cumulative weight/cost, and
   weighted unit-price summaries follow the rules above after reload and sorting.
-- [ ] A 1000g purchase, 200g started roast, and 500g repurchase leave 1300g;
+- [x] A 1000g purchase, 200g started roast, and 500g repurchase leave 1300g;
   correcting the repurchase to 600g leaves 1400g; backdating changes neither
   consumption nor which later purchase supplies the latest date.
-- [ ] Draft/manual completion, roast weight edits, equal-weight bean transfer,
+- [x] Draft/manual completion, roast weight edits, equal-weight bean transfer,
   archive/repeat archive, zeroing, manual correction, and purchase retries
   preserve the documented inventory relationship and signed balances.
-- [ ] Legacy migration preserves every original stock balance and all unrelated
+- [x] Legacy migration preserves every original stock balance and all unrelated
   bean/roast data; its second run performs no writes. Invalid records are
   reported and not silently discarded or converted into fake purchases.
-- [ ] The user's local records are backed up, migrated, and verified; the user
+- [x] The user's local records are backed up, migrated, and verified; the user
   can subsequently enter or correct purchases themselves.
-- [ ] Embedded purchases, Decimal128 prices, adjustments, and summaries survive
+- [x] Embedded purchases, Decimal128 prices, adjustments, and summaries survive
   sync insert/update in fixtures; a configured local-to-online dry run and
   guarded operator handoff are recorded without applying a remote mirror.
 - [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
@@ -209,30 +209,84 @@ and BSON backup utilities where practical; do not call a mirror to migrate.
   bean update, 65 unchanged destination documents, zero timestamp conflicts,
   and 24 destination-only roasts. This is a pre-migration baseline, not proof
   that the new schema is already implemented or synchronized.
-- Local inspection was read-only and returned counts only. No purchase
-  migration or applied mirror has run for this ticket.
+- Local inspection was read-only and returned counts only. At planning time no purchase
+  migration or applied mirror had run for this ticket; delivery evidence follows.
 
-## Implementation evidence (in progress)
+## Implementation and local delivery evidence
 
 - Implemented embedded purchase forms/history, Decimal summaries, conditional
   bean edits, recorded stock corrections, stock-preserving local migration,
   and directly affected roast start/transfer/archive accounting.
 - Full automated suite: `LOCAL_DB_NAME=roastlogger_test_rn0031 uv run pytest -q`
   passed **236 tests** on 2026-09-15. Focused regression suite previously passed
-  129 tests. The fake sync-route fixture now pins its fake database name so
-  isolated test runs cannot redirect it to a different fake database.
-- JavaScript syntax, Python compilation, and `git diff --check` passed.
-- Local migration preview: **13 eligible**, **0 invalid**, **3 opening
-  adjustments**. This was read-only; production local conversion has not run.
-- Full browser run `rn-0031-purchases-a` is in progress. Initial 1000g purchase,
-  200g roast start (800g remaining), event logging, sensor fault, and recovery
-  were verified. Native end-roast confirmation stalled browser control; the
-  remaining interaction, responsive, and cleanup evidence is not yet complete.
-- Pre-implementation local-to-online preview
-  `20260915T224438Z-332da050` succeeded without writes. It forecast one bean
-  update and zero timestamp conflicts. No remote mirror has been applied.
-- No `db_backup/` payload is tracked. Production migration and the fresh
-  post-migration sync preview remain delivery gates before resolution.
+  129 tests. A final full-suite rerun after local delivery also passed all
+  **236 tests**. JavaScript syntax, Python compilation, and `git diff --check`
+  passed. The fake sync-route fixture pins its fake database name so isolated
+  test runs cannot redirect it to a different fake database.
+- Browser run `rn-0031-purchases-a` verified creation (1000g), a 200g roast
+  start (800g), adding a backdated 500g purchase (1300g), correcting it to 600g
+  (1400g), latest-date ordering, a manual correction to 1350g with its -50g
+  history, native invalid-weight rejection, and a stale form's inline 409
+  with its 700g input retained. Live sensor/event, offline/fault, and recovery
+  checks also passed. Desktop and narrow form evidence is in ignored artifacts.
+- Browser execution remains **incomplete**: the in-app browser's native
+  confirmation handling stalled at End Roast and populated purchase removal.
+  The dialog API reported no active dialog while input commands timed out.
+  Remaining removal/cancellation, zero/restock/filtering, end/save/archive,
+  sorting, and full responsive/dark checks are not claimed as passed.
+  Full-page narrow screenshots also have browser capture artifacts; a viewport
+  screenshot shows the stacked purchase controls, but is not full responsive
+  sign-off. No confirmation behavior was bypassed or changed to accommodate
+  automation. RN-0031 stays in progress for this verification limitation.
+- Continuation run `rn-0031-purchases-b` prepared isolated fixtures after the
+  user dismissed the first popup. The next removal/cancel popup reproduced the
+  tool block; no remaining workflow pass is claimed. Its runtime was stopped
+  and cleanup removed **1 bean / 1 roast**, with **0 remaining records**.
+  Follow-up **RN-0032** tracks the user-requested removal of native confirmation
+  popups. The code is delivered with this verification limitation recorded.
+- The original isolated runtime was stopped and scoped cleanup passed: **1 bean,
+  1 roast, and 2 temperature logs removed; 0 run records remain**. Evidence
+  and logs remain ignored under `tests/e2e/artifacts/rn-0031-purchases-a/`.
+- Following the user's explicit additional inventory-entry request, local
+  delivery proceeded with passing automated migration/accounting coverage,
+  browser-verified purchase calculations, and verified backup rather than
+  waiting for the confirmation-tool limitation. This is a recorded exception
+  to the planned browser-before-local-delivery ordering, not a browser pass.
+- Local application writes were paused during backup, migration, and import,
+  then resumed. Migration run **`20260915T232137Z-1c0e2309`** verified a complete
+  **2-collection / 47-document** local backup, migrated **13 beans**, retained
+  **all 13 stock balances**, and reported **0 invalid / 0 conflicts** with
+  **3 opening adjustments**. Profiles, notes, corrections, and bean identities
+  were checked for parity. An immediate second applied call performed **0
+  writes**, with all 13 documents and timestamps unchanged.
+- Backup and ignored result records are under
+  `db_backup/database_mirrors/local--howie-macbook-pro/roastlogger/20260915T232137Z__20260915T232137Z-1c0e2309/`.
+  Manifest SHA-256:
+  `62869f9817fec2f36ede82df886c18fe5e1d562055711e54beb3fed64a78d3f5`.
+  No raw backup, manifest, receipt, or purchase import result is committed.
+- The requested receipt subsequently created **2 beans** and appended **1
+  purchase** to an existing bean, increasing total stock by **2000g**. Purchase
+  date was supplied by the user. Readback verified each balance and the
+  reconciliation equation; the existing purchase row and unrelated beans
+  remained unchanged. A final migration preview reports **15 already migrated,
+  0 eligible, 0 invalid, 0 conflicts**. The production app is healthy in local
+  mode. No remote database write was made.
+- Fresh local-to-online dry run **`20260915T232150Z-d3dc9437`** passed:
+  **2 bean additions, 13 bean updates, 4 roast additions, 0 timestamp conflicts**.
+  It retains 24 destination-only roasts; the other 29 roasts are unchanged.
+  The dry run creates no remote backup or audit despite displaying planned
+  paths. To sync only bean inventory, use the guarded command below after
+  compatible code is deployed online; review a fresh preview and complete both
+  confirmations personally. Whole-bean timestamps apply, with no row merging.
+
+```bash
+uv run python scripts/sync_database.py --direction local-to-online --collection beans --dry-run
+uv run python scripts/sync_database.py --direction local-to-online --collection beans
+```
+
+- `git ls-files db_backup 'db_backup/**'` returned no files. Applied remote
+  synchronization remains outside this delivery and requires the separately
+  authorized guarded flow.
 
 ## Open Questions
 
