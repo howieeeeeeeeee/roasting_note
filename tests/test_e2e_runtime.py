@@ -210,6 +210,7 @@ def test_e2e_start_controls_sync_fake_without_parent_env_leak(
         return CompletedProcess()
 
     monkeypatch.setenv("E2E_SYNC_FAKE", "1")
+    monkeypatch.setenv("E2E_CLEANUP_FAKE", "1")
     monkeypatch.setattr(
         e2e_manage,
         "_paths",
@@ -234,11 +235,13 @@ def test_e2e_start_controls_sync_fake_without_parent_env_leak(
             app_port=5011,
             sensor_port=5012,
             sync_fake=sync_fake,
+            cleanup_fake=sync_fake,
         )
     )
 
     assert len(environments) == 2
     assert all(("E2E_SYNC_FAKE" in value) is expected for value in environments)
+    assert all(("E2E_CLEANUP_FAKE" in value) is expected for value in environments)
     if expected:
         assert all(value["E2E_SYNC_FAKE"] == "1" for value in environments)
 

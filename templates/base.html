@@ -203,7 +203,7 @@
                                         Delete test data (documents marked with test_data flag) from the local database.
                                     </p>
                                     <button class="btn btn-secondary" type="button" id="cleanTestDataBtn"
-                                        onclick="cleanTestData()">
+                                        onclick="showCleanupConfirmation('test')">
                                         <span class="material-icons" aria-hidden="true">science</span>
                                         Clean Up Test Data
                                     </button>
@@ -214,10 +214,20 @@
                                         This will permanently delete ALL beans and roasts from your local database.
                                     </p>
                                     <button class="btn btn-danger" type="button" id="cleanLocalDbBtn"
-                                        onclick="cleanLocalDb()">
+                                        onclick="showCleanupConfirmation('local')">
                                         <span class="material-icons" aria-hidden="true">delete_forever</span>
                                         Clean Up Local DB
                                     </button>
+                                </div>
+                            </div>
+                            <div id="cleanupConfirmation" class="settings-danger-body" role="group"
+                                aria-label="Confirm local data deletion" hidden>
+                                <p id="cleanupScope" class="settings-hint"></p>
+                                <div class="sync-buttons">
+                                    <button id="cleanupApplyButton" type="button" class="btn btn-danger"
+                                        onclick="applyCleanup()">Delete</button>
+                                    <button id="cleanupCancelButton" type="button" class="btn btn-secondary"
+                                        onclick="cancelCleanup()">Cancel deletion</button>
                                 </div>
                             </div>
                         </details>

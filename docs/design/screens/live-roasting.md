@@ -59,7 +59,10 @@ Draft roasts expose a header action labeled **Set to Completed**. It uses the
 shared secondary button recipe and sits beside **Fullscreen**, outside the live
 top-bar controls so the roasting interaction remains unchanged once a roast has
 started. The action is hidden for started and completed roasts, and the
-confirmation copy states that only lifecycle metadata changes.
+button help explains that no live roast or stock change is recorded. The action
+runs directly, as do Start and End Roast. Pending controls disable repeat
+actions; errors use the shared accessible toast region without interrupting
+browser input. The live page uses the single toast region supplied by the shell.
 
 ### Chart Area (`.live-chart-area`)
 

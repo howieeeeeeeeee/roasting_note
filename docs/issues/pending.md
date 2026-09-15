@@ -4,4 +4,4 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RN-0032 | [IMPROVEMENT] | High | ui | [Remove blocking browser confirmation popups](./pending/RN-0032-remove-native-confirmations.md) | - | - | 2026-09-15 | - |
+| RN-0033 | [IMPROVEMENT] | High | ui | [Polish purchase entry and restore readable live-roast metrics](./pending/RN-0033-purchase-form-and-live-roast-polish.md) | - | - | 2026-09-15 | - |

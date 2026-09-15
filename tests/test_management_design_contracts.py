@@ -3,9 +3,26 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 
 MANAGEMENT_CSS = Path("static/css/screens/management.css")
+
+
+def test_application_actions_never_open_native_browser_popups():
+    sources = [*Path('templates').rglob('*.html'), *Path('static/js').rglob('*.js')]
+    offenders = [str(path) for path in sources if not path.name.endswith('.min.js')
+                 and re.search(r'\b(?:confirm|alert|prompt)\s*\(', path.read_text())]
+    assert offenders == [], f'Native popups block browser control: {offenders}'
+
+
+def test_review_deletion_and_failures_stay_in_the_page():
+    source = _template('roast_detail.html')
+    assert 'id="reviewDeleteConfirmation" role="group" aria-label="Delete this review" hidden' in source
+    assert 'onclick="setReviewDeleteOpen(false)"' in source
+    assert 'id="reviewError" class="status-error" role="alert" hidden' in source
+    assert 'button.disabled = cancel.disabled = true' in source
+    assert 'if (button.disabled || !currentReviewId) return' in source
 
 
 def _template(name: str) -> str:

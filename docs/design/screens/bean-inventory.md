@@ -87,8 +87,9 @@ becomes static for print.
 ### Repeated purchases
 
 Each purchase is a labeled fieldset. **Add purchase** appends a row and focuses
-its date. **Remove purchase** confirms the stock consequence when a row has
-values, removes it from the unsaved form, and focuses Add purchase. Every row
+its date. **Remove purchase** immediately removes the unsaved row and focuses
+Add purchase. The Inventory hint explains that saving subtracts the weight;
+Cancel leaves stored purchases untouched. Every row
 stacks at mobile widths. Blank dates/prices mean unknown; blank new rows can
 remain unused. Price labels explicitly say total price.
 
@@ -148,9 +149,10 @@ balance and has no automatic undo.
 
 - Render the menu only when the signed integer stock is non-zero, including a
   negative balance.
-- The confirmation names the bean and shows the signed transition from the
-  current balance to `0g`. It does not collect a note.
-- Cancellation closes the menu without a request.
+- Selecting the action applies the correction directly without a popup. The
+  signed current balance is visible on the page and the result is logged.
+- Archive is also a direct labelled action; its submit control disables while
+  navigation is pending.
 - While the request is active, disable the action. Success updates the stock
   badge, removes the empty More actions menu, prepends the history row, and
   shows a success toast. Failure preserves the visible state and shows an error

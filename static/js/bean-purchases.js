@@ -10,8 +10,6 @@
         const button = event.target.closest('.remove-purchase');
         if (!button) return;
         const row = button.closest('.purchase-row');
-        const hasValues = [...row.querySelectorAll('input')].some(input => input.value);
-        if (hasValues && !window.confirm('Remove this purchase? Saving will subtract its weight from stock.')) return;
         row.remove();
         document.getElementById('addPurchase').focus();
     });

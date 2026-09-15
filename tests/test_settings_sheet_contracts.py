@@ -39,6 +39,12 @@ def test_settings_sheet_markup_exposes_labeled_dialog_and_section_tabs(client):
     assert 'id="settingsActionStatus" role="status"' in html
     assert "modal-close" not in settings_html
     assert "&times;" not in settings_html
+    assert 'id="cleanupConfirmation"' in settings_html
+    assert 'aria-label="Confirm local data deletion" hidden' in settings_html
+    assert 'onclick="showCleanupConfirmation(\'test\')"' in settings_html
+    assert 'onclick="showCleanupConfirmation(\'local\')"' in settings_html
+    assert 'onclick="cancelCleanup()"' in settings_html
+    assert 'onclick="applyCleanup()"' in settings_html
 
 
 def test_settings_sheet_script_contains_complete_keyboard_and_state_cycle():

@@ -138,3 +138,11 @@ the old bean and deducts the new one even at equal weights. Archive restores
 consumption once. Drafts and manually completed drafts remain stock-neutral.
 See [Bean Management](./beans-management.md#stock-lifecycle) for purchase and
 correction accounting.
+
+## Nonblocking actions and errors
+
+Start, End Roast, and Set to Completed run directly from their labelled buttons.
+Pending controls reject duplicate clicks; failed requests re-enable retry and
+show errors in the shared accessible toast region. Completion's button help
+explains that it records no live roast or inventory consumption. Draft deletion
+and completed-roast Archive also run without native browser confirmation.

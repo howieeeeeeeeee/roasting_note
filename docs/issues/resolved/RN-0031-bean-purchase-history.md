@@ -2,10 +2,10 @@
 id: RN-0031
 title: Repeat bean purchases with preserved inventory and local migration
 type: feature
-status: in_progress
+status: resolved
 priority: high
 created: 2026-09-15
-resolved:
+resolved: 2026-09-15
 area: beans
 parent:
 decisions: []
@@ -147,7 +147,7 @@ and BSON backup utilities where practical; do not call a mirror to migrate.
 - [x] Embedded purchases, Decimal128 prices, adjustments, and summaries survive
   sync insert/update in fixtures; a configured local-to-online dry run and
   guarded operator handoff are recorded without applying a remote mirror.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
 - [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
@@ -157,7 +157,7 @@ and BSON backup utilities where practical; do not call a mirror to migrate.
 - Automated tests to add or update: `tests/test_beans_api.py` for array CRUD, input validation, atomic weight deltas, stale/repeated writes, summaries, manual corrections, and legacy compatibility; new `tests/test_bean_purchase_migration.py` for dry-run/no remote client, verified backup before writes, lossless BSON conversion, opening adjustment, invalid-record handling, conditional writes, and idempotency; `tests/test_roasts_api.py` for draft/start/edit/transfer/archive accounting and retries; `tests/test_api_contracts.py` for history, dates, price/stock sorting, remaining meters, signed balances, and empty states; `tests/test_sync_api.py` for complete embedded-array/adjustment round trips and unchanged timestamp conflict rules; `tests/test_management_design_contracts.py` for revised form contracts; `tests/test_database_sync_routes.py` for environment-independent fake database selection. Update `tests/test_app_factory.py` only if the existing form routes cannot be reused.
 - Browser E2E scenarios to add or update: `tests/e2e/README.md` -> `Bean`, add `Repeat purchases and inventory reconciliation`, update `Bean Stock Remaining Meter (Targeted)`, and run the complete affected `Live Roast` workflow. Create one bean, start/end a 200g roast, repurchase, edit/backdate/remove a purchase, correct stock, zero/restock, reload, sort/filter, and archive the started roast; verify exact balances/history at each step. Exercise invalid input and stale submission with no data loss. Verify at desktop/mobile widths and preserve the isolated run markers.
 - Required commands: `uv run pytest tests/test_beans_api.py tests/test_bean_purchase_migration.py tests/test_roasts_api.py tests/test_api_contracts.py tests/test_sync_api.py tests/test_management_design_contracts.py tests/test_app_factory.py`; `uv run pytest`; `uv run python -m tests.e2e.manage start --run-id rn-0031-purchases-a`; `uv run python -m tests.e2e.manage cleanup --run-id rn-0031-purchases-a`; `uv run python scripts/migrate_bean_purchases.py --dry-run`; after verification and local backup, `uv run python scripts/migrate_bean_purchases.py --apply`, followed by its no-op dry run; `uv run python scripts/sync_database.py --direction local-to-online --dry-run`; `git ls-files db_backup 'db_backup/**'`; `uv run python scripts/generate_issues_index.py`; `uv run python scripts/generate_issues_index.py --check`.
-- Required browser evidence: Run ID `rn-0031-purchases-a`; screenshots of repeatable form, purchase history, latest-date/stock summaries and meter at desktop/mobile widths; exact balance assertions through purchases and roast lifecycle; invalid/stale form behavior; console and failed-network findings; run-scoped cleanup counts in ignored `tests/e2e/artifacts/rn-0031-purchases-a/summary.md`.
+- Required browser evidence: Run IDs `rn-0031-purchases-a` and completion run `rn-0032-confirmations-a`; screenshots of repeatable form, purchase history, latest-date/stock summaries and meter at desktop/mobile widths; exact balance assertions through purchases and roast lifecycle; invalid/stale form behavior; console and failed-network findings; run-scoped cleanup counts in their ignored artifact summaries.
 - Not applicable reason: None. Purchase editing changes critical inventory accounting across bean and roast workflows. Migration tests use fixtures or isolated local data; production migration is delivery, never a test or cleanup step.
 
 ## Documentation Impact
@@ -229,7 +229,7 @@ and BSON backup utilities where practical; do not call a mirror to migrate.
   history, native invalid-weight rejection, and a stale form's inline 409
   with its 700g input retained. Live sensor/event, offline/fault, and recovery
   checks also passed. Desktop and narrow form evidence is in ignored artifacts.
-- Browser execution remains **incomplete**: the in-app browser's native
+- At initial delivery browser execution was **incomplete**: the in-app browser's native
   confirmation handling stalled at End Roast and populated purchase removal.
   The dialog API reported no active dialog while input commands timed out.
   Remaining removal/cancellation, zero/restock/filtering, end/save/archive,
@@ -237,7 +237,7 @@ and BSON backup utilities where practical; do not call a mirror to migrate.
   Full-page narrow screenshots also have browser capture artifacts; a viewport
   screenshot shows the stacked purchase controls, but is not full responsive
   sign-off. No confirmation behavior was bypassed or changed to accommodate
-  automation. RN-0031 stays in progress for this verification limitation.
+  automation. RN-0031 remained in progress until the continuation below.
 - Continuation run `rn-0031-purchases-b` prepared isolated fixtures after the
   user dismissed the first popup. The next removal/cancel popup reproduced the
   tool block; no remaining workflow pass is claimed. Its runtime was stopped
@@ -287,6 +287,33 @@ uv run python scripts/sync_database.py --direction local-to-online --collection 
 - `git ls-files db_backup 'db_backup/**'` returned no files. Applied remote
   synchronization remains outside this delivery and requires the separately
   authorized guarded flow.
+
+## Resolution
+
+- The implementation, local migration, receipt entry, backup, and configured
+  sync preview were delivered as recorded above. The initial automated suite
+  passed 236 tests; RN-0032's final full suite passed **242 tests**, including
+  the purchase, migration, lifecycle, and sync regression coverage.
+- RN-0032 removed the popup blocker and completed browser verification in
+  **`rn-0032-confirmations-a`**. Stock followed **1000 -> 800 -> 1300 -> 1400 ->
+  1350 -> 750 -> 0 -> 500 -> 700g** through start, repurchase, correction,
+  manual adjustment, removal, zeroing, restock, and roast archive. Cancelling
+  the unsaved removal retained the saved history and 1350g balance.
+- Verified latest-date/history ordering, stock and purchase-date sorting,
+  out-of-stock filtering, a cumulative meter of **46.67%** (700/1500), live
+  end/save/archive, stock-neutral manual completion, and desktop plus actual
+  390 CSS-pixel dark form/Settings views. Earlier invalid-input and stale-form
+  checks remain recorded in `rn-0031-purchases-a`; accounting retry cases also
+  remain covered by automated tests.
+- Final browser console snapshot was empty. Handled concurrent setup/start
+  409s and E2E-disabled sync responses are documented in the run summary;
+  no popup blocked control. The stopped runtime's scoped cleanup removed
+  **2 beans / 3 roasts / 2 temperature logs**, leaving **0 run records**.
+- All declared feature, architecture, design, migration/sync, and testing docs
+  are updated across the delivery and RN-0032 follow-up. The browser checklist
+  now describes direct actions and cancelling the unsaved purchase form.
+  Backup payloads remain untracked. No applied remote mirror was performed
+  by this implementation or browser run.
 
 ## Open Questions
 

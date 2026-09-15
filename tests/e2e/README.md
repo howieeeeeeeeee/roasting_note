@@ -188,7 +188,7 @@ either destructive cleanup.
    below. Switch sections and close/reopen during a pending or restored state;
    state must not clear, duplicate, or move focus into a hidden panel.
 6. In Advanced, confirm Danger Zone starts collapsed. Expand it, cancel both
-   existing confirmation paths, and verify no cleanup request is sent.
+   in-page Delete/Cancel groups, and verify no cleanup request is sent.
 7. Repeat the shell, focus, section, and overflow checks at `1280x640`,
    `1024x768`, and `390x844`. At mobile width, confirm full-screen layout. In
    short viewports, only the sheet body may scroll while title and tabs remain
@@ -288,9 +288,9 @@ Then start `rn-0030-sync-summary-a` with `--sync-fake`:
 3. Confirm the bean appears in inventory and its detail page.
 4. Edit several fields and save.
 5. Reopen detail and confirm the changes.
-6. Open **More actions**, choose **Set stock to zero**, cancel the confirmation,
-   and confirm no request was sent and neither stock nor history changed.
-7. Repeat and confirm the action. Verify exactly one successful request, a
+6. Open and dismiss **More actions** without choosing an action; verify stock
+   and history are unchanged.
+7. Choose **Set stock to zero** directly. Verify exactly one successful request, a
    `0g` stock display, the exact signed transition at the top of Stock History,
    a success toast, and removal of the now-empty **More actions** menu. Treat
    duplicate requests, console errors, or failed network requests as failures.
@@ -313,8 +313,8 @@ Use isolated run `rn-0031-purchases-a` and a run-unique bean name.
 3. Correct the second purchase to 600g and backdate it to August 1. Verify
    1400g, latest September 1, and newest-date-first history. Correct counted
    stock to 1350g; verify a -50g correction and retained purchase history.
-4. Remove the erroneous 600g row, first cancelling its confirmation and then
-   accepting. Verify 750g after save. Zero the balance, verify filtering and
+4. Remove the erroneous 600g row without a popup. Cancel the form and verify
+   the saved row remains. Remove it again and save; verify 750g. Zero the balance, verify filtering and
    history, then add a 500g purchase and verify 500g. Archive the started roast
    and verify 700g; a repeated archive must not restore more stock.
 5. Open two edit tabs; save a purchase in one and attempt to save the stale
@@ -342,6 +342,33 @@ Use isolated run `rn-0031-purchases-a` and a run-unique bean name.
    overlap, broken horizontal scrolling, console errors, or failed network
    requests as failures. Save both viewport screenshots and the findings in
    `tests/e2e/artifacts/rn-0027-stock-meter-a/summary.md`.
+
+### Popup-free actions and inline deletion (Full)
+
+Start `rn-0032-confirmations-a` with `--cleanup-fake`. This explicit test-only
+option replaces the existing cleanup handlers with deterministic responses:
+first call per endpoint fails with 503, subsequent calls succeed with fixture
+counts. It logs `database_access: false` under the run artifacts; it never
+executes production cleanup, accesses MongoDB, or creates a remote client.
+Inherited `E2E_CLEANUP_FAKE` is cleared unless the flag is passed.
+
+1. Run Bean, Repeat purchases and inventory reconciliation, and Live Roast.
+   Removal, zeroing, End Roast, and Archive must run without native popups.
+   Preserve the exact inventory assertions and cover a cancelled unsaved removal.
+2. Create a draft and use **Set to Completed**; verify no temperature events or
+   stock consumption are fabricated. Delete another draft directly from Roasts.
+3. Add a disposable review, open Delete, and use keyboard cancellation; verify
+   the review remains and focus returns. Reopen and delete it; verify its absence.
+   Save/delete errors must appear inside the page with entered data retained.
+4. In Settings Advanced, open and cancel both cleanup groups. Confirm zero fake
+   calls. For each, apply once to see the simulated error and retry to see the
+   counts; controls must disable while pending and the group must close on success.
+   Confirm exactly four fake calls and no database access. Ordinary E2E still
+   rejects real cleanup. Never verify this with production data.
+5. Repeat representative form, review/cleanup controls, Cancel focus, and error
+   states at an actual 390 CSS-pixel width and desktop, in light/dark modes.
+   Inspect accessible labels, overflow, console errors, and native-dialog absence.
+   Reset temporary viewport settings and run scoped cleanup.
 
 ### Live Roast
 

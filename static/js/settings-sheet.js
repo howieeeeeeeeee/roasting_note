@@ -853,67 +853,57 @@ function announceAdvancedResult(message, type) {
     showToast(message, type);
 }
 
-async function cleanTestData() {
-    if (!confirm("Delete all test data (documents marked with test_data flag) from local database?")) {
-        return;
-    }
+let cleanupKind = null;
+let cleanupRequestActive = false;
 
-    const button = document.getElementById("cleanTestDataBtn");
-    button.disabled = true;
-    replaceButtonLabel(button, "science", "Deleting...");
-    button.querySelector(".material-icons").classList.add("spinning");
-
-    try {
-        const response = await fetch("/api/db/clean-test-data", { method: "POST" });
-        const data = await response.json();
-
-        if (data.success) {
-            let message = `Test data cleaned! ${data.beans_deleted} beans, ${data.roasts_deleted} roasts`;
-            if (data.temp_logs_deleted > 0) {
-                message += `, ${data.temp_logs_deleted} temp logs`;
-            }
-            announceAdvancedResult(`${message} deleted.`, "success");
-        } else {
-            announceAdvancedResult(`Failed: ${data.error}`, "error");
-        }
-    } catch (error) {
-        announceAdvancedResult("Failed: Network error", "error");
-    } finally {
-        button.disabled = false;
-        replaceButtonLabel(button, "science", "Clean Up Test Data");
-    }
+function showCleanupConfirmation(kind) {
+    if (cleanupRequestActive) return;
+    cleanupKind = kind;
+    const isTest = kind === "test";
+    document.getElementById("cleanupScope").textContent = isTest
+        ? "Permanently delete all marked test beans, roasts, and their temperature logs from the local database? This cannot be undone."
+        : "Permanently delete ALL beans and roasts from the local database? This cannot be undone.";
+    document.getElementById("cleanupApplyButton").textContent = isTest
+        ? "Delete test data" : "Delete all local data";
+    document.getElementById("cleanupConfirmation").hidden = false;
+    document.getElementById("cleanupCancelButton").focus();
 }
 
-async function cleanLocalDb() {
-    if (!confirm("Are you sure you want to delete ALL beans and roasts from your LOCAL database?")) {
-        return;
-    }
-    if (!confirm("⚠️ FINAL WARNING: This action CANNOT be undone. Type \"DELETE\" mentally and click OK to proceed.")) {
-        return;
-    }
+function cancelCleanup() {
+    if (cleanupRequestActive) return;
+    document.getElementById("cleanupConfirmation").hidden = true;
+    document.getElementById(cleanupKind === "test" ? "cleanTestDataBtn" : "cleanLocalDbBtn").focus();
+    cleanupKind = null;
+}
 
-    const button = document.getElementById("cleanLocalDbBtn");
-    button.disabled = true;
-    replaceButtonLabel(button, "delete_forever", "Deleting...");
-    button.querySelector(".material-icons").classList.add("spinning");
-
+async function applyCleanup() {
+    if (cleanupRequestActive || !cleanupKind) return;
+    const kind = cleanupKind;
+    const controls = ["cleanTestDataBtn", "cleanLocalDbBtn", "cleanupApplyButton", "cleanupCancelButton"]
+        .map(id => document.getElementById(id));
+    cleanupRequestActive = true;
+    controls.forEach(button => { button.disabled = true; });
+    document.getElementById("settingsActionStatus").hidden = true;
     try {
-        const response = await fetch("/api/db/clean-local", { method: "POST" });
+        const response = await fetch(kind === "test" ? "/api/db/clean-test-data" : "/api/db/clean-local", {method: "POST"});
         const data = await response.json();
-
-        if (data.success) {
-            announceAdvancedResult(
-                `Local DB cleaned! ${data.beans_deleted} beans and ${data.roasts_deleted} roasts deleted.`,
-                "success"
-            );
-        } else {
-            announceAdvancedResult(`Failed: ${data.error}`, "error");
-        }
+        if (!response.ok || !data.success) throw new Error(data.error || "Unable to delete local data");
+        announceAdvancedResult(
+            `${data.beans_deleted} beans, ${data.roasts_deleted} roasts, and ${data.temp_logs_deleted || 0} temperature logs deleted.`,
+            "success"
+        );
+        document.getElementById("cleanupConfirmation").hidden = true;
+        cleanupKind = null;
     } catch (error) {
-        announceAdvancedResult("Failed: Network error", "error");
+        announceAdvancedResult(`Failed: ${error.message || "Network error"}`, "error");
     } finally {
-        button.disabled = false;
-        replaceButtonLabel(button, "delete_forever", "Clean Up Local DB");
+        cleanupRequestActive = false;
+        controls.forEach(button => { button.disabled = false; });
+        const focusId = cleanupKind ? "cleanupCancelButton"
+            : kind === "test" ? "cleanTestDataBtn" : "cleanLocalDbBtn";
+        if (!settingsOverlay.hidden && !document.getElementById("settingsPanelAdvanced").hidden) {
+            document.getElementById(focusId).focus();
+        }
     }
 }
 

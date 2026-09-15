@@ -77,3 +77,16 @@ behavior. The chart dimensions and shared chart rendering are unchanged.
 ## Dark Mode
 
 Inherits automatically; no custom rules needed.
+
+## Archive and review deletion
+
+The More actions menu labels its soft-delete action **Archive** and submits it
+directly, disabling the submit button during navigation.
+
+A review's **Delete** button reveals the irreversible-deletion warning and
+**Delete review** / **Cancel deletion** buttons within the existing review
+panel. Focus moves to Cancel. Cancellation sends no request and restores focus
+to Delete. Apply disables both controls while pending and stays disabled after
+success until reload; errors appear in an inline alert with retry available.
+Review save failures use the same alert and retain the entered review. These
+controls inherit the existing responsive and dark-mode button/modal styles.

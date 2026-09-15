@@ -107,8 +107,11 @@ def start(args):
         }
     )
     environment.pop("E2E_SYNC_FAKE", None)
+    environment.pop("E2E_CLEANUP_FAKE", None)
     if getattr(args, "sync_fake", False):
         environment["E2E_SYNC_FAKE"] = "1"
+    if getattr(args, "cleanup_fake", False):
+        environment["E2E_CLEANUP_FAKE"] = "1"
     _summary(
         artifact_root,
         run_id,
@@ -214,6 +217,10 @@ def build_parser():
         )
     start_parser.add_argument("--app-port", type=int, default=5011)
     start_parser.add_argument("--sensor-port", type=int, default=5012)
+    start_parser.add_argument(
+        "--cleanup-fake", action="store_true",
+        help="simulate cleanup failure/retry without deleting database data",
+    )
     start_parser.add_argument(
         "--sync-fake",
         action="store_true",

@@ -108,6 +108,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_api_contracts.py` | Labels, preferences, Settings, rendered stock-history and Beans-list remaining-meter states, identifiers, and payload failures |
 | `test_app_factory.py` | Route manifest, configuration boundaries, and live-roast module entry |
 | `test_beans_api.py` | Bean CRUD, repeated purchases, Decimal pricing, validation, stale writes, stock deltas/corrections, and labels |
+| `test_cleanup_fake.py` | Non-mutating bulk-cleanup failure/retry responses and refusal of production or unsafe artifact paths |
 | `test_bean_purchase_migration.py` | Local-only endpoint checks, dry-run safety, backup verification, stock preservation, conflicts, and idempotency |
 | `test_database_backup.py` | Complete backups, BSON round trips, and incomplete-backup safety |
 | `test_database_sync.py` | Sync validation, read-only preflight, direction, and conflicts |
@@ -118,10 +119,10 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_datetime_formatting.py` | UTC and operator-timezone formatting |
 | `test_e2e_runtime.py` | Isolated database, run markers, cleanup, and online exclusion |
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
-| `test_management_design_contracts.py` | Compact management hooks, responsive grids, sticky actions, field order, table and RN-0027 preservation, and live-roast exclusion |
+| `test_management_design_contracts.py` | Compact management hooks, responsive grids, sticky actions, field order, table and RN-0027 preservation, live-roast exclusion, native-popup prohibition, and in-page review deletion |
 | `test_reviews_api.py` | Review CRUD and validation |
 | `test_roasts_api.py` | Roast lifecycle, events, temperature, stock, and weight loss |
-| `test_settings_sheet_contracts.py` | Settings dialog semantics, section tabs, focus/state behavior, and responsive sheet geometry |
+| `test_settings_sheet_contracts.py` | Settings dialog semantics, section tabs, focus/state behavior, responsive sheet geometry, and in-page cleanup controls |
 | `test_sync_api.py` | Timestamp-aware document synchronization, including embedded bean stock history |
 | `test_temperature_api.py` | Temperature endpoints, timeouts, settings, and RoR |
 | `test_ticket_system.py` | Tracker validation, policy, generation, and dashboard |

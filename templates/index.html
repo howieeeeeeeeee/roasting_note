@@ -85,7 +85,7 @@
                         </a>
                         {% if roast.lifecycle_state == 'draft' %}
                         <form action="{{ url_for('api_roast_delete', roast_id=roast._id) }}" method="POST" style="display: inline;"
-                            onsubmit="return confirm('Delete this draft roast? Bean stock has not been deducted yet.');">
+                            onsubmit="this.querySelector('button').disabled = true;">
                             <button type="submit" class="btn-icon btn-icon-danger" title="Delete Draft">
                                 <span class="material-icons">delete</span>
                             </button>

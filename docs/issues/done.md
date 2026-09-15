@@ -6,6 +6,8 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RN-0032 | [IMPROVEMENT] | High | ui | [Remove blocking browser confirmation popups](./resolved/RN-0032-remove-native-confirmations.md) | - | - | 2026-09-15 | 2026-09-15 |
+| RN-0031 | [FEATURE] | High | beans | [Repeat bean purchases with preserved inventory and local migration](./resolved/RN-0031-bean-purchase-history.md) | - | - | 2026-09-15 | 2026-09-15 |
 | RN-0030 | [IMPROVEMENT] | High | database-sync | [Simplify Settings Sync and Show Exact Change Forecast](./resolved/RN-0030-click-sync-forecast.md) | - | - | 2026-08-20 | 2026-08-20 |
 | RN-0029-04 | [IMPROVEMENT] | Medium | design-system | [Compact Browse and Edit Screens](./resolved/RN-0029-quiet-compact-ui-refresh/RN-0029-04-compact-management-screens.md) | [RN-0029](./resolved/RN-0029-quiet-compact-ui-refresh.md) | - | 2026-08-20 | 2026-08-20 |
 | RN-0029-03 | [IMPROVEMENT] | High | settings | [Rebuild Settings as Accessible Sectioned Sheet](./resolved/RN-0029-quiet-compact-ui-refresh/RN-0029-03-rebuild-settings-sheet.md) | [RN-0029](./resolved/RN-0029-quiet-compact-ui-refresh.md) | - | 2026-08-20 | 2026-08-20 |

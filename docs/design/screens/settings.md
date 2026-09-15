@@ -136,10 +136,17 @@ contains the required token.
 ## Advanced
 
 Advanced begins with a collapsed native `details` disclosure named **Danger
-Zone**. Opening it reveals the unchanged maintenance actions:
+Zone**. Opening it reveals **Clean Up Test Data** and **Clean Up Local DB**.
+Each opens an in-page group naming exactly what will be deleted and explaining
+that deletion is permanent. Explicit **Delete test data** or **Delete all local
+data** and **Cancel deletion** buttons replace browser-native popups. Focus
+starts on Cancel; cancelling sends no request and returns to the initiating
+button.
 
-- Clean Up Test Data, including its existing confirmation and result counts.
-- Clean Up Local DB, including both existing confirmations and danger severity.
+During a request, both entry buttons and the Delete/Cancel buttons are disabled.
+Success closes the group and shows counts; failure preserves the group with
+an error and retry. Finishing an action never pulls focus into a closed sheet
+or a hidden Advanced panel.
 
 Cleanup results appear in a visible polite status and in the global toast
 region. The disclosure is closed on initial page load and is not automatically
@@ -177,3 +184,7 @@ The full guarded interaction is enabled only with the explicit sync fake. It
 exercises the exact forecast, two click-only phases, restore, cancel, terminal,
 and recovery rendering against ignored run artifacts and must never appear in
 an ordinary E2E run.
+
+The dedicated E2E entrypoint accepts `--cleanup-fake` for failure/retry checks.
+It replaces only the two cleanup handlers with artifact-logged responses and
+never performs a deletion or database access. Ordinary E2E cleanup stays blocked.

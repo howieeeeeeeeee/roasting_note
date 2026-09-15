@@ -117,6 +117,7 @@ body.settings-sheet-open { overflow: hidden; }
 }
 
 .settings-panel[hidden] { display: none; }
+.settings-danger-body[hidden] { display: none; }
 
 .settings-group + .settings-group {
   margin-top: var(--space-6);

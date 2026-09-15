@@ -22,6 +22,10 @@ def main():
             "E2E_SYNC_EXECUTOR": E2ESyncExecutor(artifact_root)
         }
     app = create_app(overrides)
+    if os.environ.get("E2E_CLEANUP_FAKE") == "1":
+        from tests.e2e.cleanup_fake import install_cleanup_fake
+
+        install_cleanup_fake(app)
     app.run(
         host="127.0.0.1",
         port=port,

@@ -2,10 +2,10 @@
 id: RN-0032
 title: Remove blocking browser confirmation popups
 type: improvement
-status: pending
+status: resolved
 priority: high
 created: 2026-09-15
-resolved:
+resolved: 2026-09-15
 area: ui
 parent:
 decisions: []
@@ -50,27 +50,28 @@ this follow-up after manually dismissing popups during RN-0031 verification.
 
 ## Acceptance Criteria
 
-- [ ] Application actions use no native `confirm()`, `alert()`, or `prompt()`
-  as a replacement confirmation mechanism, including inline template handlers.
-- [ ] Purchase removal, zeroing, archive, End Roast, and Complete Draft work
+- [x] Application actions use no native `confirm()`, `alert()`, or `prompt()`
+  as a replacement confirmation mechanism, including inline template handlers. Existing blocking error alerts are replaced with in-page
+  feedback too.
+- [x] Purchase removal, zeroing, archive, End Roast, and Complete Draft work
   through the page without requiring a person to dismiss a browser dialog.
-- [ ] Irreversible deletion has explicit scope and accessible in-page controls;
+- [x] Irreversible deletion has explicit scope and accessible in-page controls;
   cancellation has no side effect and duplicate clicks do not duplicate work.
-- [ ] Stock accounting, lifecycle transitions, validation, visible failures,
+- [x] Stock accounting, lifecycle transitions, validation, visible failures,
   and guarded database-sync requirements retain their documented behavior.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
 - Change classification: ui-interaction, cross-workflow
 - Browser verification level: full
-- Automated tests to add or update: `tests/test_management_design_contracts.py`,
-  `tests/test_design_contracts.py`, `tests/test_settings_sheet_contracts.py`,
-  and `tests/test_api_contracts.py` for direct action/inline deletion contracts;
+- Automated tests to add or update: `tests/test_management_design_contracts.py`
+  and `tests/test_settings_sheet_contracts.py` for direct action/inline deletion contracts;
+  retained regression coverage in `tests/test_design_contracts.py` and `tests/test_api_contracts.py`;
   retain accounting/lifecycle coverage in `tests/test_beans_api.py`,
   `tests/test_roasts_api.py`, and `tests/test_reviews_api.py`; verify cleanup
-  isolation in `tests/test_e2e_runtime.py`. Use fake clients for destructive
+  isolation in `tests/test_e2e_runtime.py` and new `tests/test_cleanup_fake.py`. Use fake clients for destructive
   Settings routes. Add one focused source contract covering native popup calls
   in application JavaScript and template handlers.
 - Browser E2E scenarios to add or update: `tests/e2e/README.md` Bean, Repeat
@@ -81,7 +82,7 @@ this follow-up after manually dismissing popups during RN-0031 verification.
   browser control at desktop and mobile widths. Use isolated run markers;
   bulk-cleanup success requires a fake executor, never a real production purge.
 - Required commands: focused pytest for the files above; `uv run pytest`;
-  `uv run python -m tests.e2e.manage start --run-id rn-0032-confirmations-a`;
+  `uv run python -m tests.e2e.manage start --run-id rn-0032-confirmations-a --cleanup-fake`;
   `uv run python -m tests.e2e.manage cleanup --run-id rn-0032-confirmations-a`;
   `uv run python scripts/generate_issues_index.py`;
   `uv run python scripts/generate_issues_index.py --check`.
@@ -116,10 +117,44 @@ this follow-up after manually dismissing popups during RN-0031 verification.
   record a configured read-only sync forecast, and verify no backup payloads
   are tracked before resolution.
 
+## Resolution
+
+- Removed native confirmation and error popups throughout application templates
+  and JavaScript. Routine actions run directly; review and bulk cleanup deletion
+  use scoped in-page Delete/Cancel controls, focus management, pending guards,
+  and visible failures. Roast soft deletion is labelled Archive.
+- Focused automated command passed **39 tests**:
+  `LOCAL_DB_NAME=roastlogger_test_rn0032 uv run pytest tests/test_management_design_contracts.py tests/test_settings_sheet_contracts.py tests/test_e2e_runtime.py tests/test_cleanup_fake.py tests/test_api_contracts.py -q`.
+  Full command `LOCAL_DB_NAME=roastlogger_test_rn0032 uv run pytest -q` passed
+  **242 tests**. Native-popup source scan and `git diff --check` passed.
+- Full browser run **`rn-0032-confirmations-a`** used `roastlogger_e2e`, the
+  virtual sensor, and explicit `--cleanup-fake`. Verified purchase cancellation
+  and save, exact stock transitions, zero/filter/restock, sorting/meter, live
+  start/events/sensor recovery/end/save/archive, manual completion without live
+  data or consumption, draft deletion, and review save/cancel/delete. Actual
+  390 CSS-pixel form and Settings views fit without horizontal overflow in dark
+  mode; desktop light views and keyboard cancellation/focus also passed.
+- Both cleanup cancellations made zero requests. Each fake endpoint returned
+  one deliberate 503 followed by successful retry: **4 calls**, each logged
+  `database_access: false`. Readback confirmed both beans and all three roasts
+  still existed after the fake cleanup. No production cleanup was executed.
+- Network evidence includes handled concurrent setup/start 409s and the
+  ordinary E2E sync-disabled 409, plus the two deliberate cleanup 503s. Final
+  browser warning/error snapshot was empty. No native popup stalled control.
+  Pending guards are covered by source contracts; the fake responds immediately,
+  so no held pending-state screenshot is claimed.
+- Runtime stopped; scoped cleanup removed **2 beans, 3 roasts, 2 temperature
+  logs**, leaving **0 run records**. Viewport/theme restored and test tab closed.
+  Evidence is ignored under
+  `tests/e2e/artifacts/rn-0032-confirmations-a/summary.md`.
+- Updated every feature/design/test document listed in Documentation Impact.
+  Production routes, persistence, and guarded sync were unchanged, so no new
+  migration or mirror preview was required. `git ls-files db_backup 'db_backup/**'`
+  returned no files. This run also completed RN-0031's blocked browser checks.
+
 ## Open Questions
 
-- None blocking. The request authorizes creating this follow-up ticket; its
-  implementation is a separate task.
+- None. The user authorized implementation on 2026-09-15.
 
 ## Related Files
 

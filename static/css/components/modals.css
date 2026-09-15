@@ -89,3 +89,4 @@
 .dropdown-item-danger .material-icons { color: var(--err-text); }
 .dropdown-item-form { display: block; margin: 0; padding: 0; }
 .dropdown-item-form .dropdown-item { width: 100%; }
+.modal [hidden] { display: none; }

@@ -32,11 +32,11 @@
             </button>
             <div class="dropdown-menu" id="actionDropdown">
                 <form action="{{ url_for('api_roast_delete', roast_id=roast._id) }}" method="POST"
-                    onsubmit="return confirm('Are you sure you want to delete this roast?');"
+                    onsubmit="this.querySelector('button').disabled = true;"
                     class="dropdown-item-form">
                     <button type="submit" class="dropdown-item dropdown-item-danger">
-                        <span class="material-icons">delete</span>
-                        Delete
+                        <span class="material-icons">archive</span>
+                        Archive
                     </button>
                 </form>
             </div>
@@ -295,6 +295,7 @@
             <span class="modal-close" onclick="closeReviewModal()">&times;</span>
         </div>
         <div class="modal-body">
+            <p id="reviewError" class="status-error" role="alert" hidden></p>
             <div id="viewMode" style="display: none;">
                 <div class="review-detail">
                     <div class="detail-item">
@@ -320,7 +321,14 @@
                 </div>
                 <div class="modal-actions">
                     <button class="btn btn-primary btn-full-width" onclick="switchToEditMode()">Edit</button>
-                    <button class="btn btn-danger btn-full-width" onclick="deleteReview()">Delete</button>
+                    <button id="reviewDeleteButton" class="btn btn-danger btn-full-width" onclick="setReviewDeleteOpen(true)">Delete</button>
+                </div>
+                <div id="reviewDeleteConfirmation" role="group" aria-label="Delete this review" hidden>
+                    <p>This permanently deletes this review. It cannot be undone.</p>
+                    <div class="modal-actions">
+                        <button id="reviewDeleteApply" type="button" class="btn btn-danger" onclick="deleteReview()">Delete review</button>
+                        <button id="reviewDeleteCancel" type="button" class="btn btn-secondary" onclick="setReviewDeleteOpen(false)">Cancel deletion</button>
+                    </div>
                 </div>
             </div>
 
@@ -402,6 +410,9 @@
     function showReviewModal(reviewId, mode) {
         currentReviewId = reviewId;
         currentMode = mode;
+        document.getElementById('reviewError').hidden = true;
+        document.getElementById('reviewDeleteConfirmation').hidden = true;
+        document.getElementById('reviewDeleteButton').hidden = false;
 
         const modal = document.getElementById('reviewModal');
         const viewMode = document.getElementById('viewMode');
@@ -460,6 +471,10 @@
 
     async function submitReview(event) {
         event.preventDefault();
+        const button = event.target.querySelector('button[type="submit"]');
+        if (button.disabled) return;
+        button.disabled = true;
+        document.getElementById('reviewError').hidden = true;
 
         const formData = new FormData(event.target);
         const data = {
@@ -488,19 +503,35 @@
 
             if (response.ok) {
                 location.reload();
+                return;
             } else {
-                alert('Failed to save review');
+                showReviewError('Failed to save review. Please try again.');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred while saving the review');
+            showReviewError('An error occurred while saving the review. Please try again.');
         }
+        button.disabled = false;
+    }
+
+    function showReviewError(message) {
+        const error = document.getElementById('reviewError');
+        error.textContent = message;
+        error.hidden = false;
+    }
+
+    function setReviewDeleteOpen(open) {
+        document.getElementById('reviewDeleteConfirmation').hidden = !open;
+        document.getElementById('reviewDeleteButton').hidden = open;
+        document.getElementById(open ? 'reviewDeleteCancel' : 'reviewDeleteButton').focus();
     }
 
     async function deleteReview() {
-        if (!confirm('Are you sure you want to delete this review?')) {
-            return;
-        }
+        const button = document.getElementById('reviewDeleteApply');
+        const cancel = document.getElementById('reviewDeleteCancel');
+        if (button.disabled || !currentReviewId) return;
+        button.disabled = cancel.disabled = true;
+        document.getElementById('reviewError').hidden = true;
 
         try {
             const response = await fetch(`/api/roast/delete_review/${roastId}/${currentReviewId}`, {
@@ -509,13 +540,15 @@
 
             if (response.ok) {
                 location.reload();
+                return;
             } else {
-                alert('Failed to delete review');
+                showReviewError('Failed to delete review. Please try again.');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred while deleting the review');
+            showReviewError('An error occurred while deleting the review. Please try again.');
         }
+        button.disabled = cancel.disabled = false;
     }
 
     function formatExtractionMethod(method) {

@@ -23,7 +23,7 @@
     </div>
     <div class="header-actions">
         {% if roast.lifecycle_state == 'draft' %}
-        <button id="completeDraftBtn" class="btn btn-secondary">
+        <button id="completeDraftBtn" class="btn btn-secondary" title="Complete setup without recording a live roast or changing bean stock">
             <span class="material-icons">check_circle</span>
             Set to Completed
         </button>
@@ -34,8 +34,6 @@
         </button>
     </div>
 </div>
-
-<div id="toastContainer" class="toast-container"></div>
 
 <div class="live-roast-container" id="liveRoastContainer">
     <section class="setup-section" id="setupSection">

@@ -22,7 +22,8 @@ Each bean owns a `purchases` array. Add or edit purchases from bean detail or
 its existing edit form without recreating the profile. A row records a date,
 positive whole-gram weight, and optional total price; price per kg is derived.
 A blank date or price means unknown. Removing an erroneous row subtracts its
-weight from inventory when saved. A completely blank new row is ignored.
+weight from inventory when saved. Removal updates the form immediately; Cancel
+discards the unsaved edit. A completely blank new row is ignored.
 
 The latest purchase date is the maximum dated purchase. Summary weight is the
 sum of all purchases. Lifetime cost and weighted average price per kg are
@@ -70,13 +71,12 @@ and Avg. Price/kg columns use the summaries described above.
 Bean detail shows **More actions** only while `stock_grams` is a non-zero
 integer. **Set stock to zero** works for positive and negative balances:
 
-1. The confirmation names the bean, shows the signed current balance, and
-   explains that the recorded change has no automatic undo.
-2. Cancellation sends no request.
-3. `POST /api/beans/<bean_id>/set-stock-zero` conditionally matches the
+1. Choose **Set stock to zero** to apply the correction directly. The current
+   balance remains visible on the detail page; the change is recorded in history.
+2. `POST /api/beans/<bean_id>/set-stock-zero` conditionally matches the
    observed balance, sets `stock_grams` to zero, appends one history entry, and
    refreshes `updated_at` with the same timestamp.
-4. Success updates the stock badge and history in place, removes the action,
+3. Success updates the stock badge and history in place, removes the action,
    and shows a toast. A failed or stale request leaves the page unchanged.
 
 The signed `change_grams` value is `0 - previous_stock_grams`. Discarding a
@@ -137,3 +137,9 @@ and any conflicts first. Remote-only roasts are not a local reconciliation
 source. An applied mirror remains a separate authorized operation.
 
 See [Guarded Database Sync](./database-sync.md) for the operator flow.
+
+## Direct actions
+
+Archive and Set stock to zero run from their labelled controls without browser
+popups. Pending controls disable duplicate clicks. Errors appear in the page.
+Removing purchases only persists when the bean form is saved.

@@ -30,7 +30,7 @@
             <span class="material-icons">edit</span>
             Edit
         </a>
-        <form action="{{ url_for('api_beans_delete', bean_id=bean._id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to archive this bean?');">
+        <form action="{{ url_for('api_beans_delete', bean_id=bean._id) }}" method="POST" style="display: inline;" onsubmit="this.querySelector('button').disabled = true;">
             <button type="submit" class="btn btn-danger">
                 <span class="material-icons">archive</span>
                 Archive
@@ -507,15 +507,10 @@
     }
 
     async function setBeanStockToZero() {
-        closeBeanActions();
-        const confirmed = window.confirm(
-            `${beanData.name}: Set stock from ${formatSignedGrams(beanData.stockGrams)} to 0g? `
-            + 'This records the change and cannot be undone automatically.'
-        );
-        if (!confirmed) return;
-
         const button = document.getElementById('setStockZeroButton');
-        if (button) button.disabled = true;
+        if (!button || button.disabled) return;
+        button.disabled = true;
+        closeBeanActions();
         try {
             const response = await fetch(`/api/beans/${beanData.id}/set-stock-zero`, {
                 method: 'POST',

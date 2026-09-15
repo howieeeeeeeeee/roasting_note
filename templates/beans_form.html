@@ -77,7 +77,7 @@
 
         <input type="hidden" name="purchase_history" value="1">
         {% if is_edit %}<input type="hidden" name="bean_version" value="{{ bean_version }}">{% endif %}
-        <p class="helper-text">Add each purchase here. Stock updates automatically when purchases or roasts change.</p>
+        <p class="helper-text">Add each purchase here. Stock updates automatically when purchases or roasts change. Removing a purchase subtracts its weight when you save.</p>
         <div id="purchaseRows">
             {% for purchase in purchases or [{}] %}
             {% include 'partials/bean_purchase_row.html' %}

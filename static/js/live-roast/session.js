@@ -325,12 +325,7 @@ export function createSession(config, chart) {
     function wireCompleteDraft() {
         if (!elements.completeDraftBtn) return;
         elements.completeDraftBtn.addEventListener("click", async () => {
-            const confirmed = confirm(
-                "Set this draft roast to completed? This only changes its " +
-                "lifecycle status. It will not create temperature readings, " +
-                "sensor diagnostics, key timing events, or a Drop event.",
-            );
-            if (!confirmed) return;
+            if (elements.completeDraftBtn.disabled) return;
             elements.completeDraftBtn.disabled = true;
             try {
                 if (state.setupSaveTimer) {
@@ -346,12 +341,12 @@ export function createSession(config, chart) {
                 if (response.ok && data.success) {
                     window.location.href = `/roast/edit/${config.roastId}`;
                 } else {
-                    alert(data.error || "Error completing draft roast. Please try again.");
+                    showToast(data.error || "Error completing draft roast. Please try again.", "error");
                     elements.completeDraftBtn.disabled = false;
                 }
             } catch (error) {
                 console.error("Error:", error);
-                alert("Error completing draft roast. Please try again.");
+                showToast("Error completing draft roast. Please try again.", "error");
                 elements.completeDraftBtn.disabled = false;
             }
         });
@@ -360,12 +355,14 @@ export function createSession(config, chart) {
     function wireStart() {
         if (!elements.startBtn) return;
         elements.startBtn.addEventListener("click", async () => {
+            if (elements.startBtn.disabled) return;
             const beanId = document.getElementById("bean_id").value;
             const weight = document.getElementById("original_weight").value;
             if (!beanId || !weight) {
-                alert("Please select a bean and enter the green weight before starting.");
+                showToast("Please select a bean and enter the green weight before starting.", "error");
                 return;
             }
+            elements.startBtn.disabled = true;
             try {
                 const response = await fetch(
                     `/api/roast/start/${config.roastId}`,
@@ -383,7 +380,7 @@ export function createSession(config, chart) {
                     },
                 );
                 if (!response.ok) {
-                    alert("Error starting roast. Please try again.");
+                    showToast("Error starting roast. Please try again.", "error");
                     return;
                 }
                 state.isRunning = true;
@@ -402,7 +399,9 @@ export function createSession(config, chart) {
                 notifyDisplayChange();
             } catch (error) {
                 console.error("Error:", error);
-                alert("Error starting roast. Please try again.");
+                showToast("Error starting roast. Please try again.", "error");
+            } finally {
+                elements.startBtn.disabled = state.isRunning;
             }
         });
     }
@@ -410,7 +409,8 @@ export function createSession(config, chart) {
     function wireEnd() {
         if (!elements.endBtn) return;
         elements.endBtn.addEventListener("click", async () => {
-            if (!confirm("Are you sure you want to end this roast?")) return;
+            if (elements.endBtn.disabled) return;
+            elements.endBtn.disabled = true;
             try {
                 const response = await fetch(`/api/roast/end/${config.roastId}`, {
                     method: "POST",
@@ -418,7 +418,7 @@ export function createSession(config, chart) {
                     body: JSON.stringify({ elapsed_seconds: state.seconds }),
                 });
                 if (!response.ok) {
-                    alert("Error ending roast. Please try again.");
+                    showToast("Error ending roast. Please try again.", "error");
                     return;
                 }
                 clearInterval(state.timerInterval);
@@ -431,7 +431,9 @@ export function createSession(config, chart) {
                 window.location.href = `/roast/edit/${config.roastId}`;
             } catch (error) {
                 console.error("Error:", error);
-                alert("Error ending roast. Please try again.");
+                showToast("Error ending roast. Please try again.", "error");
+            } finally {
+                if (state.isRunning) elements.endBtn.disabled = false;
             }
         });
     }
@@ -509,7 +511,7 @@ export function createSession(config, chart) {
                     notifyDisplayChange();
                 } catch (error) {
                     console.error("Error:", error);
-                    alert("Error logging event. Please try again.");
+                    showToast("Error logging event. Please try again.", "error");
                 }
             });
         });
@@ -584,7 +586,7 @@ export function createSession(config, chart) {
                 notifyDisplayChange();
             } catch (error) {
                 console.error("Error:", error);
-                alert("Error logging data. Please try again.");
+                showToast("Error logging data. Please try again.", "error");
             }
         });
     }
