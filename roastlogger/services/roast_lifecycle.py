@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from bson.objectid import ObjectId
+from models.bean_purchases import grams, snapshot_query
 from flask import current_app
 
 from roastlogger.config import (
@@ -35,24 +36,27 @@ def start_roast(roast_id, data):
         "lifecycle_status": ROAST_LIFECYCLE_STARTED,
         "updated_at": current_time,
     }
-    if data.get("bean_id"):
-        update_data["bean_id"] = ObjectId(data["bean_id"])
-    if data.get("original_weight_grams"):
-        weight = int(data["original_weight_grams"])
-        update_data["original_weight_grams"] = weight
-        if data.get("bean_id"):
-            get_beans_collection().update_one(
-                {"_id": ObjectId(data["bean_id"])},
-                {
-                    "$inc": {"stock_grams": -weight},
-                    "$set": {"updated_at": current_time},
-                },
-            )
+    bean_id = ObjectId(data['bean_id']) if data.get('bean_id') else roast.get('bean_id')
+    try:
+        weight = grams(data.get('original_weight_grams') or roast.get('original_weight_grams', 0))
+        if weight < 0:
+            raise ValueError('Roast weight cannot be negative')
+    except ValueError as error:
+        return {'success': False, 'error': str(error)}, 400
+    update_data['bean_id'] = bean_id
+    update_data['original_weight_grams'] = weight
     if data.get("ambient_temp_celsius"):
         update_data["ambient_temp_celsius"] = float(data["ambient_temp_celsius"])
     if data.get("ambient_humidity"):
         update_data["ambient_humidity"] = float(data["ambient_humidity"])
-    roasts.update_one({"_id": ObjectId(roast_id)}, {"$set": update_data})
+    result = roasts.update_one(snapshot_query(roast), {'$set': update_data})
+    if result.matched_count != 1:
+        return {'success': False, 'error': 'Roast changed; refresh and try again'}, 409
+    if bean_id and weight:
+        get_beans_collection().update_one(
+            {'_id': bean_id},
+            {'$inc': {'stock_grams': -weight}, '$set': {'updated_at': current_time}},
+        )
     return {"success": True}, 200
 
 

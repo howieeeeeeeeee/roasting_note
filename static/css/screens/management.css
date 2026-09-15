@@ -357,3 +357,28 @@
     box-shadow: none;
   }
 }
+
+/* Repeated purchase fields stay inside the existing inventory section. */
+.management-form--bean #purchaseRows,
+.management-form--bean .stock-correction,
+.management-form--bean #beanFormError,
+.management-form--bean .management-form-section--inventory > .helper-text {
+  grid-column: 1 / -1;
+}
+.management-form--bean .purchase-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: var(--space-3);
+  align-items: end;
+  min-width: 0;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+.management-form--bean .purchase-row label { min-width: 0; }
+.management-form--bean .purchase-row input { display: block; width: 100%; }
+.management-form--bean #beanFormError { color: var(--danger-color); }
+@media (max-width: 767px) {
+  .management-form--bean .purchase-row { grid-template-columns: minmax(0, 1fr); }
+}

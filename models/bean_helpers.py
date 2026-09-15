@@ -1,8 +1,11 @@
 from datetime import datetime
-from bson.decimal128 import Decimal128
 from bson.objectid import ObjectId
 
 from roastlogger.time_utils import get_current_time_with_tz
+from models.bean_purchases import (
+    BeanConflict, bean_version, grams, legacy_purchases, migration_fields,
+    parse_purchases, purchase_summaries, snapshot_query,
+)
 
 
 def normalize_short_flavor_notes(value):
@@ -29,145 +32,70 @@ def normalize_short_flavor_notes(value):
     return notes
 
 
+def _profile_fields(data, existing=None):
+    existing = existing or {}
+    fields = {key: data.get(key, existing.get(key, '')) for key in
+              ('name', 'origin', 'process', 'supplier', 'notes', 'color')}
+    fields['name'] = fields['name'].strip()
+    if not fields['name']:
+        raise ValueError('Bean name is required')
+    fields['color'] = fields['color'] or '#6B8E6F'
+    fields['short_flavor_notes'] = normalize_short_flavor_notes(
+        data.get('short_flavor_notes', existing.get('short_flavor_notes')))
+    return fields
+
+
 def create_bean(beans_collection, bean_data, markers=None):
-    """
-    Create a new bean document
-
-    Args:
-        beans_collection: MongoDB collection
-        bean_data: Dictionary with bean information from form
-
-    Returns:
-        ObjectId of created bean
-    """
-    # Parse and prepare bean document
-    bean_doc = {
-        'name': bean_data.get('name', ''),
-        'origin': bean_data.get('origin', ''),
-        'process': bean_data.get('process', ''),
-        'supplier': bean_data.get('supplier', ''),
-        'notes': bean_data.get('notes', ''),
-        'short_flavor_notes': normalize_short_flavor_notes(
-            bean_data.get('short_flavor_notes')
-        ),
-        'stock_change_log': [],
-        'color': bean_data.get('color', '#6B8E6F'),  # Default: muted green
-        'archived': False,
-        'created_at': datetime.now(),
-        'updated_at': datetime.now()
+    purchases = parse_purchases(bean_data)
+    summaries = purchase_summaries(purchases)
+    stock = summaries['purchase_weight_grams']
+    correction = bean_data.get('stock_grams', '')
+    if correction != '':
+        stock = grams(correction, 'Stock')
+    now = get_current_time_with_tz()
+    doc = {
+        **_profile_fields(bean_data), **summaries,
+        'purchases': purchases, 'stock_grams': stock,
+        'inventory_opening_adjustment_grams': stock - summaries['purchase_weight_grams'],
+        'stock_change_log': [], 'archived': False,
+        'created_at': now, 'updated_at': now,
+        **(markers or {}),
     }
-    bean_doc.update(markers or {})
-
-    # Handle date
-    if bean_data.get('purchase_date'):
-        try:
-            bean_doc['purchase_date'] = datetime.strptime(bean_data['purchase_date'], '%Y-%m-%d')
-        except:
-            bean_doc['purchase_date'] = None
-
-    # Handle numeric fields
-    if bean_data.get('purchase_price_total'):
-        try:
-            bean_doc['purchase_price_total'] = Decimal128(bean_data['purchase_price_total'])
-        except:
-            bean_doc['purchase_price_total'] = Decimal128('0')
-
-    if bean_data.get('purchase_weight_grams'):
-        try:
-            bean_doc['purchase_weight_grams'] = int(bean_data['purchase_weight_grams'])
-        except:
-            bean_doc['purchase_weight_grams'] = 0
-
-    if bean_data.get('stock_grams'):
-        try:
-            bean_doc['stock_grams'] = int(bean_data['stock_grams'])
-        except:
-            bean_doc['stock_grams'] = 0
-
-    # Calculate unit price per kg if possible
-    if bean_doc.get('purchase_price_total') and bean_doc.get('purchase_weight_grams'):
-        try:
-            weight_kg = bean_doc['purchase_weight_grams'] / 1000.0
-            if weight_kg > 0:
-                price_float = float(bean_doc['purchase_price_total'].to_decimal())
-                unit_price = price_float / weight_kg
-                bean_doc['unit_price_per_kg'] = Decimal128(str(unit_price))
-        except:
-            pass
-
-    result = beans_collection.insert_one(bean_doc)
-    return result.inserted_id
+    return beans_collection.insert_one(doc).inserted_id
 
 
-def update_bean(beans_collection, bean_id, bean_data):
-    """
-    Update an existing bean document
-
-    Args:
-        beans_collection: MongoDB collection
-        bean_id: String or ObjectId of bean to update
-        bean_data: Dictionary with updated bean information
-    """
-    current_time = datetime.now()
-    existing_bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
-
-    # Parse and prepare update data
-    update_doc = {
-        'name': bean_data.get('name', ''),
-        'origin': bean_data.get('origin', ''),
-        'process': bean_data.get('process', ''),
-        'supplier': bean_data.get('supplier', ''),
-        'notes': bean_data.get('notes', ''),
-        'short_flavor_notes': normalize_short_flavor_notes(
-            bean_data.get('short_flavor_notes')
-        ),
-        'color': bean_data.get('color', '#6B8E6F'),
-        'updated_at': current_time
+def update_bean(beans_collection, bean_id, bean_data, roasts_collection):
+    bean = beans_collection.find_one({'_id': ObjectId(bean_id), 'archived': {'$ne': True}})
+    if not bean:
+        raise LookupError('Bean not found')
+    if bean_data.get('bean_version') != bean_version(bean):
+        raise BeanConflict('This bean changed. Reload the page before saving; your entries are still shown.')
+    old_purchases = legacy_purchases(bean)
+    purchases = parse_purchases(bean_data, old_purchases) if 'purchase_history' in bean_data else old_purchases
+    summaries = purchase_summaries(purchases)
+    delta = summaries['purchase_weight_grams'] - purchase_summaries(old_purchases)['purchase_weight_grams']
+    previous_stock = grams(bean.get('stock_grams', 0), 'Stock')
+    stock = grams(previous_stock + delta, 'Stock')
+    correction = bean_data.get('stock_grams', '')
+    corrected_stock = grams(correction, 'Stock') if correction != '' else stock
+    now = get_current_time_with_tz()
+    updates = {
+        **(migration_fields(bean, roasts_collection) or {}),
+        **_profile_fields(bean_data, bean), **summaries,
+        'purchases': purchases, 'stock_grams': corrected_stock, 'updated_at': now,
     }
-    if existing_bean and not isinstance(existing_bean.get('created_at'), datetime):
-        update_doc['created_at'] = current_time
-
-    # Handle date
-    if bean_data.get('purchase_date'):
-        try:
-            update_doc['purchase_date'] = datetime.strptime(bean_data['purchase_date'], '%Y-%m-%d')
-        except:
-            pass
-
-    # Handle numeric fields
-    if bean_data.get('purchase_price_total'):
-        try:
-            update_doc['purchase_price_total'] = Decimal128(bean_data['purchase_price_total'])
-        except:
-            update_doc['purchase_price_total'] = Decimal128('0')
-
-    if bean_data.get('purchase_weight_grams'):
-        try:
-            update_doc['purchase_weight_grams'] = int(bean_data['purchase_weight_grams'])
-        except:
-            pass
-
-    if bean_data.get('stock_grams'):
-        try:
-            update_doc['stock_grams'] = int(bean_data['stock_grams'])
-        except:
-            pass
-
-    # Calculate unit price per kg if possible
-    if update_doc.get('purchase_price_total') and update_doc.get('purchase_weight_grams'):
-        try:
-            weight_kg = update_doc['purchase_weight_grams'] / 1000.0
-            if weight_kg > 0:
-                price_float = float(update_doc['purchase_price_total'].to_decimal())
-                unit_price = price_float / weight_kg
-                update_doc['unit_price_per_kg'] = Decimal128(str(unit_price))
-        except:
-            pass
-
-    beans_collection.update_one(
-        {'_id': ObjectId(bean_id)},
-        {'$set': update_doc}
-    )
+    if not isinstance(bean.get('created_at'), datetime):
+        updates['created_at'] = now
+    operation = {'$set': updates}
+    if corrected_stock != stock:
+        operation['$push'] = {'stock_change_log': {
+            'event_type': 'manual_correction', 'previous_stock_grams': stock,
+            'change_grams': corrected_stock - stock,
+            'resulting_stock_grams': corrected_stock, 'recorded_at': now,
+        }}
+    result = beans_collection.update_one(snapshot_query(bean), operation)
+    if result.matched_count != 1:
+        raise BeanConflict('This bean changed. Reload the page before saving; your entries are still shown.')
 
 
 def set_bean_stock_to_zero(beans_collection, bean_id):

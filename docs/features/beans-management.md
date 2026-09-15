@@ -16,41 +16,54 @@ and the roast history associated with each bean.
 Archived beans are excluded from these active views. The Beans list hides
 balances at or below zero by default; **Show Out of Stock** includes them.
 
-## Bean Data
+## Purchase History
 
-Bean records include profile, sourcing, purchase, stock, notes, display color,
-optional label data, and timestamps. The canonical document shape is in
-[data models](../architecture/data-models.md#beans-collection).
+Each bean owns a `purchases` array. Add or edit purchases from bean detail or
+its existing edit form without recreating the profile. A row records a date,
+positive whole-gram weight, and optional total price; price per kg is derived.
+A blank date or price means unknown. Removing an erroneous row subtracts its
+weight from inventory when saved. A completely blank new row is ignored.
 
-New beans initialize `stock_change_log` to an empty array. Existing beans that
-do not have the field remain valid and render an empty history.
+The latest purchase date is the maximum dated purchase. Summary weight is the
+sum of all purchases. Lifetime cost and weighted average price per kg are
+shown only when every purchase is priced; individual known prices remain
+visible. Backdated entries do not replace a later latest-purchase date.
+
+The canonical shapes are in [data models](../architecture/data-models.md#beans-collection).
 
 ## Stock Lifecycle
 
-- Editing a bean writes the submitted current stock directly.
-- Starting a roast deducts its original green weight once.
-- Archiving a started roast restores its original green weight.
-- Editing the weight of a started roast applies the difference.
-- Draft creation and manual draft completion do not change stock.
+`stock = purchased grams - consumed roast grams + logged corrections + opening adjustment`
 
-Those existing operations do not add `stock_change_log` entries. The log is
-currently reserved for the explicit set-to-zero action.
+`stock_grams` remains the stored balance for fast list filtering and sorting.
+Editing purchases changes that balance only by the purchased-weight difference.
+Every form update atomically saves history, summaries, stock and `updated_at`.
+A form version and a conditional document update reject stale submissions
+with `409`; unsaved entries remain visible so the user can copy them before
+reloading. Validation failures return `400` without partial changes.
+
+- Creating a bean defaults stock to purchased weight. An optional opening
+  count becomes its opening adjustment. Profile-only creation starts at zero.
+- Starting a roast deducts its green weight once, including saved setup values.
+- Archiving a started roast restores weight once; repeating archive does not.
+- Editing a started roast applies its weight difference. Changing its bean
+  transfers consumption, including when weight stays the same.
+- Draft creation and manual draft completion do not change stock.
+- **Correct stock to** records a signed `manual_correction` in the stock log.
+  Leave it blank for automatic purchase accounting. Corrections apply after
+  purchase changes in the same submission.
+- **Set stock to zero** continues to record its signed correction.
+
+Roast/bean updates retain the existing separate-document persistence model;
+there is no distributed transaction or per-purchase allocation of roast usage.
 
 ## Beans List Remaining Meter
 
-Each Beans-list Stock cell keeps the exact signed balance in a compact
-`<stock_grams>g left` pill. When `purchase_weight_grams` is a positive integer,
-a separate thin meter beneath the pill shows the remaining share of the
-original purchase:
-
-`clamp((stock_grams / purchase_weight_grams) * 100, 0, 100)`
-
-The clamp affects only the meter. Zero and negative balances produce an empty
-meter, balances above the original purchase produce a full meter, and the pill
-continues to show the uncapped value. A missing, non-integer, zero, or negative
-purchase weight omits the meter and leaves the signed pill as the complete
-fallback. Sorting and out-of-stock filtering continue to use raw
-`stock_grams`; the indicator does not store or change inventory data.
+The Stock cell shows exact signed grams. Its separate meter uses
+`clamp(stock_grams / cumulative purchased grams * 100, 0, 100)`.
+Only the meter is clamped; raw stock still controls sorting and filtering.
+Missing or invalid legacy purchase weights omit the meter. The Latest Purchase
+and Avg. Price/kg columns use the summaries described above.
 
 ## Set Stock To Zero
 
@@ -78,16 +91,49 @@ overwriting newer stock.
 
 Bean detail renders `stock_change_log` newest-first under Stock & Pricing with
 the recorded time, previous balance, signed change, and resulting balance.
-Manual restocking does not erase earlier entries, so another later set-to-zero
+Purchase additions and manual corrections do not erase earlier entries, so another later set-to-zero
 event is appended to the same history.
+
+## Local Migration
+
+Preview before applying:
+
+```bash
+uv run python scripts/migrate_bean_purchases.py --dry-run
+```
+
+Pause local application writes, then run:
+
+```bash
+uv run python scripts/migrate_bean_purchases.py --apply
+uv run python scripts/migrate_bean_purchases.py --dry-run
+```
+
+The command accepts only loopback `MONGO_URI_LOCAL`, uses a direct local
+connection, and never constructs an online client. Apply backs up every local
+collection with the existing canonical BSON backup/verification utilities
+before changing beans. Backups and sanitized results stay in ignored
+`db_backup/database_mirrors/local--<DEVICE>/...`.
+
+Each legacy scalar purchase becomes one stable row. Current stock, bean ids,
+labels, logs, roasts, and valid creation times are preserved. The opening
+adjustment explains historical unlogged differences without inventing
+purchases. Malformed records stop apply before backup/writes. Changed records
+get fresh `updated_at`; existing arrays are skipped and reruns do not update
+any timestamps. Conditional bean snapshots and a post-backup consumption check
+reject intervening changes. Writes must remain paused until verification ends.
+
+Legacy beans also render a projected purchase row before migration; saving an
+unmigrated valid bean initializes its array and opening adjustment in the same
+conditional write. Unsupported legacy values need local correction first.
 
 ## Database Selection And Sync
 
-The action writes only the currently selected `beans` collection. It does not
-contact the other database role or modify `roasts`. A later guarded
-timestamp-aware sync copies the complete bean, including its embedded history,
-when that bean is the newer source document. No migration, backfill, or applied
-mirror is part of this feature.
+Bean edits write only the selected database. A guarded timestamp-aware sync
+copies the complete newer bean, including purchases, corrections, and summary
+fields. It does not merge purchase rows across devices. Deploy compatible code
+before syncing migrated beans online; review a fresh local-to-online dry run
+and any conflicts first. Remote-only roasts are not a local reconciliation
+source. An applied mirror remains a separate authorized operation.
 
-See [Guarded Database Sync](./database-sync.md) for dry-run, authorization,
-backup, and audit requirements.
+See [Guarded Database Sync](./database-sync.md) for the operator flow.

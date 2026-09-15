@@ -34,6 +34,29 @@ return the same message as plain text.
 | `/api/label/preferences` | GET | Default `templateId` / `fontPreset` / `aspectRatio` for new beans, derived from the most recent saved label |
 | `/api/label/images` | GET | List image assets under `/static/img/` for the label image picker |
 
+### Create and Edit Bean Purchases
+
+`POST /api/beans/add` and `POST /api/beans/edit/<bean_id>` accept form data.
+Existing profile fields remain unchanged. The purchase section submits
+`purchase_history=1` and repeated aligned `purchase_id`, `purchase_date`,
+`purchase_weight_grams`, and `purchase_price_total` fields. Empty ids create
+rows; existing ids must belong to that bean and cannot repeat. Omitted dates
+and prices are unknown; a wholly empty new row is ignored. An empty submitted
+history removes the existing purchases. If `purchase_history` is omitted on
+an edit, history is preserved.
+
+Edit requires `bean_version`, the opaque whole-document token supplied by the
+GET edit form. Success redirects to bean detail (creation redirects to Beans).
+Stale versions or a lost conditional write return `409`; missing/archived
+beans return `404`; invalid dates, prices, weights, row ids, or blank names
+return `400`. Errors are JSON `{success: false, error: "..."}`. The browser
+keeps submitted fields visible after a failed save.
+
+`stock_grams` is optional: blank means apply the purchase-weight delta;
+a supplied integer is a counted stock correction after that delta. Creation
+uses it as an opening balance. Summary price/date/weight values are calculated
+from purchases. See [Bean Management](../features/beans-management.md).
+
 ### Set Bean Stock To Zero
 
 `POST /api/beans/<bean_id>/set-stock-zero` accepts no body. Success returns:
@@ -77,6 +100,12 @@ Malformed ObjectIds use the shared `400` / `Invalid identifier` response.
 | `/api/roast/add_event/<roast_id>` | POST | Add temp curve event |
 | `/api/roast/log_temp_local/<roast_id>` | POST | Log to local CSV file |
 | `/api/roast/sync_state/<roast_id>` | POST | Sync live roast state (temp, RoR, settings) to DB |
+
+Starting uses provided or saved bean/weight fields and conditionally claims the
+draft before stock deduction. A repeated or competing start returns `409`.
+Started-roast edits apply consumption differences, including equal-weight bean
+transfers; a concurrently changed roast returns `409`. Archiving atomically
+claims the active roast, so repeated archive posts do not restore stock twice.
 
 `/api/roast/sync_state/<roast_id>` returns the temperature fields documented
 below plus `ror`, `logged_to_db`, and `last_success_age_seconds` so the live UI

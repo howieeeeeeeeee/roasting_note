@@ -71,9 +71,8 @@ def test_management_templates_keep_field_and_action_order() -> None:
             'name="color"',
             'name="short_flavor_notes"',
             'name="notes"',
-            'name="purchase_date"',
-            'name="purchase_weight_grams"',
-            'name="purchase_price_total"',
+            'name="purchase_history"',
+            'id="purchaseRows"',
             'name="stock_grams"',
             "management-form-actions",
         ),
@@ -94,6 +93,8 @@ def test_management_templates_keep_field_and_action_order() -> None:
             "management-form-actions",
         ),
     )
+    purchase_row = _template("partials/bean_purchase_row.html")
+    _assert_in_source_order(purchase_row, ('name="purchase_date"', 'name="purchase_weight_grams"', 'name="purchase_price_total"'))
     assert "Save Changes" in roast_form
     assert roast_form.index("Save Changes") < roast_form.index(">Cancel<")
     assert bean_form.index("Bean</button>") < bean_form.index(">Cancel<")

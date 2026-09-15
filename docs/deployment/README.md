@@ -123,3 +123,16 @@ requires both exact run-specific tokens; Settings requires its two distinct
 phase clicks. Both create a complete destination backup under ignored
 `db_backup/`. Only the reviewed audit record is eligible for publication. See
 [Database Sync](../features/database-sync.md).
+
+## Bean purchase history rollout (RN-0031)
+
+Deploy purchase-history-compatible application code before syncing migrated
+local beans to the hosted database. Legacy scalar records remain readable and
+convert on a valid edit. Back up and migrate the local database with
+`scripts/migrate_bean_purchases.py` while local writes are paused; see
+[Bean Management](../features/beans-management.md#local-migration) for preview,
+apply, verification, and backup paths. A rerun must report zero eligible beans.
+
+Review a fresh guarded local-to-online dry run after your purchase corrections.
+The code deployment and local migration do not authorize applying a remote
+mirror; use the existing Settings or CLI confirmation flow separately.

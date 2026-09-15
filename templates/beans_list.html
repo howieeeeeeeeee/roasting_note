@@ -47,13 +47,13 @@
                 </th>
                 <th class="sortable-header">
                     <button class="sort-btn-inline" onclick="sortTable('date')" title="Sort by date">
-                        Purchase Date
+                        Latest Purchase
                         <span class="material-icons">{% if sort_by == 'date' %}{% if sort_order == 'asc' %}arrow_upward{% else %}arrow_downward{% endif %}{% else %}unfold_more{% endif %}</span>
                     </button>
                 </th>
                 <th class="sortable-header">
                     <button class="sort-btn-inline" onclick="sortTable('price')" title="Sort by price">
-                        Price/kg
+                        Avg. Price/kg
                         <span class="material-icons">{% if sort_by == 'price' %}{% if sort_order == 'asc' %}arrow_upward{% else %}arrow_downward{% endif %}{% else %}unfold_more{% endif %}</span>
                     </button>
                 </th>
@@ -125,7 +125,7 @@
                                 aria-valuemin="0"
                                 aria-valuemax="100"
                                 aria-valuenow="{{ remaining_percent_display }}"
-                                aria-valuetext="{{ stock_grams }}g remaining of {{ purchase_weight_grams }}g original ({{ remaining_percent_display }}%)"
+                                aria-valuetext="{{ stock_grams }}g remaining of {{ purchase_weight_grams }}g purchased ({{ remaining_percent_display }}%)"
                             >
                                 <span
                                     class="stock-remaining-meter-fill"

@@ -282,8 +282,9 @@ Then start `rn-0030-sync-summary-a` with `--sync-fake`:
 ### Bean
 
 1. Navigate to **Beans**, choose **Add Bean**, and use a run-unique name.
-2. Fill origin, process, supplier, purchase date, price, purchase weight,
-   stock, flavor notes, notes, and color; save.
+2. Fill origin, process, supplier, the initial purchase date/weight/total price,
+   flavor notes, notes, and color; leave opening stock blank for automatic
+   inventory or supply an explicit opening count; save.
 3. Confirm the bean appears in inventory and its detail page.
 4. Edit several fields and save.
 5. Reopen detail and confirm the changes.
@@ -295,16 +296,42 @@ Then start `rn-0030-sync-summary-a` with `--sync-fake`:
    duplicate requests, console errors, or failed network requests as failures.
 8. Return to Beans and confirm the default inventory hides the bean. Enable
    **Show Out of Stock**, reopen it, and confirm the stock history persisted.
-9. Edit the bean back to positive stock for the following Live Roast workflow.
-   Confirm its history remains and **More actions** is available again.
+9. Add another purchase to return the bean to positive stock for the following
+   Live Roast workflow. Confirm correction history remains and **More actions**
+   is available again.
+
+#### Repeat purchases and inventory reconciliation (Full)
+
+Use isolated run `rn-0031-purchases-a` and a run-unique bean name.
+
+1. Create a 1000g/$40 purchase dated September 1; leave opening stock blank.
+   Verify 1000g and its history. Start a 200g roast and verify consumption once;
+   exercise the Live Roast scenario below, end and save its roasted weight.
+2. Add a second 500g/$30 purchase dated September 10 without re-entering the
+   bean profile. Verify 1300g, latest September 10, cumulative 1500g, and both
+   history rows. Save/reload and inspect the remaining meter and sorting.
+3. Correct the second purchase to 600g and backdate it to August 1. Verify
+   1400g, latest September 1, and newest-date-first history. Correct counted
+   stock to 1350g; verify a -50g correction and retained purchase history.
+4. Remove the erroneous 600g row, first cancelling its confirmation and then
+   accepting. Verify 750g after save. Zero the balance, verify filtering and
+   history, then add a 500g purchase and verify 500g. Archive the started roast
+   and verify 700g; a repeated archive must not restore more stock.
+5. Open two edit tabs; save a purchase in one and attempt to save the stale
+   other form. Expect an inline `409` error with entered values retained.
+   Submit an invalid zero weight and verify no save; correct it and save.
+6. Inspect form/history at desktop and 390px widths, including dark mode.
+   Capture purchase form, history, meter, stale-error, and correction evidence;
+   record exact balances, expected validation failures, unexpected console or
+   network errors, and scoped cleanup in the ignored run summary.
 
 #### Bean Stock Remaining Meter (Targeted)
 
 1. For run `rn-0027-stock-meter-a`, create or edit the run-marked bean so its
-   original purchase weight is `2000g` and its current stock is `300g`.
+   cumulative purchased weight is `2000g` and its current stock is `300g`.
 2. Return to Beans and confirm the Stock cell shows `300g left` in the existing
    pill with a separate thin meter beneath it. Inspect the progressbar and
-   confirm its accessible value is 15% with remaining/original context.
+   confirm its accessible value is 15% with remaining/purchased context.
 3. Confirm the cell shows no visible consumed weight, original-weight fraction,
    or percentage. Sort the Stock column and verify the row follows its raw
    `300g` balance, then open the bean through the clickable row.

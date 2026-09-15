@@ -1,5 +1,7 @@
 from datetime import datetime
 from bson.objectid import ObjectId
+from models.bean_purchases import grams, snapshot_query
+from werkzeug.exceptions import BadRequest, Conflict, NotFound
 import pytz
 import os
 
@@ -58,7 +60,9 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
         roast_data: Dictionary with updated roast information
     """
     # Get the existing roast to compare original_weight_grams
-    existing_roast = roasts_collection.find_one({'_id': ObjectId(roast_id)})
+    existing_roast = roasts_collection.find_one({'_id': ObjectId(roast_id), 'archived': {'$ne': True}})
+    if not existing_roast:
+        raise NotFound('Roast not found')
 
     current_time = get_current_time_with_tz()
     update_doc = {
@@ -90,22 +94,22 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
 
     # Handle bean_id
     old_bean_id = existing_roast.get('bean_id')
-    new_bean_id = roast_data.get('bean_id')
-
-    if new_bean_id:
-        update_doc['bean_id'] = ObjectId(new_bean_id)
+    new_bean_id = (ObjectId(roast_data['bean_id']) if roast_data.get('bean_id') else None) if 'bean_id' in roast_data else old_bean_id
+    update_doc['bean_id'] = new_bean_id
 
     # Handle weights
     old_original_weight = existing_roast.get('original_weight_grams', 0)
-    new_original_weight = 0
+    new_original_weight = old_original_weight
     new_roasted_weight = None
 
-    if roast_data.get('original_weight_grams'):
+    if 'original_weight_grams' in roast_data:
         try:
-            new_original_weight = int(roast_data['original_weight_grams'])
+            new_original_weight = grams(roast_data['original_weight_grams'] or 0)
+            if new_original_weight < 0:
+                raise ValueError('Roast weight cannot be negative')
             update_doc['original_weight_grams'] = new_original_weight
-        except:
-            pass
+        except ValueError as error:
+            raise BadRequest(str(error)) from error
 
     if roast_data.get('roasted_weight_grams'):
         try:
@@ -119,46 +123,19 @@ def update_roast(roasts_collection, beans_collection, roast_id, roast_data):
         weight_loss = ((new_original_weight - new_roasted_weight) / new_original_weight) * 100
         update_doc['weight_loss_percentage'] = round(weight_loss, 2)
 
-    # Draft roasts have not deducted stock yet. Only adjust stock after a roast
-    # has started, when the original green weight has actually been consumed.
-    should_adjust_stock = bool(existing_roast.get('roast_start_time'))
-
-    # Update bean stock if original_weight_grams changed after the roast started
-    if should_adjust_stock and new_original_weight != old_original_weight:
-        weight_difference = new_original_weight - old_original_weight
-
-        # If bean changed, handle both old and new beans
-        if old_bean_id and new_bean_id and str(old_bean_id) != str(new_bean_id):
-            # Restore stock to old bean
-            if old_original_weight > 0:
+    result = roasts_collection.update_one(snapshot_query(existing_roast), {'$set': update_doc})
+    if result.matched_count != 1:
+        raise Conflict('Roast changed; refresh and try again')
+    if existing_roast.get('roast_start_time'):
+        # Apply consumption by bean, including equal-weight transfers.
+        changes = {}
+        if old_bean_id:
+            changes[old_bean_id] = old_original_weight
+        if new_bean_id:
+            changes[new_bean_id] = changes.get(new_bean_id, 0) - new_original_weight
+        for bean_id, delta in changes.items():
+            if delta:
                 beans_collection.update_one(
-                    {'_id': ObjectId(old_bean_id)},
-                    {
-                        '$inc': {'stock_grams': old_original_weight},
-                        '$set': {'updated_at': current_time}
-                    }
+                    {'_id': bean_id},
+                    {'$inc': {'stock_grams': delta}, '$set': {'updated_at': current_time}},
                 )
-            # Deduct stock from new bean
-            if new_original_weight > 0:
-                beans_collection.update_one(
-                    {'_id': ObjectId(new_bean_id)},
-                    {
-                        '$inc': {'stock_grams': -new_original_weight},
-                        '$set': {'updated_at': current_time}
-                    }
-                )
-        elif new_bean_id:
-            # Same bean, just adjust the difference
-            beans_collection.update_one(
-                {'_id': ObjectId(new_bean_id)},
-                {
-                    '$inc': {'stock_grams': -weight_difference},
-                    '$set': {'updated_at': current_time}
-                }
-            )
-
-    # Update the roast
-    roasts_collection.update_one(
-        {'_id': ObjectId(roast_id)},
-        {'$set': update_doc}
-    )

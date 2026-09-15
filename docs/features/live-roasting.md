@@ -128,3 +128,13 @@ remain based on start/end deltas and are not shifted for display.
 ## Dark Mode
 
 Toggle via the moon icon in the navbar. Preference is persisted in `localStorage` under the key `roast-dark`. See [docs/design/foundations/dark-mode.md](../design/foundations/dark-mode.md) for the full system.
+
+## Inventory accounting with repeat purchases
+
+Starting a draft consumes its green weight once, using submitted or saved
+setup values. Repeated/competing starts cannot deduct twice. Started-roast
+weight edits apply only the difference; transferring to another bean restores
+the old bean and deducts the new one even at equal weights. Archive restores
+consumption once. Drafts and manually completed drafts remain stock-neutral.
+See [Bean Management](./beans-management.md#stock-lifecycle) for purchase and
+correction accounting.

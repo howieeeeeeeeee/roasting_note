@@ -8,6 +8,7 @@ from bson.objectid import ObjectId
 from flask import Blueprint, Response, redirect, render_template, request, url_for
 
 from models.roast_helpers import create_draft_roast
+from models.bean_purchases import bean_version, purchase_view
 from roastlogger.database import get_beans_collection, get_roasts_collection
 from roastlogger.e2e import document_markers
 from roastlogger.routing import register_unprefixed_routes
@@ -121,7 +122,7 @@ def beans_detail(bean_id):
                 roast["time_after_fc"] = (
                     roast["total_duration_seconds"] - fc_start
                 )
-    return render_template("beans_detail.html", bean=bean, roasts=roasts)
+    return render_template("beans_detail.html", bean=bean, roasts=roasts, purchases=purchase_view(bean))
 
 
 def beans_edit_form(bean_id):
@@ -130,7 +131,8 @@ def beans_edit_form(bean_id):
     )
     if not bean:
         return "Bean not found", 404
-    return render_template("beans_form.html", bean=bean, is_edit=True)
+    return render_template("beans_form.html", bean=bean, is_edit=True,
+                           purchases=purchase_view(bean), bean_version=bean_version(bean))
 
 
 def roast_new():

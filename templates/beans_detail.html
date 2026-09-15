@@ -63,7 +63,7 @@
             <div class="detail-item"><strong>Origin:</strong> {{ bean.origin or 'Not specified' }}</div>
             <div class="detail-item"><strong>Process:</strong> {{ bean.process or 'Not specified' }}</div>
             <div class="detail-item"><strong>Supplier:</strong> {{ bean.supplier or 'Not specified' }}</div>
-            <div class="detail-item"><strong>Purchase Date:</strong> {{ bean.purchase_date.strftime('%Y-%m-%d') if bean.purchase_date else 'Not specified' }}</div>
+            <div class="detail-item"><strong>Latest Purchase:</strong> {{ bean.purchase_date.strftime('%Y-%m-%d') if bean.purchase_date else 'Not specified' }}</div>
         </div>
     </section>
 
@@ -76,15 +76,37 @@
                     {{ bean.stock_grams or 0 }}g
                 </span>
             </div>
-            <div class="detail-item"><strong>Purchase Weight:</strong> {{ bean.purchase_weight_grams or 'Not specified' }}{% if bean.purchase_weight_grams %}g{% endif %}</div>
+            <div class="detail-item"><strong>Total Purchased:</strong> {{ bean.purchase_weight_grams or 'Not specified' }}{% if bean.purchase_weight_grams %}g{% endif %}</div>
             <div class="detail-item">
-                <strong>Total Purchase Price:</strong>
+                <strong>Lifetime Cost:</strong>
                 {% if bean.purchase_price_total %}${{ bean.purchase_price_total.to_decimal() | round(2) }}{% else %}Not specified{% endif %}
             </div>
             <div class="detail-item">
-                <strong>Price per kg:</strong>
+                <strong>Average Price per kg:</strong>
                 {% if bean.unit_price_per_kg %}${{ bean.unit_price_per_kg.to_decimal() | round(2) }}{% else %}Not calculated{% endif %}
             </div>
+        </div>
+        <div class="stock-history">
+            <h3 class="stock-history-title">Purchase History</h3>
+            {% if purchases %}
+            <div class="stock-history-table-container">
+                <table class="stock-history-table" id="purchaseHistory">
+                    <thead><tr><th>Purchase date</th><th>Weight</th><th>Total price</th><th>Price/kg</th></tr></thead>
+                    <tbody>{% for purchase in purchases %}
+                        <tr>
+                            <td>{{ purchase.purchase_date.strftime('%Y-%m-%d') if purchase.purchase_date else 'Unknown' }}</td>
+                            <td>{{ purchase.weight_grams }}g</td>
+                            <td>{{ '$%.2f' | format(purchase.price_total.to_decimal()) if purchase.price_total is not none else 'Unknown' }}</td>
+                            <td>{{ '$%.2f' | format(purchase.unit_price_per_kg.to_decimal()) if purchase.unit_price_per_kg is not none else 'Unknown' }}</td>
+                        </tr>
+                    {% endfor %}</tbody>
+                </table>
+            </div>
+            {% else %}<p class="stock-history-empty">No purchase history recorded.</p>{% endif %}
+            <a href="{{ url_for('beans_edit_form', bean_id=bean._id) }}#purchaseRows" class="btn btn-secondary">Add or edit purchases</a>
+            {% if bean.inventory_opening_adjustment_grams %}
+            <p class="helper-text">Historical inventory adjustment: {{ '%+d' | format(bean.inventory_opening_adjustment_grams) }}g. Preserves the opening balance.</p>
+            {% endif %}
         </div>
         {% set stock_changes = bean.stock_change_log or [] %}
         <div class="stock-history" id="stockHistory" aria-live="polite">

@@ -6,6 +6,7 @@ import json
 from argparse import Namespace
 from pathlib import Path
 from uuid import uuid4
+from models.bean_purchases import bean_version
 
 import pytest
 from bson.objectid import ObjectId
@@ -264,6 +265,7 @@ def test_browser_creation_marks_and_updates_e2e_documents(tmp_path):
         response = client.post(
             f"/api/beans/edit/{bean['_id']}",
             data={
+                "bean_version": bean_version(bean),
                 "name": f"{bean_name} Updated",
                 "stock_grams": "450",
                 "origin": "E2E Origin",
@@ -281,7 +283,7 @@ def test_browser_creation_marks_and_updates_e2e_documents(tmp_path):
         assert zeroed_bean["stock_grams"] == 0
         assert zeroed_bean["test_data"] is True
         assert zeroed_bean["test_run_id"] == run_id
-        assert len(zeroed_bean["stock_change_log"]) == 1
+        assert len(zeroed_bean["stock_change_log"]) == 2
 
         response = client.post("/api/roast/create")
         roast_id = ObjectId(response.json["new_roast_id"])

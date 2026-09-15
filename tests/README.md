@@ -107,7 +107,8 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | --- | --- |
 | `test_api_contracts.py` | Labels, preferences, Settings, rendered stock-history and Beans-list remaining-meter states, identifiers, and payload failures |
 | `test_app_factory.py` | Route manifest, configuration boundaries, and live-roast module entry |
-| `test_beans_api.py` | Bean CRUD, stock, labels, pricing, and validation |
+| `test_beans_api.py` | Bean CRUD, repeated purchases, Decimal pricing, validation, stale writes, stock deltas/corrections, and labels |
+| `test_bean_purchase_migration.py` | Local-only endpoint checks, dry-run safety, backup verification, stock preservation, conflicts, and idempotency |
 | `test_database_backup.py` | Complete backups, BSON round trips, and incomplete-backup safety |
 | `test_database_sync.py` | Sync validation, read-only preflight, direction, and conflicts |
 | `test_database_sync_cli.py` | Confirmations, cancellation, backups, and audit behavior |
@@ -130,10 +131,10 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 
 ### Bean Operations (`test_beans_api.py`)
 - Create bean with valid/invalid data
-- Edit bean details
+- Edit bean details and repeated dated purchases; reject stale forms atomically
 - Delete bean (soft delete verification)
 - Stock deduction/restoration and atomic positive/negative set-to-zero history
-- Unit price calculation
+- Decimal purchase totals, weighted unit-price summaries, and unknown prices
 - Form validation and data handling
 
 ### Rendered Bean Contracts (`test_api_contracts.py`)
@@ -174,7 +175,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 - Add key timing events (FC, SC, Yellowing)
 - Add temperature curve data
 - Update roast details
-- Delete roast (soft delete + stock restoration)
+- Delete roast (soft delete + one-time stock restoration), repeated start/archive, and equal-weight bean transfers
 - Weight loss calculation
 - Sync state endpoint
 - Local CSV logging
@@ -413,3 +414,18 @@ The supported generator script remains
 record parsing, validation, filing, Markdown rendering, and orchestration to
 the internal `tracker/` package while preserving the script and import
 compatibility surface.
+
+## Purchase-history verification
+
+Use an isolated local database for RN-0031 API runs:
+
+```bash
+LOCAL_DB_NAME=roastlogger_test_rn0031 uv run pytest
+```
+
+The migration tests create and drop only unique `roastlogger_migration_test_*`
+databases. They verify canonical BSON backup content, verification-before-write,
+no-op reruns, malformed-record rejection, and conditional-write conflicts.
+Production conversion runs only as an explicit delivery operation after tests;
+it is never a fixture or cleanup step. Browser coverage is the repeat-purchase
+scenario in `tests/e2e/README.md`.

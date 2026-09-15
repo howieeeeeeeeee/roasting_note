@@ -54,6 +54,8 @@ Stores information about each type of green coffee bean in inventory.
   "origin": "String",
   "process": "String",
   "supplier": "String",
+  "purchases": ["Purchase"],
+  "inventory_opening_adjustment_grams": "Integer",
   "purchase_date": "Date",
   "purchase_price_total": "Decimal128",
   "purchase_weight_grams": "Integer",
@@ -77,17 +79,39 @@ Stores information about each type of green coffee bean in inventory.
 | `origin` | String | No | - | Country/region of origin |
 | `process` | String | No | - | Processing method (Washed, Natural, Honey) |
 | `supplier` | String | No | - | Where purchased |
-| `purchase_date` | Date | No | - | When purchased |
-| `purchase_price_total` | Decimal | No | - | Total cost for batch |
-| `purchase_weight_grams` | Integer | No | - | Original batch weight |
+| `purchase_date` | Date | No | null | Latest dated purchase |
+| `purchase_price_total` | Decimal | No | null | Lifetime cost; unknown if any entry is unpriced |
+| `purchase_weight_grams` | Integer | No | 0 | Cumulative purchased weight |
 | `stock_grams` | Integer | Yes | 0 | Current available stock |
-| `stock_change_log` | Array[Object] | No | [] | Embedded history of explicit set-to-zero stock changes |
+| `stock_change_log` | Array[Object] | No | [] | Embedded set-to-zero and manual stock corrections |
 | `short_flavor_notes` | Array[String] | No | [] | Compact flavor notes for bean previews and label auto-fill, one note per array item |
 | `color` | String | No | "#6B8E6F" | Hex color for visual identification |
 | `archived` | Boolean | No | false | Soft delete flag |
 | `label` | Object | No | - | Label creator data (see below) |
 | `test_data` | Boolean | E2E only | - | Always `true` for dedicated E2E records |
 | `test_run_id` | String | E2E only | - | Run-scoped cleanup and evidence identifier |
+
+### Embedded: `purchases` Array
+
+Each entry has `id` (ObjectId, stable within the bean), `purchase_date` (Date or
+null), `weight_grams` (positive integer), and `price_total` (nonnegative finite
+Decimal128 or null). Dates retain the entered calendar day. Unit prices use
+Decimal128 arithmetic; the per-entry price is derived, not separately stored.
+
+Top-level purchase fields are summaries, not independent editable fields.
+`unit_price_per_kg` is total lifetime cost × 1000 / total purchased grams;
+both cost and average are null if the history is empty or any price is unknown.
+`inventory_opening_adjustment_grams` is a signed integer preserving historical
+unlogged balance differences. It is set once at migration or initial creation.
+
+The balance invariant is:
+`stock_grams = sum(purchases.weight_grams) - active started-roast usage + sum(stock_change_log.change_grams) + inventory_opening_adjustment_grams`.
+Purchase edits change stock by their weight delta. Drafts and manually completed
+roasts without `roast_start_time` are excluded from consumption. Bean form
+updates use a whole-document version token and conditional snapshot match.
+
+The local migration wraps the legacy scalar purchase and preserves stock;
+existing arrays are not remigrated. See [Bean Management](../features/beans-management.md#local-migration).
 
 ### Embedded: `label` Object
 
@@ -131,7 +155,7 @@ Optional label configuration for the bean label creator.
 
 ### Embedded: `stock_change_log` Array
 
-Each entry records one successful explicit set-to-zero action:
+Each entry records one successful set-to-zero action or manual stock correction:
 
 ```json
 {
@@ -145,14 +169,14 @@ Each entry records one successful explicit set-to-zero action:
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `event_type` | String | Always `set_to_zero` for this history version |
+| `event_type` | String | `set_to_zero` or `manual_correction` |
 | `previous_stock_grams` | Integer | Signed stock observed before the conditional update |
-| `change_grams` | Integer | `0 - previous_stock_grams` |
-| `resulting_stock_grams` | Integer | Always `0` |
+| `change_grams` | Integer | Resulting balance minus previous balance |
+| `resulting_stock_grams` | Integer | Counted balance, or zero for set-to-zero |
 | `recorded_at` | Date | Timezone-aware time shared with the bean's new `updated_at` value |
 
 Legacy beans may omit `stock_change_log`; readers treat omission as an empty
-array. No backfill is required.
+array. The purchase migration retains this log unchanged.
 
 ---
 
@@ -330,7 +354,9 @@ db.roasts.updateOne(
 ```
 
 ### On Roast Weight Edit
-Calculate difference and apply to bean stock.
+Calculate the consumed-weight difference and apply it to bean stock. A bean
+change restores the old bean and deducts from the new one even at equal weight.
+Repeated archive requests do not restore stock again.
 
 ### On Explicit Set To Zero
 
@@ -338,4 +364,5 @@ Calculate difference and apply to bean stock.
 It conditionally matches the observed value and atomically sets stock to zero,
 appends one `stock_change_log` entry, and refreshes `updated_at`. Zero, repeated,
 or concurrently stale requests append no entry. Manual edits and roast-driven
-stock changes do not write this history.
+purchase/roast changes do not write this correction history; manual counted
+balances append `manual_correction` entries.

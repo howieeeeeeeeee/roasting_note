@@ -75,31 +75,23 @@
     <section class="form-section management-form-section management-form-section--inventory surface-flat">
         <h2>Inventory</h2>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label for="purchase_date">Purchase Date</label>
-                <input type="text" id="purchase_date" name="purchase_date" class="form-control flatpickr-date"
-                    value="{{ bean.purchase_date.strftime('%Y-%m-%d') if bean and bean.purchase_date else '' }}"
-                    placeholder="Select date" readonly data-flatpickr data-flatpickr-mode="date">
-            </div>
-
-            <div class="form-group">
-                <label for="purchase_weight_grams">Purchase Weight (grams)</label>
-                <input type="number" id="purchase_weight_grams" name="purchase_weight_grams" value="{{ bean.purchase_weight_grams if bean else '' }}" min="0">
-            </div>
+        <input type="hidden" name="purchase_history" value="1">
+        {% if is_edit %}<input type="hidden" name="bean_version" value="{{ bean_version }}">{% endif %}
+        <p class="helper-text">Add each purchase here. Stock updates automatically when purchases or roasts change.</p>
+        <div id="purchaseRows">
+            {% for purchase in purchases or [{}] %}
+            {% include 'partials/bean_purchase_row.html' %}
+            {% endfor %}
         </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label for="purchase_price_total">Total Purchase Price</label>
-                <input type="number" step="0.01" id="purchase_price_total" name="purchase_price_total" value="{{ bean.purchase_price_total.to_decimal() if bean and bean.purchase_price_total else '' }}" min="0">
-            </div>
-
-            <div class="form-group">
-                <label for="stock_grams">Current Stock (grams)</label>
-                <input type="number" id="stock_grams" name="stock_grams" value="{{ bean.stock_grams if bean else '' }}" min="0">
-            </div>
+        <button type="button" class="btn btn-secondary" id="addPurchase">Add purchase</button>
+        <template id="purchaseRowTemplate">{% set purchase = {} %}{% include 'partials/bean_purchase_row.html' %}</template>
+        <div class="form-group stock-correction">
+            {% if is_edit %}<p>Current stock: <strong>{{ bean.stock_grams or 0 }}g</strong></p>{% endif %}
+            <label for="stock_grams">{% if is_edit %}Correct stock to (grams){% else %}Opening stock (grams){% endif %}</label>
+            <input type="number" id="stock_grams" name="stock_grams" step="1" placeholder="Leave blank to calculate from purchases">
+            <p class="helper-text">Optional. Enter a counted balance only to correct inventory; purchase changes apply automatically.</p>
         </div>
+        <p id="beanFormError" role="alert" hidden></p>
     </section>
 
     <div class="form-actions management-form-actions">
@@ -198,4 +190,5 @@
         colorPreview.textContent = this.value.toUpperCase();
     });
 </script>
+<script src="{{ url_for('static', filename='js/bean-purchases.js') }}"></script>
 {% endblock %}

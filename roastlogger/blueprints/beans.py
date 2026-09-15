@@ -8,7 +8,8 @@ from bson.objectid import ObjectId
 from flask import Blueprint, current_app, jsonify, redirect, request, url_for
 
 from models.bean_helpers import create_bean, set_bean_stock_to_zero, update_bean
-from roastlogger.database import get_beans_collection
+from models.bean_purchases import BeanConflict
+from roastlogger.database import get_beans_collection, get_roasts_collection
 from roastlogger.e2e import document_markers
 from roastlogger.routing import register_unprefixed_routes
 from roastlogger.time_utils import get_current_time_with_tz
@@ -18,17 +19,23 @@ blueprint = Blueprint("beans", __name__)
 
 
 def api_beans_add():
-    create_bean(
-        get_beans_collection(),
-        request.form.to_dict(),
-        markers=document_markers(),
-    )
+    try:
+        create_bean(get_beans_collection(), request.form, markers=document_markers())
+    except ValueError as error:
+        return jsonify(success=False, error=str(error)), 400
     return redirect(url_for("beans_list"))
 
 
 def api_beans_edit(bean_id):
-    update_bean(get_beans_collection(), bean_id, request.form.to_dict())
-    return redirect(url_for("beans_list"))
+    try:
+        update_bean(get_beans_collection(), bean_id, request.form, get_roasts_collection())
+    except BeanConflict as error:
+        return jsonify(success=False, error=str(error)), 409
+    except LookupError as error:
+        return jsonify(success=False, error=str(error)), 404
+    except ValueError as error:
+        return jsonify(success=False, error=str(error)), 400
+    return redirect(url_for("beans_detail", bean_id=bean_id))
 
 
 def api_beans_delete(bean_id):

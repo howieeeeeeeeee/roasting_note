@@ -16,7 +16,30 @@ from bson.objectid import ObjectId
 from bson.decimal128 import Decimal128
 
 from models.bean_helpers import set_bean_stock_to_zero
+from models.bean_purchases import bean_version
+from werkzeug.datastructures import MultiDict
 from tests.conftest import TEST_DATA_MARKER
+
+
+def edit_data(beans, bean_id, **fields):
+    bean = beans.find_one({'_id': ObjectId(bean_id)})
+    values = {'bean_version': bean_version(bean), **fields}
+    if any(key in fields for key in ('purchase_date', 'purchase_weight_grams', 'purchase_price_total')):
+        values['purchase_history'] = '1'
+        values['purchase_id'] = str(bean['_id'])
+        values.setdefault('purchase_date', bean['purchase_date'].strftime('%Y-%m-%d') if bean.get('purchase_date') else '')
+        values.setdefault('purchase_weight_grams', str(bean.get('purchase_weight_grams', '')))
+        amount = bean.get('purchase_price_total')
+        values.setdefault('purchase_price_total', str(amount.to_decimal()) if amount else '')
+    return values
+
+
+def history_data(bean, rows, **fields):
+    data = MultiDict({'name': bean['name'], 'bean_version': bean_version(bean), 'purchase_history': '1', **fields})
+    for row in rows:
+        for key, value in zip(('purchase_id', 'purchase_date', 'purchase_weight_grams', 'purchase_price_total'), row):
+            data.add(key, value)
+    return data
 
 
 class TestBeanCreate:
@@ -104,14 +127,8 @@ class TestBeanCreate:
 
         response = client.post('/api/beans/add', data=form_data, follow_redirects=False)
 
-        # Should still succeed (with default/zero values)
-        assert response.status_code == 302
-
-        bean = beans_collection.find_one({'name': 'Test Invalid Numbers Bean'})
-        assert bean is not None
-
-        # Cleanup
-        beans_collection.delete_one({'_id': bean['_id']})
+        assert response.status_code == 400
+        assert beans_collection.find_one({'name': 'Test Invalid Numbers Bean'}) is None
 
 
 class TestBeanEdit:
@@ -134,7 +151,7 @@ class TestBeanEdit:
             'notes': 'Updated notes',
         }
 
-        response = client.post(f'/api/beans/edit/{bean_id}', data=updated_data, follow_redirects=False)
+        response = client.post(f'/api/beans/edit/{bean_id}', data=edit_data(beans_collection, bean_id, **updated_data), follow_redirects=False)
 
         assert response.status_code == 302
 
@@ -153,6 +170,7 @@ class TestBeanEdit:
         response = client.post(
             f'/api/beans/edit/{bean_id}',
             data={
+                'bean_version': bean_version(beans_collection.find_one({'_id': ObjectId(bean_id)})),
                 'name': 'Cleared Notes Bean',
                 'short_flavor_notes': '',
             },
@@ -174,7 +192,7 @@ class TestBeanEdit:
             'stock_grams': '2000',
         }
 
-        client.post(f'/api/beans/edit/{bean_id}', data=updated_data, follow_redirects=False)
+        client.post(f'/api/beans/edit/{bean_id}', data=edit_data(beans_collection, bean_id, **updated_data), follow_redirects=False)
 
         bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
         unit_price = float(bean['unit_price_per_kg'].to_decimal())
@@ -184,9 +202,7 @@ class TestBeanEdit:
         """Test editing a bean that doesn't exist."""
         fake_id = str(ObjectId())
         response = client.post(f'/api/beans/edit/{fake_id}', data={'name': 'Test'}, follow_redirects=False)
-        # The helper function will try to update but find nothing
-        # This should still redirect (no error handling in current implementation)
-        assert response.status_code == 302
+        assert response.status_code == 404
 
 
 class TestBeanDelete:
@@ -397,7 +413,7 @@ class TestBeanStock:
 
         client.post(
             f'/api/beans/edit/{bean_id}',
-            data={'name': 'Restocked Bean', 'stock_grams': '-40'},
+            data=edit_data(beans_collection, bean_id, name='Restocked Bean', stock_grams='-40'),
         )
         second = client.post(f'/api/beans/{bean_id}/set-stock-zero')
 
@@ -406,9 +422,10 @@ class TestBeanStock:
         assert [
             entry['previous_stock_grams']
             for entry in bean['stock_change_log']
-        ] == [1000, -40]
+        ] == [1000, 0, -40]
         assert [entry['change_grams'] for entry in bean['stock_change_log']] == [
             -1000,
+            -40,
             40,
         ]
 
@@ -518,6 +535,7 @@ class TestBeanFormValidation:
         form_data = {
             'name': 'Date Test Bean',
             'purchase_date': '2024-06-15',
+            'purchase_weight_grams': '1000',
         }
 
         client.post('/api/beans/add', data=form_data, follow_redirects=False)
@@ -563,3 +581,113 @@ class TestBeanFormValidation:
 
         # Cleanup
         beans_collection.delete_one({'_id': bean['_id']})
+
+
+def test_purchase_history_deltas_summaries_replay_and_manual_correction(client, beans_collection, created_test_bean):
+    bean_id = ObjectId(created_test_bean)
+    bean = beans_collection.find_one({'_id': bean_id})
+    rows = [(str(bean_id), '2024-01-15', '1000', '45'), ('', '2025-01-01', '500', '30')]
+    data = history_data(bean, rows)
+    url = f'/api/beans/edit/{bean_id}'
+    assert client.post(url, data=data).status_code == 302
+    updated = beans_collection.find_one({'_id': bean_id})
+    assert updated['stock_grams'] == 1500
+    assert updated['purchase_weight_grams'] == 1500
+    assert updated['purchase_price_total'].to_decimal() == 75
+    assert updated['unit_price_per_kg'].to_decimal() == 50
+    assert client.post(url, data=data).status_code == 409
+    rows[1] = (str(updated['purchases'][1]['id']), '2023-01-01', '600', '30')
+    assert client.post(url, data=history_data(updated, rows)).status_code == 302
+    updated = beans_collection.find_one({'_id': bean_id})
+    assert updated['stock_grams'] == 1600
+    assert updated['purchase_date'] == datetime(2024, 1, 15)
+    assert client.post(url, data=history_data(updated, rows, stock_grams='-10')).status_code == 302
+    corrected = beans_collection.find_one({'_id': bean_id})
+    assert corrected['stock_change_log'][-1]['change_grams'] == -1610
+    assert corrected['stock_change_log'][-1]['event_type'] == 'manual_correction'
+    assert client.post(url, data=history_data(corrected, rows[:1])).status_code == 302
+    assert beans_collection.find_one({'_id': bean_id})['stock_grams'] == -610
+    html = client.get(f'/beans/detail/{bean_id}').get_data(as_text=True)
+    assert 'Purchase History' in html and '2024-01-15' in html
+    assert 'Average Price per kg' in html
+
+
+@pytest.mark.parametrize('date,weight,amount', [
+    ('2026-02-30', '100', '5'), ('2026-01-01', '0', '5'),
+    ('2026-01-01', '-1', '5'), ('2026-01-01', '1.5', '5'),
+    ('2026-01-01', 'true', '5'), ('2026-01-01', '10', 'NaN'),
+    ('2026-01-01', '10', 'Infinity'), ('2026-01-01', '10', '-5'),
+])
+def test_invalid_purchase_never_partially_writes(client, beans_collection, created_test_bean, date, weight, amount):
+    bean = beans_collection.find_one({'_id': ObjectId(created_test_bean)})
+    data = history_data(bean, [('', date, weight, amount)], name='Must not save')
+    response = client.post(f'/api/beans/edit/{created_test_bean}', data=data)
+    assert response.status_code == 400
+    assert beans_collection.find_one({'_id': bean['_id']}) == bean
+
+
+def test_purchase_identifiers_unknown_cost_and_stale_roast(client, beans_collection, created_test_bean):
+    bean = beans_collection.find_one({'_id': ObjectId(created_test_bean)})
+    url = f'/api/beans/edit/{bean["_id"]}'
+    for rows in [
+        [('bad', '', '10', '1')], [(str(ObjectId()), '', '10', '1')],
+        [(str(bean['_id']), '', '10', '1')] * 2,
+    ]:
+        assert client.post(url, data=history_data(bean, rows)).status_code == 400
+    data = history_data(bean, [(str(bean['_id']), '', '1000', '')])
+    assert client.post(url, data=data).status_code == 302
+    bean = beans_collection.find_one({'_id': bean['_id']})
+    assert bean['purchase_price_total'] is None and bean['unit_price_per_kg'] is None
+    stale = history_data(bean, [('', '', '500', '')])
+    beans_collection.update_one({'_id': bean['_id']}, {'$inc': {'stock_grams': -200}})
+    assert client.post(url, data=stale).status_code == 409
+    assert beans_collection.find_one({'_id': bean['_id']})['stock_grams'] == 800
+
+
+def test_purchase_compare_and_swap_rejects_intervening_write(monkeypatch, client, beans_collection, created_test_bean):
+    import models.bean_helpers as purchases
+    bean = beans_collection.find_one({'_id': ObjectId(created_test_bean)})
+    original = purchases.snapshot_query
+    def racing_query(document):
+        beans_collection.update_one({'_id': document['_id']}, {'$inc': {'stock_grams': -200}})
+        return original(document)
+    monkeypatch.setattr(purchases, 'snapshot_query', racing_query)
+    data = history_data(bean, [(str(bean['_id']), '', '1500', '50')])
+    assert client.post(f'/api/beans/edit/{bean["_id"]}', data=data).status_code == 409
+    stored = beans_collection.find_one({'_id': bean['_id']})
+    assert stored['stock_grams'] == 800 and 'purchases' not in stored
+
+
+def test_full_purchase_and_roast_inventory_equation(client, beans_collection, roasts_collection, created_test_bean):
+    bean_id = ObjectId(created_test_bean)
+    roast_id = roasts_collection.insert_one({'bean_id': bean_id, 'original_weight_grams': 200,
+                                             'lifecycle_status': 'draft', 'test_data': True}).inserted_id
+    url = f'/api/beans/edit/{bean_id}'
+    try:
+        assert client.post(f'/api/roast/start/{roast_id}', json={}).status_code == 200
+        bean = beans_collection.find_one({'_id': bean_id})
+        rows = [(str(bean_id), '2024-01-15', '1000', '45'), ('', '2026-09-10', '500', '30')]
+        assert client.post(url, data=history_data(bean, rows)).status_code == 302
+        bean = beans_collection.find_one({'_id': bean_id})
+        assert bean['stock_grams'] == 1300
+        rows[1] = (str(bean['purchases'][1]['id']), '2023-01-01', '600', '30')
+        assert client.post(url, data=history_data(bean, rows)).status_code == 302
+        bean = beans_collection.find_one({'_id': bean_id})
+        assert bean['stock_grams'] == 1400
+        assert bean['inventory_opening_adjustment_grams'] == 0
+        assert client.post(f'/api/beans/{bean_id}/set-stock-zero').status_code == 200
+        bean = beans_collection.find_one({'_id': bean_id})
+        rows.append(('', '2026-09-15', '500', '0'))
+        assert client.post(url, data=history_data(bean, rows)).status_code == 302
+        assert beans_collection.find_one({'_id': bean_id})['stock_grams'] == 500
+        for _ in range(2):
+            assert client.post(f'/api/roast/delete/{roast_id}').status_code == 302
+            bean = beans_collection.find_one({'_id': bean_id})
+            assert bean['stock_grams'] == 700
+        assert bean['stock_grams'] == sum(row['weight_grams'] for row in bean['purchases']) + sum(row['change_grams'] for row in bean['stock_change_log'])
+        assert client.post(url, data=history_data(bean, [])).status_code == 302
+        empty = beans_collection.find_one({'_id': bean_id})
+        assert empty['stock_grams'] == -1400 and empty['purchases'] == []
+        assert empty['purchase_date'] is None and empty['unit_price_per_kg'] is None
+    finally:
+        roasts_collection.delete_one({'_id': roast_id})

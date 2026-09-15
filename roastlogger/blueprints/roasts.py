@@ -196,25 +196,17 @@ def api_roast_update(roast_id):
 
 
 def api_roast_delete(roast_id):
-    roast = get_roasts_collection().find_one({"_id": ObjectId(roast_id)})
     current_time = get_current_time_with_tz()
-    if (
-        roast
-        and roast.get("roast_start_time")
-        and roast.get("bean_id")
-        and roast.get("original_weight_grams")
-    ):
-        get_beans_collection().update_one(
-            {"_id": ObjectId(roast["bean_id"])},
-            {
-                "$inc": {"stock_grams": roast["original_weight_grams"]},
-                "$set": {"updated_at": current_time},
-            },
-        )
-    get_roasts_collection().update_one(
-        {"_id": ObjectId(roast_id)},
-        {"$set": {"archived": True, "updated_at": current_time}},
+    roast = get_roasts_collection().find_one_and_update(
+        {'_id': ObjectId(roast_id), 'archived': {'$ne': True}},
+        {'$set': {'archived': True, 'updated_at': current_time}},
     )
+    if roast and roast.get('roast_start_time') and roast.get('bean_id') and roast.get('original_weight_grams'):
+        get_beans_collection().update_one(
+            {'_id': roast['bean_id']},
+            {'$inc': {'stock_grams': roast['original_weight_grams']},
+             '$set': {'updated_at': current_time}},
+        )
     return redirect(url_for("index"))
 
 

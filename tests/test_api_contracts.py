@@ -278,7 +278,7 @@ def test_bean_list_stock_remaining_meter_contract(client, beans_collection):
         assert 'aria-valuemax="100"' in ratio_row
         assert 'aria-valuenow="15.0"' in ratio_row
         assert (
-            'aria-valuetext="300g remaining of 2000g original (15.0%)"'
+            'aria-valuetext="300g remaining of 2000g purchased (15.0%)"'
             in ratio_row
         )
         assert '--stock-remaining-percent: 15.0%;' in ratio_row

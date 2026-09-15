@@ -2,7 +2,7 @@
 id: RN-0031
 title: Repeat bean purchases with preserved inventory and local migration
 type: feature
-status: pending
+status: in_progress
 priority: high
 created: 2026-09-15
 resolved:
@@ -154,7 +154,7 @@ and BSON backup utilities where practical; do not call a mirror to migrate.
 
 - Change classification: backend-api, ui-interaction, cross-workflow, database-sync
 - Browser verification level: full
-- Automated tests to add or update: `tests/test_beans_api.py` for array CRUD, input validation, atomic weight deltas, stale/repeated writes, summaries, manual corrections, and legacy compatibility; new `tests/test_bean_purchase_migration.py` for dry-run/no remote client, verified backup before writes, lossless BSON conversion, opening adjustment, invalid-record handling, conditional writes, and idempotency; `tests/test_roasts_api.py` for draft/start/edit/transfer/archive accounting and retries; `tests/test_api_contracts.py` for history, dates, price/stock sorting, remaining meters, signed balances, and empty states; `tests/test_sync_api.py` for complete embedded-array/adjustment round trips and unchanged timestamp conflict rules; `tests/test_management_design_contracts.py` for revised form contracts. Update `tests/test_app_factory.py` only if the existing form routes cannot be reused.
+- Automated tests to add or update: `tests/test_beans_api.py` for array CRUD, input validation, atomic weight deltas, stale/repeated writes, summaries, manual corrections, and legacy compatibility; new `tests/test_bean_purchase_migration.py` for dry-run/no remote client, verified backup before writes, lossless BSON conversion, opening adjustment, invalid-record handling, conditional writes, and idempotency; `tests/test_roasts_api.py` for draft/start/edit/transfer/archive accounting and retries; `tests/test_api_contracts.py` for history, dates, price/stock sorting, remaining meters, signed balances, and empty states; `tests/test_sync_api.py` for complete embedded-array/adjustment round trips and unchanged timestamp conflict rules; `tests/test_management_design_contracts.py` for revised form contracts; `tests/test_database_sync_routes.py` for environment-independent fake database selection. Update `tests/test_app_factory.py` only if the existing form routes cannot be reused.
 - Browser E2E scenarios to add or update: `tests/e2e/README.md` -> `Bean`, add `Repeat purchases and inventory reconciliation`, update `Bean Stock Remaining Meter (Targeted)`, and run the complete affected `Live Roast` workflow. Create one bean, start/end a 200g roast, repurchase, edit/backdate/remove a purchase, correct stock, zero/restock, reload, sort/filter, and archive the started roast; verify exact balances/history at each step. Exercise invalid input and stale submission with no data loss. Verify at desktop/mobile widths and preserve the isolated run markers.
 - Required commands: `uv run pytest tests/test_beans_api.py tests/test_bean_purchase_migration.py tests/test_roasts_api.py tests/test_api_contracts.py tests/test_sync_api.py tests/test_management_design_contracts.py tests/test_app_factory.py`; `uv run pytest`; `uv run python -m tests.e2e.manage start --run-id rn-0031-purchases-a`; `uv run python -m tests.e2e.manage cleanup --run-id rn-0031-purchases-a`; `uv run python scripts/migrate_bean_purchases.py --dry-run`; after verification and local backup, `uv run python scripts/migrate_bean_purchases.py --apply`, followed by its no-op dry run; `uv run python scripts/sync_database.py --direction local-to-online --dry-run`; `git ls-files db_backup 'db_backup/**'`; `uv run python scripts/generate_issues_index.py`; `uv run python scripts/generate_issues_index.py --check`.
 - Required browser evidence: Run ID `rn-0031-purchases-a`; screenshots of repeatable form, purchase history, latest-date/stock summaries and meter at desktop/mobile widths; exact balance assertions through purchases and roast lifecycle; invalid/stale form behavior; console and failed-network findings; run-scoped cleanup counts in ignored `tests/e2e/artifacts/rn-0031-purchases-a/summary.md`.
@@ -211,6 +211,28 @@ and BSON backup utilities where practical; do not call a mirror to migrate.
   that the new schema is already implemented or synchronized.
 - Local inspection was read-only and returned counts only. No purchase
   migration or applied mirror has run for this ticket.
+
+## Implementation evidence (in progress)
+
+- Implemented embedded purchase forms/history, Decimal summaries, conditional
+  bean edits, recorded stock corrections, stock-preserving local migration,
+  and directly affected roast start/transfer/archive accounting.
+- Full automated suite: `LOCAL_DB_NAME=roastlogger_test_rn0031 uv run pytest -q`
+  passed **236 tests** on 2026-09-15. Focused regression suite previously passed
+  129 tests. The fake sync-route fixture now pins its fake database name so
+  isolated test runs cannot redirect it to a different fake database.
+- JavaScript syntax, Python compilation, and `git diff --check` passed.
+- Local migration preview: **13 eligible**, **0 invalid**, **3 opening
+  adjustments**. This was read-only; production local conversion has not run.
+- Full browser run `rn-0031-purchases-a` is in progress. Initial 1000g purchase,
+  200g roast start (800g remaining), event logging, sensor fault, and recovery
+  were verified. Native end-roast confirmation stalled browser control; the
+  remaining interaction, responsive, and cleanup evidence is not yet complete.
+- Pre-implementation local-to-online preview
+  `20260915T224438Z-332da050` succeeded without writes. It forecast one bean
+  update and zero timestamp conflicts. No remote mirror has been applied.
+- No `db_backup/` payload is tracked. Production migration and the fresh
+  post-migration sync preview remain delivery gates before resolution.
 
 ## Open Questions
 

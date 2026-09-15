@@ -21,6 +21,7 @@ def make_app(tmp_path):
         {
             "TESTING": True,
             "DEVICE": "route-test-mac",
+            "LOCAL_DB_NAME": "roastlogger",
             "MONGO_URI": "mongodb://online.example/roastlogger",
             "MONGO_URI_LOCAL": "mongodb://localhost:27017/roastlogger",
             "REPOSITORY_ROOT": str(tmp_path),

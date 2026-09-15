@@ -45,14 +45,14 @@ Bean names use the shared record-title typography (`--font-display`) so they car
 The centered 9% Stock column uses a compact two-tier stack. The existing
 monospace green pill reads `<signed stock_grams>g left`; balances below the
 existing low-stock threshold retain the red `.stock-low` treatment. When a
-positive integer purchase-weight baseline exists, a separate 4px rounded
+positive integer cumulative purchase-weight baseline exists, a separate 4px rounded
 neutral track sits 4px below the pill. Its green fill represents the clamped
 remaining percentage and switches to the low-stock foreground with the pill.
 
 Do not fuse the track into the pill or add visible original weight, consumed
 weight, a fraction, percentage, legend, icon, tooltip, border, gradient, or
 animation. The meter exposes `role="progressbar"`, a 0–100 range, the clamped
-value, and remaining/original context in `aria-valuetext`. Invalid or absent
+value, and remaining/cumulative-purchased context in `aria-valuetext`. Invalid or absent
 purchase-weight baselines omit the progressbar entirely, so the pill remains a
 complete readable fallback.
 
@@ -68,13 +68,14 @@ The add/edit bean form is grouped into three `.form-section` panels:
 
 - **Bean Profile** — name, origin, process, supplier, and label colour.
 - **Flavor Notes** — short note chip editor and long notes textarea.
-- **Inventory** — purchase date, purchase weight, total price, and current stock.
+- **Inventory** — repeated purchase rows plus an optional counted stock correction.
 
 The bean name field uses `.form-group-title` so it matches record-title typography. The `short_flavor_notes` chip editor still submits newline-separated text so the backend can normalize it into the stored array.
 
 The form also uses `.management-form--bean`. At `1024px` and wider, Bean
 Profile and Flavor Notes share the first row, then Inventory spans the form
-with a four-column field grid. Existing wrapper rows use `display: contents`
+with purchase rows containing native date, weight, total-price, and Remove
+controls. Existing wrapper rows use `display: contents`
 only at that breakpoint, so focus and DOM order remain name, sourcing, color,
 flavor, notes, then inventory. Below `768px`, all sections and field groups are
 one column.
@@ -82,6 +83,27 @@ one column.
 Add/Update Bean stays before Cancel in a sticky action row. The row includes
 mobile safe-area padding, does not remove the actions from document flow, and
 becomes static for print.
+
+### Repeated purchases
+
+Each purchase is a labeled fieldset. **Add purchase** appends a row and focuses
+its date. **Remove purchase** confirms the stock consequence when a row has
+values, removes it from the unsaved form, and focuses Add purchase. Every row
+stacks at mobile widths. Blank dates/prices mean unknown; blank new rows can
+remain unused. Price labels explicitly say total price.
+
+The current balance appears above **Correct stock to (grams)** on edit.
+This optional field starts blank so repurchasing cannot accidentally restore
+an old stock count. On create it reads **Opening stock (grams)**. Inline
+validation and stale-save errors use an alert below Inventory and retain the
+form entries. Submit is disabled while saving and re-enabled after an error.
+
+Bean detail includes a newest-date-first Purchase History table and **Add or
+edit purchases** link. Stock & Pricing labels cumulative weight, lifetime cost,
+and average price per kg; unknown prices are shown as unknown. A nonzero
+historical opening adjustment is disclosed below purchase history. Latest
+Purchase and Avg. Price/kg replace the ambiguous list column names. The meter
+uses cumulative purchases and retains signed gram text and clamped fill.
 
 ## Bean Detail
 
@@ -133,7 +155,7 @@ balance and has no automatic undo.
   badge, removes the empty More actions menu, prepends the history row, and
   shows a success toast. Failure preserves the visible state and shows an error
   toast.
-- The history table displays Recorded, Previous, Change, and Result columns in
+- The stock-correction history table displays Recorded, Previous, Change, and Result columns in
   newest-first order. Positive deltas use the success color and negative deltas
   use the error color; numeric cells use the monospace data face.
 - When no history exists, show **No stock changes recorded.** The table becomes

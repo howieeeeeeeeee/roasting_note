@@ -942,3 +942,41 @@ class TestRoastLocalTempLog:
 
         # Cleanup
         os.remove(log_file)
+
+
+def test_inventory_start_retry_equal_weight_transfer_and_archive_retry(client, beans_collection, roasts_collection, created_test_roast):
+    from bson.objectid import ObjectId
+    first = ObjectId(created_test_roast['bean_id'])
+    roast_id = created_test_roast['roast_id']
+    second = beans_collection.insert_one({'name': 'Transfer destination', 'stock_grams': 700, 'test_data': True}).inserted_id
+    try:
+        url = f'/api/roast/start/{roast_id}'
+        assert client.post(url, json={'bean_id': str(first), 'original_weight_grams': 200}).status_code == 200
+        assert client.post(url, json={'bean_id': str(first), 'original_weight_grams': 200}).status_code == 409
+        assert beans_collection.find_one({'_id': first})['stock_grams'] == 800
+        response = client.post(f'/api/roast/update/{roast_id}', data={'bean_id': str(second), 'original_weight_grams': '200'})
+        assert response.status_code == 302
+        assert beans_collection.find_one({'_id': first})['stock_grams'] == 1000
+        assert beans_collection.find_one({'_id': second})['stock_grams'] == 500
+        assert client.post(f'/api/roast/update/{roast_id}', data={'bean_id': str(second), 'original_weight_grams': '250'}).status_code == 302
+        assert beans_collection.find_one({'_id': second})['stock_grams'] == 450
+        for _ in range(2):
+            assert client.post(f'/api/roast/delete/{roast_id}').status_code == 302
+            assert beans_collection.find_one({'_id': second})['stock_grams'] == 700
+    finally:
+        beans_collection.delete_one({'_id': second})
+
+
+def test_start_uses_saved_setup_and_claims_before_consuming(client, beans_collection, created_test_roast, monkeypatch):
+    from bson.objectid import ObjectId
+    from roastlogger.services import roast_lifecycle
+    first = ObjectId(created_test_roast['bean_id'])
+    roast_id = created_test_roast['roast_id']
+    original = roast_lifecycle.snapshot_query
+    def competing_start(document):
+        monkeypatch.setattr(roast_lifecycle, 'snapshot_query', original)
+        assert client.post(f'/api/roast/start/{roast_id}', json={}).status_code == 200
+        return original(document)
+    monkeypatch.setattr(roast_lifecycle, 'snapshot_query', competing_start)
+    assert client.post(f'/api/roast/start/{roast_id}', json={}).status_code == 409
+    assert beans_collection.find_one({'_id': first})['stock_grams'] == 800

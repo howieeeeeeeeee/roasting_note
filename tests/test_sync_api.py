@@ -6,6 +6,7 @@ from datetime import datetime
 
 import pytest
 from bson.objectid import ObjectId
+from bson.decimal128 import Decimal128
 
 import app as app_module
 
@@ -141,6 +142,9 @@ def test_sync_round_trips_bean_stock_change_history_on_insert_and_update():
         doc_id,
     )
     source_doc["stock_change_log"] = [first_change]
+    source_doc['purchases'] = [{'id': ObjectId(), 'purchase_date': datetime(2026, 5, 1),
+                                'weight_grams': 1000, 'price_total': Decimal128('21.25')}]
+    source_doc['inventory_opening_adjustment_grams'] = -125
     source = FakeCollection([source_doc])
     target = FakeCollection()
 
@@ -148,6 +152,8 @@ def test_sync_round_trips_bean_stock_change_history_on_insert_and_update():
 
     assert inserted["added"] == 1
     assert target.docs[doc_id]["stock_change_log"] == [first_change]
+    assert target.docs[doc_id]['purchases'] == source_doc['purchases']
+    assert target.docs[doc_id]['inventory_opening_adjustment_grams'] == -125
 
     second_change = {
         "event_type": "set_to_zero",
@@ -159,6 +165,8 @@ def test_sync_round_trips_bean_stock_change_history_on_insert_and_update():
     newer_source = deepcopy(source_doc)
     newer_source["updated_at"] = datetime(2026, 5, 1, 12, 0, 0)
     newer_source["stock_change_log"].append(second_change)
+    newer_source['purchases'].append({'id': ObjectId(), 'purchase_date': None,
+                                     'weight_grams': 500, 'price_total': None})
 
     updated = app_module.sync_collection(
         FakeCollection([newer_source]),
@@ -166,6 +174,7 @@ def test_sync_round_trips_bean_stock_change_history_on_insert_and_update():
     )
 
     assert updated["updated"] == 1
+    assert target.docs[doc_id]['purchases'] == newer_source['purchases']
     assert target.docs[doc_id]["stock_change_log"] == [
         first_change,
         second_change,

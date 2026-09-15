@@ -199,6 +199,23 @@ destination-only, conflict, change-total, unchanged-total, and expected-after
 counts. Terminal output includes added, updated, skipped, conflict, and
 post-run counts.
 
+## Purchase-history migration and sync
+
+RN-0031 adds embedded purchases and an opening inventory adjustment to beans.
+The local-only command in [Bean Management](./beans-management.md#local-migration)
+backs up and converts those documents without invoking synchronization or
+constructing an online client. Its backup uses the existing complete canonical
+BSON backup/verification format; its sanitized result remains with the ignored
+backup. Do not treat that local conversion as a mirror authorization.
+
+Deploy the compatible application before copying migrated beans online. After
+local edits, run `--direction local-to-online --dry-run` and review the count
+forecast. The existing timestamp classifier copies whole newer bean documents;
+it does not reconcile independent purchase edits from both databases. Newer
+remote documents stay unchanged and missing timestamps remain conflicts.
+Remote-only roasts are retained and are not used to recalculate local stock.
+Apply still requires the separate guarded operator flow.
+
 ## Destination Backup
 
 Every applied attempt backs up all destination collections, including archived
