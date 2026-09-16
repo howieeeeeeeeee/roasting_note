@@ -73,7 +73,7 @@ See [docs/architecture/data-models.md](../architecture/data-models.md).
 
 ### Optional text sizing
 
-Each label value has its own aligned 50–200% slider in the Text size panel.
+Each label value has its own aligned 70–130% slider in the Text size panel.
 The live percentage readout and canvas update together. Leaving a slider at
 100% uses the template default; saving stores only changed values, and returning
 it to 100% removes that field’s override. Reopening restores saved sizes. It is

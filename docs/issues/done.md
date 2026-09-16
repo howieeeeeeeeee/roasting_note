@@ -6,6 +6,7 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RN-0035 | [IMPROVEMENT] | Medium | labels | [Limit label size sliders to a practical range](./resolved/RN-0035-limit-label-size-slider-range.md) | - | - | 2026-09-16 | 2026-09-16 |
 | RN-0034 | [IMPROVEMENT] | High | labels | [Align label editor and replace font inputs with sliders](./resolved/RN-0034-align-label-editor-and-size-sliders.md) | - | - | 2026-09-16 | 2026-09-16 |
 | RN-0033 | [IMPROVEMENT] | High | ui | [Polish purchase entry and restore readable live-roast metrics](./resolved/RN-0033-purchase-form-and-live-roast-polish.md) | - | - | 2026-09-15 | 2026-09-15 |
 | RN-0032 | [IMPROVEMENT] | High | ui | [Remove blocking browser confirmation popups](./resolved/RN-0032-remove-native-confirmations.md) | - | - | 2026-09-15 | 2026-09-15 |

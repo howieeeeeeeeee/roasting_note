@@ -99,7 +99,7 @@ The modal chrome (form fields, buttons, background) adapts automatically via CSS
 ### Text size controls
 
 Text size is a separate, lightly surfaced panel beneath the label content
-fields. It uses aligned 50–200% sliders with a live percentage readout, so the
+fields. It uses aligned 70–130% sliders with a live percentage readout, so the
 editor stays readable while each value can still be tuned independently. A
 slider at 100% uses the template default and is omitted when saving; moving it
 redraws only that field immediately. Export dimensions and artwork do not scale

@@ -17,6 +17,7 @@ def test_label_font_size_controls_are_grouped_sliders():
 
     assert 'fieldset class="label-size-panel label-form-row-full"' in template
     assert 'type="range"' in template
+    assert 'min="70" max="130" step="1" value="100"' in template
     assert 'oninput="updateLabelSize(this)"' in template
     assert 'Number(input.value) !== 100' in template
     assert '.label-size-control {' in css
