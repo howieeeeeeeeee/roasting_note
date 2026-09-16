@@ -147,6 +147,19 @@ Use Codex's in-app browser, not a standalone browser driver.
    computed text colors, target measurements, console errors, failed network
    requests, and cleanup in the run summary.
 
+#### Label Creator size controls (Targeted)
+
+1. Open a run-marked bean's **Create Label** modal at desktop and 390px widths.
+   Check the label content fields have space to scan and the Text size panel
+   keeps label, slider, and percentage in aligned rows without horizontal
+   overflow.
+2. Move one slider with pointer and keyboard. Its percentage and preview must
+   update together; returning it to 100% restores the default. Reopen a saved
+   non-default value and verify its slider/readout restore without changing any
+   other field.
+3. Check light and dark modes, capture the modal, inspect browser console, then
+   cancel without saving or use only an isolated E2E bean.
+
 #### Navigation continuity
 
 1. Start run `rn-0029-navigation-a`. Repeatedly activate Roasts and Beans,

@@ -31,14 +31,14 @@
   gap: var(--space-5);
 }
 
-/* Form panel — 2-column grid for compact data entry */
+/* Form panel — two clear columns, with size controls in their own section. */
 .label-form-panel {
   flex: 1;
   min-width: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: var(--space-4);
-  row-gap: var(--space-2);
+  column-gap: var(--space-5);
+  row-gap: var(--space-4);
 }
 .label-form-panel .form-group { margin-bottom: 0; }
 .label-form-panel .form-group label {
@@ -50,13 +50,13 @@
 .label-form-panel .form-group input,
 .label-form-panel .form-group select,
 .label-form-panel .form-control {
-  padding: 0.4rem 0.6rem;
+  padding: 0.55rem 0.7rem;
   font-size: var(--text-base);
-  min-height: 34px;
+  min-height: 42px;
 }
 .label-form-panel .form-group textarea {
-  min-height: 56px;
-  padding: 0.4rem 0.6rem;
+  min-height: 76px;
+  padding: 0.55rem 0.7rem;
   font-size: var(--text-base);
 }
 
@@ -77,13 +77,57 @@
 }
 .label-form-export-row .form-group:last-child { flex: 1.2; }
 .label-form-export-row span.form-control {
-  min-height: 34px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   background: var(--surf2);
   font-size: var(--text-sm);
   font-family: var(--font-mono);
   color: var(--txt2);
+}
+
+.label-size-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--bd2);
+  border-radius: var(--radius-md);
+  background: var(--surf2);
+}
+.label-size-panel legend {
+  padding: 0 var(--space-1);
+  font-weight: 650;
+  color: var(--txt);
+}
+.label-size-panel > p {
+  grid-column: 1 / -1;
+  margin: calc(var(--space-2) * -1) 0 0;
+  color: var(--txt2);
+  font-size: var(--text-sm);
+}
+.label-size-control {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) minmax(5.5rem, 2fr) 3.25rem;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.label-size-control label {
+  margin: 0 !important;
+  color: var(--txt) !important;
+  white-space: nowrap;
+}
+.label-size-control input[type="range"] {
+  width: 100%;
+  accent-color: var(--pr);
+}
+.label-size-control output {
+  color: var(--txt2);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-align: right;
 }
 
 /* Preview panel — flush against the form, neutral surface, canvas centered */
@@ -122,5 +166,6 @@
 @media (max-width: 900px) {
   .label-modal-layout { flex-direction: column; }
   .label-form-panel { grid-template-columns: 1fr; }
+  .label-size-panel { grid-template-columns: 1fr; }
   .label-preview-panel { max-width: 100%; order: -1; }
 }

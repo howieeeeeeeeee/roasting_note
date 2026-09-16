@@ -11,7 +11,7 @@ Issue and human-decision tracker for RoastLogger. Product, engineering, design, 
 - [In Progress](./in-progress.md) — 0
 - [Blocked](./blocked.md) — 0
 - [Pending](./pending.md) — 0
-- [Done](./done.md) — 37 (resolved 36, won't-fix 1)
+- [Done](./done.md) — 38 (resolved 37, won't-fix 1)
 - [Human Decisions](./human-decisions.md) — 0 pending, 0 finalized
 
 ## Folder Layout
