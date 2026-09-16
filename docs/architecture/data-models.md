@@ -145,7 +145,7 @@ Optional label configuration for the bean label creator.
 | `flavorNotes` | String | Flavor notes text for label. May contain `\n`-separated lines; each non-blank line renders on its own line. |
 | `roastDate` | String | Roast date (YYYY-MM-DD) |
 | `templateId` | String | Selected template ID — one of `nova` / `ink` / `strip` / `washi` |
-| `fontSizePercent` | Number | Optional per-bean text scale, 50–200; absent means 100%. No backfill required. |
+| `fontSizePercents` | Object | Optional per-field percentages (50–200), keyed by name, origin, process, roastLevel, flavorNotes, roastDate. Missing keys use 100%. No backfill required; legacy fontSizePercent seeds all controls until the next save. |
 | `fontPreset` | String | Selected font preset — one of `modern` / `editorial` / `technical` / `bold` / `craft` |
 | `aspectRatio` | String | Selected aspect ratio — one of `2:1` / `5:3` / `5:4` / `4:3` / `3:4` |
 | `imageSrc` | String | Path to selected image (e.g. `/static/img/nova.png`) or empty for none |

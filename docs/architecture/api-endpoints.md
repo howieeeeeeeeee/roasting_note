@@ -410,7 +410,7 @@ CLI documented in [Database Sync](../features/database-sync.md).
 
 `flavorNotes` may contain `\n`-separated lines; each non-blank line is rendered on its own line on the label.
 
-Optional `fontSizePercent` accepts a JSON number from 50–200. Omitted, null, or empty removes any prior override; other values return `400` without updating the bean.
+Optional `fontSizePercents` is an object with optional name, origin, process, roastLevel, flavorNotes, and roastDate keys. Values must be JSON numbers from 50–200. Omitted keys use template defaults; an omitted or empty object removes prior overrides. Invalid keys, types, or ranges return `400` without updating the bean.
 
 **Response:** `{ "success": true }` or `404` if bean not found.
 

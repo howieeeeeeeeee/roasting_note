@@ -110,12 +110,15 @@ def api_beans_label(bean_id):
         "exportWidthCm": data.get("exportWidthCm", 10),
         "exportHeightCm": data.get("exportHeightCm", 8),
     }
-    font_size = data.get("fontSizePercent")
-    if font_size is not None and font_size != "":
-        if (isinstance(font_size, bool) or not isinstance(font_size, (int, float))
-                or not 50 <= font_size <= 200):
-            return jsonify(success=False, error="Font size must be between 50 and 200%"), 400
-        label_data["fontSizePercent"] = font_size
+    font_sizes = data.get("fontSizePercents", {})
+    fields = {"name", "origin", "process", "roastLevel", "flavorNotes", "roastDate"}
+    if not isinstance(font_sizes, dict) or set(font_sizes) - fields:
+        return jsonify(success=False, error="Invalid font size fields"), 400
+    for size in font_sizes.values():
+        if isinstance(size, bool) or not isinstance(size, (int, float)) or not 50 <= size <= 200:
+            return jsonify(success=False, error="Font sizes must be between 50 and 200%"), 400
+    if font_sizes:
+        label_data["fontSizePercents"] = font_sizes
     get_beans_collection().update_one(
         {"_id": ObjectId(bean_id)},
         {"$set": {"label": label_data, "updated_at": get_current_time_with_tz()}},

@@ -259,29 +259,47 @@
                         <label for="labelName">Name</label>
                         <textarea id="labelName" class="form-control" rows="2"
                             placeholder="One line, or break manually&#10;e.g. Edwin&#10;     Noreña"></textarea>
+                        <label for="labelNameSize">Font size (%)</label>
+                        <input type="number" id="labelNameSize" class="form-control" data-label-font-size="name"
+                            min="50" max="200" step="any" placeholder="Default (100%)" oninput="updatePreview()">
                     </div>
                     <div class="form-group">
                         <label for="labelOrigin">Origin</label>
                         <input type="text" id="labelOrigin" class="form-control">
+                        <label for="labelOriginSize">Font size (%)</label>
+                        <input type="number" id="labelOriginSize" class="form-control" data-label-font-size="origin"
+                            min="50" max="200" step="any" placeholder="Default (100%)" oninput="updatePreview()">
                     </div>
                     <div class="form-group">
                         <label for="labelProcess">Process</label>
                         <input type="text" id="labelProcess" class="form-control">
+                        <label for="labelProcessSize">Font size (%)</label>
+                        <input type="number" id="labelProcessSize" class="form-control" data-label-font-size="process"
+                            min="50" max="200" step="any" placeholder="Default (100%)" oninput="updatePreview()">
                     </div>
                     <div class="form-group">
                         <label for="labelRoastLevel">Roast Level</label>
                         <input type="text" id="labelRoastLevel" class="form-control">
+                        <label for="labelRoastLevelSize">Font size (%)</label>
+                        <input type="number" id="labelRoastLevelSize" class="form-control" data-label-font-size="roastLevel"
+                            min="50" max="200" step="any" placeholder="Default (100%)" oninput="updatePreview()">
                     </div>
                     <div class="form-group label-form-row-full">
                         <label for="labelFlavorNotes">Flavor Notes</label>
                         <textarea id="labelFlavorNotes" class="form-control" rows="3"
                             placeholder="One note per line, e.g.&#10;Lychee, juniper&#10;White tea&#10;Dark chocolate"></textarea>
+                        <label for="labelFlavorNotesSize">Font size (%)</label>
+                        <input type="number" id="labelFlavorNotesSize" class="form-control" data-label-font-size="flavorNotes"
+                            min="50" max="200" step="any" placeholder="Default (100%)" oninput="updatePreview()">
                     </div>
                     <div class="form-group">
                         <label for="labelRoastDate">Roast Date</label>
                         <input type="text" id="labelRoastDate" class="form-control label-date-input" readonly
                             data-flatpickr data-flatpickr-mode="date" data-flatpickr-default-today="true"
                             data-flatpickr-onchange="updatePreview">
+                        <label for="labelRoastDateSize">Font size (%)</label>
+                        <input type="number" id="labelRoastDateSize" class="form-control" data-label-font-size="roastDate"
+                            min="50" max="200" step="any" placeholder="Default (100%)" oninput="updatePreview()">
                     </div>
                     <div class="form-group">
                         <label for="labelImage">Image (optional)</label>
@@ -319,11 +337,6 @@
                                 <option value="3:4">3:4 - Portrait</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="labelFontSizePercent">Font size (%)</label>
-                        <input type="number" id="labelFontSizePercent" class="form-control" min="50" max="200" step="any"
-                            placeholder="Default (100%)" oninput="updatePreview()" title="Scale all label text. Leave blank for the template default.">
                     </div>
                     <div class="label-form-row-full label-form-grid-row label-form-export-row">
                         <div class="form-group">
@@ -589,7 +602,9 @@
     function openLabelModal() {
         var modal = document.getElementById('labelModal');
         var saved = beanData.label;
-        document.getElementById('labelFontSizePercent').value = saved?.fontSizePercent ?? '';
+        document.querySelectorAll('[data-label-font-size]').forEach(function (input) {
+            input.value = saved?.fontSizePercents?.[input.dataset.labelFontSize] ?? saved?.fontSizePercent ?? '';
+        });
 
         if (saved && (saved.name || saved.imageSrc || saved.templateId)) {
             document.getElementById('labelName').value        = saved.name        || '';
@@ -711,13 +726,21 @@
         };
     }
 
+    function getLabelFontSizes() {
+        var sizes = {};
+        document.querySelectorAll('[data-label-font-size]').forEach(function (input) {
+            if (input.value !== '') sizes[input.dataset.labelFontSize] = Number(input.value);
+        });
+        return sizes;
+    }
+
     function updatePreview() {
         var canvas      = document.getElementById('labelCanvas');
         var templateId  = document.getElementById('labelTemplate').value;
         var fontPreset  = document.getElementById('labelFontPreset').value;
         var aspectRatio = document.getElementById('labelAspectRatio').value;
         var accentColor = beanData.color || '#9B6A6A';
-        LabelCreator.renderLabel(canvas, templateId, getFieldValues(), accentColor, selectedImageSrc, fontPreset, aspectRatio, document.getElementById('labelFontSizePercent').value);
+        LabelCreator.renderLabel(canvas, templateId, getFieldValues(), accentColor, selectedImageSrc, fontPreset, aspectRatio, getLabelFontSizes());
     }
 
     function onLabelStyleChange() { updatePreview(); }
@@ -732,8 +755,7 @@
     });
 
     async function saveLabelInfo() {
-        var sizeInput = document.getElementById('labelFontSizePercent');
-        if (!sizeInput.reportValidity()) return;
+        if (!Array.from(document.querySelectorAll('[data-label-font-size]')).every(input => input.reportValidity())) return;
         var values      = getFieldValues();
         var templateId  = document.getElementById('labelTemplate').value;
         var fontPreset  = document.getElementById('labelFontPreset').value;
@@ -758,7 +780,7 @@
             exportHeightCm: exportH,
         };
 
-        if (sizeInput.value !== '') payload.fontSizePercent = Number(sizeInput.value);
+        payload.fontSizePercents = getLabelFontSizes();
 
         try {
             var resp = await fetch('/api/beans/' + beanData.id + '/label', {

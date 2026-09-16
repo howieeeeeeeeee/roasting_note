@@ -27,16 +27,28 @@ async function render(template, size) {
         const normal = await render(template);
         assert(normal.length > 0);
         assert.deepEqual(await render(template, ''), normal);
-        assert.deepEqual(await render(template, 100), normal);
-        assert.deepEqual(await render(template, 999), normal);
-        for (const percent of [50, 125, 200]) {
-            const scaled = await render(template, percent);
-            assert.equal(scaled.length, normal.length);
-            scaled.forEach((text, i) => {
-                const pixels = font => Number(font.match(/([\d.]+)px/)[1]);
-                assert.equal(text.value, normal[i].value);
-                assert(Math.abs(pixels(text.font) - pixels(normal[i].font) * percent / 100) < 1e-8);
-            });
+        const fields = {
+            name: value => value === 'Coffee',
+            origin: value => value === 'ETHIOPIA',
+            process: value => value === 'Natural' || value === 'NATURAL',
+            roastLevel: value => value === 'Light',
+            flavorNotes: value => ['Berry', 'Citrus', 'Berry, Citrus'].includes(value),
+            roastDate: value => value.includes('2026-09-15'),
+        };
+        for (const [field, matches] of Object.entries(fields)) {
+            assert.deepEqual(await render(template, {[field]: 999}), normal);
+            for (const percent of [50, 125, 200]) {
+                const scaled = await render(template, {[field]: percent});
+                assert.equal(scaled.length, normal.length);
+                assert(scaled.some(text => matches(text.value)));
+                scaled.forEach((text, i) => {
+                    const pixels = font => Number(font.match(/([\d.]+)px/)[1]);
+                    assert.equal(text.value, normal[i].value);
+                    const scale = matches(text.value) ? percent / 100 : 1;
+                    assert(Math.abs(pixels(text.font) - pixels(normal[i].font) * scale) < 1e-8,
+                        template + ': changing ' + field + ' affected ' + text.value);
+                });
+            }
         }
     }
 })().catch(error => { console.error(error); process.exitCode = 1; });

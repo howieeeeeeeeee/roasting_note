@@ -492,18 +492,18 @@ class TestBeanLabel:
     def test_label_font_size_round_trip(self, client, beans_collection, created_test_bean):
         bean_id = created_test_bean
         url = f'/api/beans/{bean_id}/label'
-        payload = {'name': 'Coffee', 'fontSizePercent': 125.5}
+        payload = {'name': 'Coffee', 'fontSizePercents': {'name': 125.5, 'origin': 80}}
         assert client.post(url, json=payload).status_code == 200
         bean = beans_collection.find_one({'_id': ObjectId(bean_id)})
-        assert bean['label']['fontSizePercent'] == 125.5
+        assert bean['label']['fontSizePercents'] == {'name': 125.5, 'origin': 80}
         for invalid in [49, 201, True, 'large', {}, float('inf')]:
-            assert client.post(url, json={**payload, 'fontSizePercent': invalid}).status_code == 400
+            assert client.post(url, json={**payload, 'fontSizePercents': {'name': invalid}}).status_code == 400
             assert beans_collection.find_one({'_id': ObjectId(bean_id)})['label'] == bean['label']
-        for cleared in ['', None]:
-            assert client.post(url, json={**payload, 'fontSizePercent': cleared}).status_code == 200
-            assert 'fontSizePercent' not in beans_collection.find_one({'_id': ObjectId(bean_id)})['label']
+        for cleared in [{}]:
+            assert client.post(url, json={**payload, 'fontSizePercents': cleared}).status_code == 200
+            assert 'fontSizePercents' not in beans_collection.find_one({'_id': ObjectId(bean_id)})['label']
         assert client.post(url, json={'name': 'Coffee'}).status_code == 200
-        assert 'fontSizePercent' not in beans_collection.find_one({'_id': ObjectId(bean_id)})['label']
+        assert 'fontSizePercents' not in beans_collection.find_one({'_id': ObjectId(bean_id)})['label']
 
     def test_save_label_invalid_bean(self, client):
         """Test saving label data for a non-existent bean returns 404."""

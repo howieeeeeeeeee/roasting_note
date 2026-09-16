@@ -185,11 +185,14 @@ var LabelCreator = (function () {
      * @param {string} imageSrc     - URL or '' (for nova: right panel; for ink/washi: bg)
      * @param {string} fontPreset   - key from FONT_PRESETS
      * @param {string} aspectRatio  - key from ASPECT_RATIOS e.g. '5:4'
-     * @param {number} fontSizePercent - optional text scale, 50–200; blank uses 100
+     * @param {Object} fontSizePercents - optional per-field text scales, 50–200
      */
-    function renderLabel(canvas, templateId, fields, accentColor, imageSrc, fontPreset, aspectRatio, fontSizePercent) {
-        var size = Number(fontSizePercent);
-        var fontScale = Number.isFinite(size) && size >= 50 && size <= 200 ? size / 100 : 1;
+    function renderLabel(canvas, templateId, fields, accentColor, imageSrc, fontPreset, aspectRatio, fontSizePercents) {
+        var fontScale = {};
+        ['name', 'origin', 'process', 'roastLevel', 'flavorNotes', 'roastDate'].forEach(function (field) {
+            var size = Number((fontSizePercents || {})[field]);
+            fontScale[field] = Number.isFinite(size) && size >= 50 && size <= 200 ? size / 100 : 1;
+        });
         var preset  = fontPreset  || 'modern';
         var ratioKey = aspectRatio || '5:4';
         var ratio    = ASPECT_RATIOS[ratioKey] || [5, 4];
@@ -275,9 +278,13 @@ var LabelCreator = (function () {
         // Text area - keep name restrained; bump sub & body ~15-20%
         var textW = isPortrait ? w : w * 0.5;
         var tx     = 26 + (barW - 5);
-        var nameSz = (Math.max(20, Math.min(40, textW * 0.17))) * fontScale;
-        var subSz  = (Math.max(12, Math.min(18, textW * 0.056))) * fontScale;
-        var bodySz = (Math.max(10, Math.min(14, textW * 0.040))) * fontScale;
+        var nameSz = (Math.max(20, Math.min(40, textW * 0.17))) * fontScale.name;
+        var subSz  = (Math.max(12, Math.min(18, textW * 0.056))) * fontScale.origin;
+        var bodySz = (Math.max(10, Math.min(14, textW * 0.040)));
+        var processSz = bodySz * fontScale.process;
+        var roastSz = bodySz * fontScale.roastLevel;
+        var notesSz = bodySz * fontScale.flavorNotes;
+        var dateSz = bodySz * fontScale.roastDate;
         // Lift the full text block noticeably to avoid crowding the lower divider zone.
         var contentShiftY = -Math.max(16, h * 0.06);
 
@@ -312,7 +319,7 @@ var LabelCreator = (function () {
 
         // Process - sits between origin and the rule
         var procY = origY + subSz * 1.8;
-        txt(ctx, f.process, tx, procY, bodyFontStr(preset, bodySz, 500), '#777370');
+        txt(ctx, f.process, tx, procY, bodyFontStr(preset, processSz, 500), '#777370');
 
         var sepY = procY + bodySz * 1.6;
         ctx.strokeStyle = '#E8E4E0'; ctx.lineWidth = 0.75;
@@ -320,11 +327,11 @@ var LabelCreator = (function () {
         // Anchor roast level + notes just below the separator so they flow with the
         // text block instead of a fixed h*0.62, leaving more room for multi-line notes.
         var roastY = sepY + bodySz * 1.8;
-        txt(ctx, f.roastLevel, tx, roastY, bodyFontStr(preset, bodySz, 600), '#4A4540');
-        txtMulti(ctx, f.flavorNotes, tx, roastY + bodySz * 1.8, bodyFontStr(preset, bodySz), '#888480',
-            'left', 'alphabetic', bodySz, 1.35);
+        txt(ctx, f.roastLevel, tx, roastY, bodyFontStr(preset, roastSz, 600), '#4A4540');
+        txtMulti(ctx, f.flavorNotes, tx, roastY + notesSz * 1.8, bodyFontStr(preset, notesSz), '#888480',
+            'left', 'alphabetic', notesSz, 1.35);
         txt(ctx, f.roastDate ? ('Roasted on: ' + f.roastDate) : '', tx, h - 18 + contentShiftY * 0.35,
-            bodyFontStr(preset, bodySz * 0.88, 500), '#BBB7B3');
+            bodyFontStr(preset, dateSz * 0.88, 500), '#BBB7B3');
     }
 
     // ════════════════════════════════════════════════════
@@ -369,9 +376,13 @@ var LabelCreator = (function () {
         ctx.fillStyle = fade; ctx.fillRect(0, h - h * 0.18, w, h * 0.18);
 
         var mx     = w * 0.07;
-        var nameSz = (Math.max(24, Math.min(54, w * 0.12))) * fontScale;
-        var subSz  = (Math.max(9,  Math.min(14, w * 0.030))) * fontScale;
-        var bodySz = (Math.max(8,  Math.min(12, w * 0.025))) * fontScale;
+        var nameSz = (Math.max(24, Math.min(54, w * 0.12))) * fontScale.name;
+        var subSz  = (Math.max(9,  Math.min(14, w * 0.030))) * fontScale.origin;
+        var bodySz = (Math.max(8,  Math.min(12, w * 0.025)));
+        var processSz = bodySz * fontScale.process;
+        var roastSz = bodySz * fontScale.roastLevel;
+        var notesSz = bodySz * fontScale.flavorNotes;
+        var dateSz = bodySz * fontScale.roastDate;
 
         var inkNameLines = splitLines(f.name);
         if (!inkNameLines.length) inkNameLines = [''];
@@ -388,17 +399,17 @@ var LabelCreator = (function () {
         ctx.strokeStyle = '#2E2420'; ctx.lineWidth = 0.75;
         ctx.beginPath(); ctx.moveTo(mx, ruleY); ctx.lineTo(w - mx, ruleY); ctx.stroke();
 
-        txt(ctx, f.process,    mx, ruleY + bodySz * 2.6,  bodyFontStr(preset, bodySz),      '#7A7470');
-        txt(ctx, f.roastLevel, mx, ruleY + bodySz * 6.2,  bodyFontStr(preset, bodySz, 600), '#C8C4BE');
-        txtMulti(ctx, f.flavorNotes, mx, ruleY + bodySz * 8.4, bodyFontStr(preset, bodySz), '#6A6560',
-            'left', 'alphabetic', bodySz, 1.4);
+        txt(ctx, f.process,    mx, ruleY + processSz * 2.6,  bodyFontStr(preset, processSz),      '#7A7470');
+        txt(ctx, f.roastLevel, mx, ruleY + roastSz * 6.2,  bodyFontStr(preset, roastSz, 600), '#C8C4BE');
+        txtMulti(ctx, f.flavorNotes, mx, ruleY + notesSz * 8.4, bodyFontStr(preset, notesSz), '#6A6560',
+            'left', 'alphabetic', notesSz, 1.4);
 
         // Origin ghost stamp bottom-right
         ctx.save(); ctx.globalAlpha = 0.10;
-        txt(ctx, (f.origin||'').toUpperCase(), w - mx, h - 18, nameFontStr(preset, Math.max(14, w * 0.04) * fontScale), '#C9A87A', 'right');
+        txt(ctx, (f.origin||'').toUpperCase(), w - mx, h - 18, nameFontStr(preset, Math.max(14, w * 0.04) * fontScale.origin), '#C9A87A', 'right');
         ctx.globalAlpha = 1; ctx.restore();
 
-        txt(ctx, f.roastDate ? ('Roasted: ' + f.roastDate) : '', mx, h - 18, bodyFontStr(preset, bodySz * 0.9, 500), '#4A4540');
+        txt(ctx, f.roastDate ? ('Roasted: ' + f.roastDate) : '', mx, h - 18, bodyFontStr(preset, dateSz * 0.9, 500), '#4A4540');
     }
 
     // ════════════════════════════════════════════════════
@@ -414,7 +425,7 @@ var LabelCreator = (function () {
         ctx.save();
         ctx.translate(bandW / 2, h / 2); ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = 'rgba(255,255,255,0.82)';
-        ctx.font = '700 ' + (Math.max(8, bandW * 0.28) * fontScale) + "px 'Inter', sans-serif";
+        ctx.font = '700 ' + (Math.max(8, bandW * 0.28) * fontScale.origin) + "px 'Inter', sans-serif";
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText((f.origin || '').toUpperCase(), 0, 0);
         ctx.restore();
@@ -422,13 +433,13 @@ var LabelCreator = (function () {
         var cx2    = bandW + w * 0.05;
         var cw     = w - cx2 - w * 0.04;
         var pillH  = Math.max(14, h * 0.065);
-        var pillSz = (Math.max(7, pillH * 0.48)) * fontScale;
+        var pillSz = (Math.max(7, pillH * 0.48)) * fontScale.process;
 
         roundRect(ctx, cx2, h * 0.07, cw * 0.38, pillH, 3, '#F0EDE8');
         txt(ctx, (f.process||'').toUpperCase(), cx2 + 9, h * 0.07 + pillH / 2,
             '600 ' + pillSz + "px 'Inter', sans-serif", '#999590', 'left', 'middle');
 
-        var nameSz = (Math.max(20, Math.min(52, w * 0.112))) * fontScale;
+        var nameSz = (Math.max(20, Math.min(52, w * 0.112))) * fontScale.name;
         var stripNameLines = splitLines(f.name);
         if (!stripNameLines.length) stripNameLines = [''];
         var stripNameTop = h * 0.07 + pillH + nameSz * 1.12;
@@ -441,25 +452,29 @@ var LabelCreator = (function () {
         ctx.strokeStyle = '#E0DDD8'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx2, ruleY2); ctx.lineTo(w - w * 0.04, ruleY2); ctx.stroke();
 
-        var bodySz = (Math.max(8, Math.min(12, w * 0.026))) * fontScale;
+        var bodySz = (Math.max(8, Math.min(12, w * 0.026)));
+        var processSz = bodySz * fontScale.process;
+        var roastSz = bodySz * fontScale.roastLevel;
+        var notesSz = bodySz * fontScale.flavorNotes;
+        var dateSz = bodySz * fontScale.roastDate;
         var col2   = cx2 + cw * 0.5;
         var infoY  = ruleY2 + bodySz * 2.2;
 
         txt(ctx, 'ROAST', cx2,  infoY, bodyFontStr(preset, bodySz * 0.78, 600), '#B0ACA8');
         txt(ctx, 'NOTES', col2, infoY, bodyFontStr(preset, bodySz * 0.78, 600), '#B0ACA8');
-        txt(ctx, f.roastLevel, cx2, infoY + bodySz * 2.1, bodyFontStr(preset, bodySz, 600), '#3A3530');
+        txt(ctx, f.roastLevel, cx2, infoY + roastSz * 2.1, bodyFontStr(preset, roastSz, 600), '#3A3530');
 
         // Prefer explicit newlines; fall back to comma-split for legacy single-line input
         var notes = splitLines(f.flavorNotes);
         if (notes.length <= 1) notes = (f.flavorNotes || '').split(', ').map(function (s) { return s.trim(); }).filter(Boolean);
-        txt(ctx, notes.slice(0, 2).join(', '), col2, infoY + bodySz * 2.1, bodyFontStr(preset, bodySz), '#706C68');
-        if (notes[2]) txt(ctx, notes[2], col2, infoY + bodySz * 3.7, bodyFontStr(preset, bodySz), '#706C68');
+        txt(ctx, notes.slice(0, 2).join(', '), col2, infoY + notesSz * 2.1, bodyFontStr(preset, notesSz), '#706C68');
+        if (notes[2]) txt(ctx, notes[2], col2, infoY + notesSz * 3.7, bodyFontStr(preset, notesSz), '#706C68');
 
         var botY2 = h - h * 0.14;
         ctx.strokeStyle = '#E8E5E0'; ctx.lineWidth = 0.75;
         ctx.beginPath(); ctx.moveTo(cx2, botY2); ctx.lineTo(w - w * 0.04, botY2); ctx.stroke();
         txt(ctx, f.roastDate ? ('Roasted on: ' + f.roastDate) : '', cx2, h - h * 0.06,
-            bodyFontStr(preset, bodySz * 0.85, 500), '#B0ACA8', 'left', 'middle');
+            bodyFontStr(preset, dateSz * 0.85, 500), '#B0ACA8', 'left', 'middle');
     }
 
     // ════════════════════════════════════════════════════
@@ -507,10 +522,10 @@ var LabelCreator = (function () {
         ctx.beginPath(); ctx.moveTo(bm + 18, topY2); ctx.lineTo(w / 2 - 44, topY2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(w / 2 + 44, topY2); ctx.lineTo(w - bm - 18, topY2); ctx.stroke();
         txt(ctx, (f.origin||'').toUpperCase(), w / 2, topY2,
-            bodyFontStr(preset, Math.max(9, w * 0.022) * fontScale, 600), '#9A8060', 'center', 'middle');
+            bodyFontStr(preset, Math.max(9, w * 0.022) * fontScale.origin, 600), '#9A8060', 'center', 'middle');
 
         // Name - multi-line breaks honor user newlines, centered around h*0.38
-        var nameSz = (Math.max(20, Math.min(52, w * 0.112))) * fontScale;
+        var nameSz = (Math.max(20, Math.min(52, w * 0.112))) * fontScale.name;
         var washiNameLines = splitLines(f.name);
         if (!washiNameLines.length) washiNameLines = [''];
         var washiNameStep   = nameSz * 1.05;
@@ -533,19 +548,23 @@ var LabelCreator = (function () {
         ctx.lineTo(w / 2, midY2 + 5); ctx.lineTo(w / 2 - 5, midY2);
         ctx.closePath(); ctx.fill();
 
-        var bodySz = (Math.max(8, Math.min(12, w * 0.026))) * fontScale;
-        txt(ctx, (f.process||'').toUpperCase(), w / 2, midY2 + bodySz * 2.6,
-            bodyFontStr(preset, bodySz, 500), '#8A7860', 'center', 'middle');
-        txt(ctx, f.roastLevel, w / 2, h * 0.67, bodyFontStr(preset, bodySz, 600), '#5A4830', 'center', 'middle');
-        txtMulti(ctx, f.flavorNotes, w / 2, h * 0.67 + bodySz * 2.2, bodyFontStr(preset, bodySz), '#8A7860',
-            'center', 'middle', bodySz, 1.4);
+        var bodySz = (Math.max(8, Math.min(12, w * 0.026)));
+        var processSz = bodySz * fontScale.process;
+        var roastSz = bodySz * fontScale.roastLevel;
+        var notesSz = bodySz * fontScale.flavorNotes;
+        var dateSz = bodySz * fontScale.roastDate;
+        txt(ctx, (f.process||'').toUpperCase(), w / 2, midY2 + processSz * 2.6,
+            bodyFontStr(preset, processSz, 500), '#8A7860', 'center', 'middle');
+        txt(ctx, f.roastLevel, w / 2, h * 0.67, bodyFontStr(preset, roastSz, 600), '#5A4830', 'center', 'middle');
+        txtMulti(ctx, f.flavorNotes, w / 2, h * 0.67 + notesSz * 2.2, bodyFontStr(preset, notesSz), '#8A7860',
+            'center', 'middle', notesSz, 1.4);
 
         // Bottom
         var by2 = h - h * 0.14;
         ctx.strokeStyle = '#C0AA80'; ctx.lineWidth = 0.75;
         ctx.beginPath(); ctx.moveTo(bm + 18, by2); ctx.lineTo(w - bm - 18, by2); ctx.stroke();
         txt(ctx, f.roastDate ? ('Roasted on: ' + f.roastDate) : '', bm + 20, h - h * 0.065,
-            bodyFontStr(preset, bodySz * 0.9, 500), '#9A8060', 'left', 'middle');
+            bodyFontStr(preset, dateSz * 0.9, 500), '#9A8060', 'left', 'middle');
     }
 
     // ── Public API ───────────────────────────────────────────────────

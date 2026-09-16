@@ -98,4 +98,4 @@ The modal chrome (form fields, buttons, background) adapts automatically via CSS
 
 ### Font size control
 
-An optional Font size (%) number input below the style selectors accepts 50–200, with “Default (100%)” as its blank placeholder. Changes redraw all template text immediately. Saving validates the range and preserves the override per bean; clearing restores default sizing. Export dimensions and artwork do not scale with text.
+An optional Font size (%) number input beside each text field accepts 50–200, with “Default (100%)” as its blank placeholder. Changes redraw only the selected value’s font size immediately, preserving other values’ sizes. Saving validates the range and preserves the override per bean; clearing restores default sizing. Export dimensions and artwork do not scale with text.
