@@ -36,7 +36,7 @@ body.fullscreen-mode .fullscreen-readings { display: flex !important; }
 body.fullscreen-mode .live-topbar { display: none; }
 .fs-readings-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-7);
   flex-wrap: wrap;
   flex: 1;
@@ -162,3 +162,14 @@ body.fullscreen-mode .live-controls-bar {
 body.fullscreen-compact .fs-controls-bar { display: block; }
 body.fullscreen-compact .fullscreen-readings { display: none !important; }
 body.fullscreen-portrait .live-chart-area { height: 60vh; }
+
+.fullscreen-readings { flex-wrap: wrap; }
+.fs-readings-left { min-width: 0; }
+.fs-fc-badge { margin-left: 0; font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .fullscreen-readings { padding: var(--space-3); gap: var(--space-3); }
+  .fs-readings-left { gap: var(--space-3); }
+  .fs-temp { order: 1; flex-basis: 100%; }
+  .fs-reading-item { min-width: 0; }
+  body.fullscreen-mode .live-roast-container { overflow-y: auto; }
+}

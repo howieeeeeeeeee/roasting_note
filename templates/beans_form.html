@@ -87,9 +87,10 @@
         <template id="purchaseRowTemplate">{% set purchase = {} %}{% include 'partials/bean_purchase_row.html' %}</template>
         <div class="form-group stock-correction">
             {% if is_edit %}<p>Current stock: <strong>{{ bean.stock_grams or 0 }}g</strong></p>{% endif %}
+            <div class="stock-count-row">
             <label for="stock_grams">{% if is_edit %}Correct stock to (grams){% else %}Opening stock (grams){% endif %}</label>
-            <input type="number" id="stock_grams" name="stock_grams" step="1" placeholder="Leave blank to calculate from purchases">
-            <p class="helper-text">Optional. Enter a counted balance only to correct inventory; purchase changes apply automatically.</p>
+            <input type="number" id="stock_grams" name="stock_grams" step="1" placeholder="Automatic" title="Optional counted balance. Leave blank for automatic purchase accounting.">
+            </div>
         </div>
         <p id="beanFormError" role="alert" hidden></p>
     </section>

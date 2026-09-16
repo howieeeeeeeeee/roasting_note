@@ -166,3 +166,17 @@ def test_live_roast_template_has_no_management_layout_hook() -> None:
     assert "management-page" not in live_template
     assert "management-form" not in live_template
     assert "management-detail" not in live_template
+
+
+def test_purchase_removal_is_local_and_explicit():
+    row = _template("partials/bean_purchase_row.html")
+    assert row.count('class="form-group"') == 3
+    assert 'aria-label="Remove purchase" aria-expanded="false"' in row
+    assert 'role="group" aria-label="Confirm purchase removal" hidden' in row
+    assert 'Confirm removal</button>' in row
+    assert 'Stock changes only when you save this form.' in row
+    form = _template("beans_form.html")
+    assert 'class="stock-count-row"' in form
+    assert 'title="Optional counted balance.' in form
+    assert 'Optional. Enter a counted balance' not in form
+    assert 'purchase-history-action' in _template("beans_detail.html")

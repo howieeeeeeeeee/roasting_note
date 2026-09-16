@@ -1,14 +1,20 @@
 <fieldset class="purchase-row">
     <legend>Purchase</legend>
     <input type="hidden" name="purchase_id" value="{{ purchase.id or '' }}">
-    <label>Purchase date
+    <div class="form-group"><label>Purchase date
         <input type="date" name="purchase_date" value="{{ purchase.purchase_date.strftime('%Y-%m-%d') if purchase.purchase_date else '' }}">
-    </label>
-    <label>Weight (grams)
+    </label></div>
+    <div class="form-group"><label>Weight (grams)
         <input type="number" name="purchase_weight_grams" min="1" step="1" value="{{ purchase.weight_grams or '' }}">
-    </label>
-    <label>Total price ($)
+    </label></div>
+    <div class="form-group"><label>Total price ($)
         <input type="number" name="purchase_price_total" min="0" step="0.01" value="{{ purchase.price_total.to_decimal() if purchase.price_total is defined and purchase.price_total is not none else '' }}" placeholder="Unknown">
-    </label>
-    <button type="button" class="btn btn-secondary remove-purchase">Remove purchase</button>
+    </label></div>
+    <button type="button" class="btn btn-secondary remove-purchase" aria-label="Remove purchase" aria-expanded="false">Remove</button>
+    <div class="purchase-removal" role="group" aria-label="Confirm purchase removal" hidden>
+        <p class="purchase-removal-summary"></p>
+        <p class="helper-text">Stock changes only when you save this form.</p>
+        <button type="button" class="btn btn-secondary confirm-purchase-removal">Confirm removal</button>
+        <button type="button" class="btn btn-secondary cancel-purchase-removal">Cancel</button>
+    </div>
 </fieldset>

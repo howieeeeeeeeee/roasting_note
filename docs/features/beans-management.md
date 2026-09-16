@@ -22,8 +22,10 @@ Each bean owns a `purchases` array. Add or edit purchases from bean detail or
 its existing edit form without recreating the profile. A row records a date,
 positive whole-gram weight, and optional total price; price per kg is derived.
 A blank date or price means unknown. Removing an erroneous row subtracts its
-weight from inventory when saved. Removal updates the form immediately; Cancel
-discards the unsaved edit. A completely blank new row is ignored.
+weight from inventory when saved. **Remove** opens a row-local in-page
+confirmation naming its date/weight; **Confirm removal** edits the unsaved form.
+**Cancel** preserves values and returns focus to Remove. Cancelling the whole
+form discards unsaved removals. A completely blank new row is ignored.
 
 The latest purchase date is the maximum dated purchase. Summary weight is the
 sum of all purchases. Lifetime cost and weighted average price per kg are
@@ -143,3 +145,7 @@ See [Guarded Database Sync](./database-sync.md) for the operator flow.
 Archive and Set stock to zero run from their labelled controls without browser
 popups. Pending controls disable duplicate clicks. Errors appear in the page.
 Removing purchases only persists when the bean form is saved.
+
+Roast detail also displays the linked bean’s current Origin and Processing in
+Basic Information, with “Not specified” for missing values or a missing bean.
+These are read from the bean, not copied into historical roast documents.

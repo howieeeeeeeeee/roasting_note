@@ -2,10 +2,10 @@
 id: RN-0033
 title: Polish purchase entry and restore readable live-roast metrics
 type: improvement
-status: pending
+status: resolved
 priority: high
 created: 2026-09-15
-resolved:
+resolved: 2026-09-15
 area: ui
 parent:
 decisions: []
@@ -71,7 +71,8 @@ status changes, and name an untitled new roast from the selected bean.
 - Put **Correct stock to (grams)** and its input side by side in a compact,
   vertically centered row. Give the input the same height as the other fields;
   constrain its width to suit a gram count instead of filling the panel. Keep
-  Current stock readable above and the explanation below. Preserve the blank
+  Current stock readable above. Per implementation feedback, expose optional
+  accounting help on hover rather than as a permanent paragraph. Preserve the blank
   default and automatic purchase accounting. Apply the same layout to Opening
   stock on create; stack only when needed at narrow widths.
 - Match the Label Color wrapper's outer height and vertical alignment to the
@@ -79,6 +80,12 @@ status changes, and name an untitled new roast from the selected bean.
   retain the compact width, native color picker, helper text, and focus state.
 - Verify add/edit, multiple rows, 390px mobile, desktop, and light/dark modes
   without clipping, horizontal form overflow, or hidden save actions.
+
+### Additional implementation feedback
+
+- Make the resizable bean Notes field 40% taller.
+- Show the linked bean’s Origin and Processing in roast-detail Basic Information,
+  with a missing-value fallback and no copied historical fields.
 
 ### Purchase History spacing on bean detail
 
@@ -136,29 +143,29 @@ status changes, and name an untitled new roast from the selected bean.
   confirmations on unrelated actions.
 - Use existing templates, styles, and JavaScript modules; no new dependency,
   schema, inventory algorithm, or broad fullscreen redesign is needed.
-- This is a planning record only. Implementation and its feature/design/test
-  documentation belong in the subsequent implementation branch.
+- Implementation uses the dedicated `improve/rn-0033-purchase-live-polish` branch.
 
 ## Acceptance Criteria
 
-- [ ] Purchase controls match standard bean-field height and styling; vertical
+- [x] Purchase controls match standard bean-field height and styling; vertical
   spacing, compact Remove, and bottom-right wide Add purchase match the request.
-- [ ] Remove requires an in-page confirm action; cancellation preserves the row,
+- [x] Remove requires an in-page confirm action; cancellation preserves the row,
   confirmation edits only that row, and only Save changes stored stock/history.
-- [ ] Stock label/input share a compact horizontal row and consistent control
+- [x] Stock label/input share a compact horizontal row and consistent control
   height; Label Color aligns with Supplier without excess wrapper height.
-- [ ] Bean detail Purchase History has clear vertical spacing around the table
+- [x] Bean detail Purchase History has clear vertical spacing around the table
   and its Add or edit purchases action, with no touching borders at any width.
-- [ ] Normal and fullscreen Since FC counters agree, advance each second, and
+- [x] Normal and fullscreen Since FC counters agree, advance each second, and
   survive fullscreen toggling and resumed/reloaded roasts without false starts.
-- [ ] Sensor status sits beside the temperature value and all three readings
+- [x] Sensor status sits beside the temperature value and all three readings
   remain aligned across status changes, orientations, and supported widths.
-- [ ] Selecting a bean fills only a blank/default draft title with its last two
+- [x] Selecting a bean fills only a blank/default draft title with its last two
   name words; custom titles survive changes, autosave, reload, and immediate start.
-- [ ] Existing purchase accounting, validation/stale-save handling, sensor
+- [x] Notes starts 40% taller and roast detail shows linked Origin/Processing.
+- [x] Existing purchase accounting, validation/stale-save handling, sensor
   behavior, and roast lifecycle continue to pass regression verification.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
@@ -218,6 +225,8 @@ status changes, and name an untitled new roast from the selected bean.
   status badge, fullscreen counter, and narrow/orientation behavior.
 - `docs/design/components/forms.md`: bean-specific control-height/color and
   compact stock-row guidance; keep broad shared form contracts unchanged.
+- `docs/architecture/tech-stack.md`: Node 22+ test-only JavaScript checks.
+- `docs/design/screens/roast-detail.md`: linked bean metadata display.
 - `tests/README.md` and `tests/e2e/README.md`: focused automated inventory and
   durable scenarios, replacing obsolete immediate-removal steps.
 - Conditional: `docs/architecture/api-endpoints.md` only if setup/timing API
@@ -259,3 +268,29 @@ status changes, and name an untitled new roast from the selected bean.
 - `static/css/screens/live-fullscreen.css`
 - RN-0031: repeated purchase history and inventory invariants.
 - RN-0032: browser-native popup removal and in-page interactions.
+
+## Resolution
+
+Implemented purchase form styling, scoped in-page removal and focus behavior,
+compact stock/color fields, history action spacing, 40% taller Notes, and
+hover-only stock guidance. Draft naming uses raw bean names and ordered setup
+saves; Start waits for the final save. FC counters share the persisted origin,
+restore UTC correctly on reload, and update only after successful event saves.
+Sensor badges sit alongside aligned readouts with responsive reflow. Roast
+detail reads Origin/Processing directly from the linked bean.
+
+- Focused verification: 95 passed across the five declared test modules; full
+  `LOCAL_DB_NAME=roastlogger_test_rn0033 uv run pytest`: 246 passed.
+- Browser: `rn-0033-polish-a` and restart continuation `rn-0033-polish-b`;
+  evidence in ignored `tests/e2e/artifacts/rn-0033-polish-a/summary.md`,
+  `fc-samples.json`, screenshots, and both service logs. Actual 390px and tablet
+  orientation checks, light/dark forms/history, naming/autosave/start, FC
+  normal/fullscreen/reload/failure, sensor states, end/save and stock verified.
+  Only expected stale409 and deliberately injected sensor/network failures.
+- Read-only forecast `20260915T235435Z-76a7cdb3`: 2 bean updates, no additions
+  or conflicts; 71 destination documents unchanged. No mirror applied.
+- `git ls-files db_backup 'db_backup/**'`: empty. Browser records and CSVs
+  cleaned with the two run-scoped cleanup commands; no remaining run records.
+- Documentation Impact updated in this branch, including the user’s in-flight
+  stock-help, Notes-height, and linked-bean-metadata refinements. No API or
+  schema contract changed. Tracker regenerated and checked.

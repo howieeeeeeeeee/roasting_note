@@ -55,7 +55,7 @@
                         <option value="">Select a bean...</option>
                         {% for bean in beans %}
                         {% if bean.stock_grams and bean.stock_grams > 0 %}
-                        <option value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id==bean._id %}selected{% endif %}>
+                        <option data-bean-name="{{ bean.name }}" value="{{ bean._id }}" {% if roast.bean_id and roast.bean_id==bean._id %}selected{% endif %}>
                             {{ bean.name }} ({{ bean.stock_grams }}g available)
                         </option>
                         {% endif %}
@@ -92,8 +92,8 @@
             </div>
             <div class="fs-reading-item fs-temp">
                 <span class="fs-label">Temp</span>
-                <span class="fs-value"><span id="fsTempValue">--</span><span class="fs-unit">°C</span></span>
-                <span class="fs-sensor-status sensor-status-idle" id="fsTempSensorStatus">Idle</span>
+                <div class="temperature-reading"><span class="fs-value"><span id="fsTempValue">--</span><span class="fs-unit">°C</span></span>
+                <span class="fs-sensor-status sensor-status sensor-status-idle" id="fsTempSensorStatus">Idle</span></div>
             </div>
             <div class="fs-reading-item fs-ror">
                 <span class="fs-label">RoR</span>
@@ -165,10 +165,10 @@
             </div>
             <div class="tb-tile" id="tempTile">
                 <div class="tb-label">Temperature</div>
-                <div class="tb-value">
+                <div class="temperature-reading"><div class="tb-value">
                     <span id="tempValue">--</span><span class="tb-unit">°C</span>
                 </div>
-                <div class="tb-sub sensor-status sensor-status-idle" id="tempSensorStatus">Idle</div>
+                <span class="sensor-status sensor-status-idle" id="tempSensorStatus">Idle</span></div>
             </div>
             <div class="tb-tile">
                 <div class="tb-label">Rate of Rise</div>
@@ -307,7 +307,8 @@
     'roastId': roast._id | string,
     'roastStarted': roast.lifecycle_state == 'started',
     'roastEnded': roast.lifecycle_state == 'completed',
-    'roastStartTime': roast.roast_start_time.isoformat() if roast.roast_start_time else none
+    'roastStartTime': (roast.roast_start_time.isoformat() + ('Z' if not roast.roast_start_time.tzinfo else '')) if roast.roast_start_time else none,
+    'keyTimings': roast.key_timings or []
 } %}
 <script type="application/json" id="live-roast-config">{{ live_roast_config | tojson }}</script>
 <script type="module" src="{{ url_for('static', filename='js/live-roast/index.js') }}"></script>

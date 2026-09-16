@@ -47,7 +47,7 @@ The four key readings are fixed in a horizontal bar at the top. The chart takes 
 - Height: **88px**, `flex-shrink: 0`.
 - Four metric tiles: **Elapsed · Temperature · Rate of Rise · Since FC** — see [../components/instrument-displays.md](../components/instrument-displays.md#top-bar-tiles-tb-tile).
 - The "Since FC" tile (`#fcElapsedTile`) is hidden until First Crack Start is logged, then shown automatically.
-- The Temperature tile includes a compact sensor-state line under the numeric
+- The Temperature tile includes a compact sensor-state badge beside the numeric
   value. Normal state reads `Live`; transient failures read `Retrying`; failures
   older than 5 seconds read `Stale`; unavailable hardware reads `Offline` or
   `Sensor fault`.
@@ -100,7 +100,7 @@ Separate layout, triggered from the navbar. Two flavours driven by device orient
 
 - **Landscape** (`.fullscreen-landscape`): left panel with instrument tiles, right panel with the chart. At ≥ 768px the left panel is `400px` wide; at ≥ 1024px it widens to `420px`.
 - **Portrait** (`.fullscreen-portrait`): instrument row on top, chart below.
-- The fullscreen temperature readout mirrors the same sensor-state line as the
+- The fullscreen temperature readout mirrors the same adjacent sensor-state badge as the
   top bar so stale/offline state remains visible while roasting fullscreen.
 - Safe-area insets (`env(safe-area-inset-*)`) applied for notched devices.
 - Fullscreen redesign to match the new top-bar layout is a pending item (see [Open Items](#open-items)).
@@ -111,3 +111,12 @@ Separate layout, triggered from the navbar. Two flavours driven by device orient
 - [ ] Slide-out event log panel (swipe up from bottom) for reviewing logged data without leaving the roast view.
 - [ ] Larger tap targets for Fan/Power steppers on smaller tablets.
 - [ ] Test on actual iPad with the sensor connected.
+
+### Readout alignment
+
+Normal and fullscreen metric groups align labels and numeric baselines from the
+top. Temperature keeps its unit and a reserved 12ch status badge alongside it;
+status changes do not change the group height. At widths below 768px the
+Temperature group gets its own row. Controls/readings wrap and narrow fullscreen
+can scroll. Since FC appears below fullscreen Time only after a saved FC event,
+and remains in sync across orientation changes and fullscreen toggles.

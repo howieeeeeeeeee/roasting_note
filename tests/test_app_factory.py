@@ -146,4 +146,5 @@ def test_live_roast_uses_one_json_bootstrap_and_module_entry():
         "roastStarted": False,
         "roastEnded": False,
         "roastStartTime": None,
+        "keyTimings": [],
     }

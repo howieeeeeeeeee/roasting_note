@@ -384,3 +384,34 @@ def test_stock_zero_conflict_returns_stable_error(client, monkeypatch):
         "success": False,
         "error": "Bean stock changed; refresh and try again",
     }
+
+
+def test_live_roast_raw_names_and_recorded_fc_bootstrap(client, created_test_roast, roasts_collection):
+    import json
+    import re
+    from bson import ObjectId
+    roast_id = created_test_roast["roast_id"]
+    roasts_collection.update_one({"_id": ObjectId(roast_id)}, {"$set": {
+        "key_timings": [{"event_name": "First Crack Start", "time_seconds": 60}]
+    }})
+    html = client.get(f"/roast/live/{roast_id}").get_data(as_text=True)
+    config = json.loads(re.search(r'id="live-roast-config">(.*?)</script>', html, re.S).group(1))
+    assert config["keyTimings"][0]["time_seconds"] == 60
+    assert 'data-bean-name="Test Ethiopian Yirgacheffe"' in html
+    assert 'id="fcElapsedValue"' in html
+    assert 'id="fsFcTimeDisplay"' in html
+    assert html.count('class="temperature-reading"') == 2
+
+
+def test_roast_detail_uses_linked_bean_origin_and_processing(client, created_test_roast, beans_collection):
+    from bson import ObjectId
+    bean_id = created_test_roast["bean_id"]
+    beans_collection.update_one({"_id": ObjectId(bean_id)}, {"$set": {"origin": "Origin example", "process": "Honey example"}})
+    route = f'/roast/detail/{created_test_roast["roast_id"]}'
+    html = client.get(route).get_data(as_text=True)
+    assert '<strong>Origin:</strong> Origin example' in html
+    assert '<strong>Processing:</strong> Honey example' in html
+    beans_collection.update_one({"_id": ObjectId(bean_id)}, {"$unset": {"origin": "", "process": ""}})
+    html = client.get(route).get_data(as_text=True)
+    assert '<strong>Origin:</strong> Not specified' in html
+    assert '<strong>Processing:</strong> Not specified' in html

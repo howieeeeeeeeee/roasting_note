@@ -6,6 +6,12 @@ export function formatTime(totalSeconds) {
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+export function defaultRoastTitle(title, beanName) {
+    if (!/^(?:untitled(?: roast)?)?$/i.test(title.trim())) return title;
+    const words = (beanName || "").trim().split(/\s+/);
+    return words[0] ? words.slice(-2).join(" ") : title;
+}
+
 export function createSession(config, chart) {
     const elements = {
         timerDisplay: document.getElementById("timerDisplay"),
@@ -37,6 +43,7 @@ export function createSession(config, chart) {
         lastPower: 3,
         fcStartTime: null,
     };
+    let setupSave = Promise.resolve(true);
     let displayListener = () => {};
 
     function notifyDisplayChange() {
@@ -50,10 +57,16 @@ export function createSession(config, chart) {
     function updateTimer() {
         state.seconds += 1;
         elements.timerDisplay.textContent = formatTime(state.seconds);
+        updateFcDisplay();
+    }
+
+    function updateFcDisplay() {
         if (state.fcStartTime !== null) {
+            const tile = document.getElementById("fcElapsedTile");
+            if (tile) tile.style.display = "flex";
             const elapsed = state.seconds - state.fcStartTime;
             const display = document.getElementById("fcElapsedValue");
-            if (display) display.textContent = formatTime(elapsed);
+            if (display) display.textContent = formatTime(Math.max(0, elapsed));
         }
         notifyDisplayChange();
     }
@@ -109,17 +122,25 @@ export function createSession(config, chart) {
         };
     }
 
-    async function saveSetupFields() {
-        if (state.setupLocked) return;
-        try {
-            await fetch(`/api/roast/update_setup/${config.roastId}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(collectSetupData()),
-            });
-        } catch (error) {
-            console.error("Error saving roast setup:", error);
-        }
+    function saveSetupFields() {
+        if (state.setupLocked) return Promise.resolve(false);
+        const payload = JSON.stringify(collectSetupData());
+        setupSave = setupSave.then(async () => {
+            try {
+                const response = await fetch(`/api/roast/update_setup/${config.roastId}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: payload,
+                });
+                if (!response.ok) throw new Error("Unable to save roast setup");
+                return true;
+            } catch (error) {
+                console.error("Error saving roast setup:", error);
+                showMessage("Unable to save roast setup. Please retry.", "error");
+                return false;
+            }
+        });
+        return setupSave;
     }
 
     function scheduleSetupSave() {
@@ -138,7 +159,7 @@ export function createSession(config, chart) {
     function setSensorStatus(status, ageSeconds) {
         if (!elements.tempSensorStatus) return;
         elements.tempSensorStatus.className =
-            `tb-sub sensor-status sensor-status-${status || "idle"}`;
+            `sensor-status sensor-status-${status || "idle"}`;
         const labels = {
             ok: "Live",
             retrying: "Retrying",
@@ -290,6 +311,15 @@ export function createSession(config, chart) {
 
     function wireSetupPersistence() {
         if (state.setupLocked) return;
+        const beanSelect = document.getElementById("bean_id");
+        const fillTitle = () => {
+            elements.roastTitleInput.value = defaultRoastTitle(
+                elements.roastTitleInput.value,
+                beanSelect.selectedOptions[0]?.dataset.beanName,
+            );
+        };
+        beanSelect.addEventListener("input", fillTitle);
+        beanSelect.addEventListener("change", fillTitle);
         [
             "roast_title",
             "bean_id",
@@ -332,7 +362,10 @@ export function createSession(config, chart) {
                     clearTimeout(state.setupSaveTimer);
                     state.setupSaveTimer = null;
                 }
-                await saveSetupFields();
+                if (!await saveSetupFields()) {
+                    elements.completeDraftBtn.disabled = false;
+                    return;
+                }
                 const response = await fetch(
                     `/api/roast/complete_draft/${config.roastId}`,
                     { method: "POST" },
@@ -364,6 +397,8 @@ export function createSession(config, chart) {
             }
             elements.startBtn.disabled = true;
             try {
+                clearTimeout(state.setupSaveTimer);
+                if (!await saveSetupFields()) return;
                 const response = await fetch(
                     `/api/roast/start/${config.roastId}`,
                     {
@@ -442,13 +477,9 @@ export function createSession(config, chart) {
         elements.eventButtons.forEach((button) => {
             button.addEventListener("click", async () => {
                 const eventName = button.dataset.event;
-                if (eventName === "First Crack Start") {
-                    state.fcStartTime = state.seconds;
-                    const tile = document.getElementById("fcElapsedTile");
-                    const value = document.getElementById("fcElapsedValue");
-                    if (tile) tile.style.display = "flex";
-                    if (value) value.textContent = "00:00";
-                }
+                if (button.disabled) return;
+                button.disabled = true;
+                const eventSeconds = state.seconds;
                 const fan = parseInt(
                     document.getElementById("fan_setting").value,
                     10,
@@ -466,16 +497,21 @@ export function createSession(config, chart) {
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
                                 event_name: eventName,
-                                time_seconds: state.seconds,
+                                time_seconds: eventSeconds,
                                 temperature,
                                 fan_setting: fan,
                                 power_setting: power,
                             }),
                         },
                     );
-                    if (!response.ok) {
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
                         showMessage("Error logging event. Please try again.", "error");
                         return;
+                    }
+                    if (eventName === "First Crack Start") {
+                        state.fcStartTime = eventSeconds;
+                        updateFcDisplay();
                     }
                     if (fan !== null) state.lastFan = fan;
                     if (power !== null) state.lastPower = power;
@@ -495,16 +531,16 @@ export function createSession(config, chart) {
                         `<span class="timeline-settings"> Fan: ${fan || 0} | ` +
                         `Power: ${power || 0}</span>`;
                     item.innerHTML = `
-                        <div class="timeline-time">${formatTime(state.seconds)}</div>
+                        <div class="timeline-time">${formatTime(eventSeconds)}</div>
                         <div class="timeline-content">${content}</div>
                     `;
                     elements.timelineList.insertBefore(
                         item,
                         elements.timelineList.firstChild,
                     );
-                    chart.addEventMarker(state.seconds, eventName);
+                    chart.addEventMarker(eventSeconds, eventName);
                     showMessage(
-                        `✓ ${eventName} logged at ${formatTime(state.seconds)}`,
+                        `✓ ${eventName} logged at ${formatTime(eventSeconds)}`,
                     );
                     button.classList.add("fired");
                     if (elements.tempInput) elements.tempInput.value = "";
@@ -512,6 +548,8 @@ export function createSession(config, chart) {
                 } catch (error) {
                     console.error("Error:", error);
                     showToast("Error logging event. Please try again.", "error");
+                } finally {
+                    button.disabled = !state.isRunning;
                 }
             });
         });
@@ -624,6 +662,10 @@ export function createSession(config, chart) {
             document.getElementById("bean_id").disabled = true;
             document.getElementById("original_weight").disabled = true;
             collapseSetupOnStart();
+            const fc = (config.keyTimings || []).findLast(
+                timing => timing.event_name === "First Crack Start",
+            );
+            state.fcStartTime = fc ? fc.time_seconds : null;
             if (config.roastStartTime) {
                 state.seconds = Math.floor(
                     (Date.now() - new Date(config.roastStartTime).getTime()) / 1000,
@@ -639,6 +681,7 @@ export function createSession(config, chart) {
                 state.timerInterval = setInterval(updateTimer, 1000);
             }
         }
+        updateFcDisplay();
         startSyncLoop();
         chart.init();
         notifyDisplayChange();

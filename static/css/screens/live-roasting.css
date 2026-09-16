@@ -271,3 +271,21 @@
 .timeline-temp-value { font-family: var(--font-mono); color: var(--txt); }
 .timeline-settings { font-size: var(--text-sm); color: var(--txt2); }
 .timeline-note { font-size: var(--text-sm); color: var(--txt2); font-style: italic; }
+
+/* Keep numeric baselines independent of status and development annotations. */
+.live-topbar { flex-wrap: wrap; }
+.tb-tile { justify-content: flex-start; flex: 1 0 auto; }
+.temperature-reading { display: flex; align-items: center; gap: var(--space-2); }
+.temperature-reading .sensor-status {
+  flex: 0 0 12ch;
+  width: 12ch;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.4;
+  margin: 0;
+}
+@media (max-width: 767px) {
+  .tb-tile { padding: var(--space-3); }
+  #tempTile { flex-basis: 100%; order: 1; }
+  .tb-end { padding: var(--space-3); }
+}

@@ -121,7 +121,8 @@
 }
 
 .management-form .color-picker-wrapper {
-  padding: var(--space-1);
+  height: 46px;
+  padding: 0 var(--space-2);
 }
 
 .management-form-actions {
@@ -381,4 +382,45 @@
 .management-form--bean #beanFormError { color: var(--danger-color); }
 @media (max-width: 767px) {
   .management-form--bean .purchase-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+.management-form--bean .management-form-section--inventory {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.management-form--bean #purchaseRows { max-width: 960px; width: 100%; }
+.management-form--bean #addPurchase { margin-right: max(0px, calc(100% - 960px)); }
+.management-form--bean .purchase-row .form-group,
+.management-form--bean .purchase-row label { margin-bottom: 0; }
+.management-form--bean .purchase-row input { margin-top: var(--space-2); }
+.management-form--bean .remove-purchase { justify-self: end; }
+.management-form--bean #addPurchase {
+  align-self: flex-end;
+  min-width: 12rem;
+}
+.management-form--bean .purchase-removal {
+  grid-column: 1 / -1;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--bd);
+}
+.management-form--bean .purchase-removal .btn { margin-top: var(--space-3); }
+.management-form--bean .stock-count-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.management-form--bean .stock-count-row label { margin: 0; }
+.management-form--bean .stock-count-row input { width: 10rem; }
+.management-form--bean .color-picker-wrapper:focus-within {
+  border-color: var(--pr);
+  box-shadow: 0 0 0 3px var(--pr-l);
+}
+.management-detail--bean .purchase-history-action { margin-top: var(--space-4); }
+
+/* Four text rows plus existing padding/border, enlarged by 40%. */
+.management-form--bean #notes {
+  height: calc((6em + 1.3rem + 2px) * 1.4);
 }

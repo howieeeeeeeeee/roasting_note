@@ -52,6 +52,12 @@
                 <strong>Bean:</strong> {{ roast.bean_name }}
             </div>
             <div class="detail-item">
+                <strong>Origin:</strong> {{ bean.origin if bean and bean.origin else 'Not specified' }}
+            </div>
+            <div class="detail-item">
+                <strong>Processing:</strong> {{ bean.process if bean and bean.process else 'Not specified' }}
+            </div>
+            <div class="detail-item">
                 <strong>Roast Date:</strong> {{ roast.roast_date | format_date }}
             </div>
             <div class="detail-item">

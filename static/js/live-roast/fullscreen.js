@@ -20,10 +20,10 @@ export function createFullscreenController(session, chart) {
         if (timer) timer.textContent = elements.timerDisplay.textContent;
 
         const fsFcTime = document.getElementById("fsFcTimeDisplay");
-        const fcTime = document.getElementById("fcTimeDisplay");
+        const fcTime = document.getElementById("fcElapsedValue");
         if (fsFcTime && fcTime) {
-            fsFcTime.textContent = fcTime.textContent;
-            fsFcTime.style.display = fcTime.style.display;
+            fsFcTime.textContent = `Since FC ${fcTime.textContent}`;
+            fsFcTime.style.display = state.fcStartTime === null ? "none" : "block";
         }
 
         const temperature = document.getElementById("fsTempValue");

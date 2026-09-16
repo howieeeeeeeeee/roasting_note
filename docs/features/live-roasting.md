@@ -21,7 +21,7 @@ The live roasting page is the tablet-first interface used during an active roast
 - Syncs approximately every 1 second without overlapping requests.
 - Uses bounded retries so normal ESP32 responses in the 200-450ms range do not
   appear as failures.
-- Shows `Live`, `Retrying`, `Stale`, `Offline`, or `Sensor fault` under the
+- Shows `Live`, `Retrying`, `Stale`, `Offline`, or `Sensor fault` beside the
   temperature readout.
 - Treats the last reading as stale after 5 seconds without a successful sensor
   read, and does not reuse stale temperature for event logging.
@@ -146,3 +146,18 @@ Pending controls reject duplicate clicks; failed requests re-enable retry and
 show errors in the shared accessible toast region. Completion's button help
 explains that it records no live roast or inventory consumption. Draft deletion
 and completed-roast Archive also run without native browser confirmation.
+
+## Draft naming and development-time continuity
+
+Selecting a bean fills a blank, Untitled, or Untitled Roast name (case/whitespace
+insensitive) with the last two words of its actual name. One-word names stay
+whole; availability text is excluded. Custom or already-filled titles survive
+later bean selections. Setup writes run in order, and Start/Set to Completed
+wait for the latest successful setup save before advancing the lifecycle.
+
+Since FC uses the saved First Crack Start time and the same session clock in
+normal/fullscreen views, including reloads. Naive stored UTC start timestamps
+are explicitly marked UTC in the browser bootstrap. FC is committed to the
+counter only after the event request succeeds; pending duplicates are disabled.
+Fullscreen mirrors the existing counter without adding timers or polling.
+Ending the roast stops the timer. Sensor freshness and cadence remain unchanged.

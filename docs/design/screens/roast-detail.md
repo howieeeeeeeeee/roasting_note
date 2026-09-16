@@ -90,3 +90,7 @@ to Delete. Apply disables both controls while pending and stays disabled after
 success until reload; errors appear in an inline alert with retry available.
 Review save failures use the same alert and retain the entered review. These
 controls inherit the existing responsive and dark-mode button/modal styles.
+
+Basic Information shows Bean, Origin, and Processing together, using the linked
+bean’s current fields. Missing metadata or a missing bean reads “Not specified”.
+These facts use the existing responsive grid and light/dark typography.

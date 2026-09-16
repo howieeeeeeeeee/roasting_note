@@ -27,7 +27,7 @@ The canonical instrument readout. Used in a row of four on the [live roasting sc
 
 A conditional variant of `.tb-tile` that appears only after First Crack Start is logged. The value uses `.tb-value-fc` (`2rem`, slightly smaller) and a red sub-line (`.tb-sub`, DM Mono `0.6875rem`, `--danger-color`) marking development time.
 
-Show/hide is driven by JS in [templates/roast_live.html](../../../templates/roast_live.html) — the `#fcElapsedTile` element is toggled when `fcStartTime` is set.
+Show/hide is driven by [session.js](../../../static/js/live-roast/session.js) — the `#fcElapsedTile` element is toggled when `fcStartTime` is set.
 
 ## Stepper Control (`.stepper-control`)
 
@@ -66,3 +66,9 @@ The row of five event buttons below the chart on the live screen (Y, FC, FC–, 
 ## Dark Mode
 
 All instrument components consume palette tokens (`--primary-color`, `--bg-color`, `--border-color`). The dark-mode rules in [static/css/style.css](../../../static/css/style.css) (`body.dark-mode .stepper-control`, `.timer-panel`, `.temp-panel`, `.live-ev-btn`) explicitly swap the background to `--bg-color` so the instrument surfaces sit slightly *below* the card background in dark mode — creating a subtle inset feel that reinforces the "instrument embedded in a panel" read.
+
+The temperature number/unit and sensor badge share `.temperature-reading` in
+both modes. Badge width is reserved at 12ch for Live, Retrying, Stale Ns, Offline,
+and Sensor fault; labels supply meaning beyond color. Groups align at the top
+so status and Since FC annotations do not move the primary numeric baseline.
+Narrow screens reflow the temperature group to a separate row.

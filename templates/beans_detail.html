@@ -103,7 +103,7 @@
                 </table>
             </div>
             {% else %}<p class="stock-history-empty">No purchase history recorded.</p>{% endif %}
-            <a href="{{ url_for('beans_edit_form', bean_id=bean._id) }}#purchaseRows" class="btn btn-secondary">Add or edit purchases</a>
+            <a href="{{ url_for('beans_edit_form', bean_id=bean._id) }}#purchaseRows" class="btn btn-secondary purchase-history-action">Add or edit purchases</a>
             {% if bean.inventory_opening_adjustment_grams %}
             <p class="helper-text">Historical inventory adjustment: {{ '%+d' | format(bean.inventory_opening_adjustment_grams) }}g. Preserves the opening balance.</p>
             {% endif %}

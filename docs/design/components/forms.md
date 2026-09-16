@@ -131,3 +131,10 @@ Inputs, sections, helpers, and focus rings inherit from semantic tokens. Dark mo
 - **`.short-flavor-editor`** — tokenized chip-input surface used by add/edit bean. It matches field height, uses `--surf2` when idle, and switches to `--surf` on focus.
 - **`.color-picker-wrapper`** — compact input group for bean label colour. The swatch and mono hex preview sit inside one tokenized field shell.
 - **`.info-text`** — small helper text block for form caveats. Use sparingly; most forms should rely on field labels.
+
+Bean purchase rows use the same `.form-group` fields, including native date and
+number inputs. Bean Label Color has a 46px outer shell aligned with Supplier.
+Opening/corrected stock uses a wrapping label plus a 10rem input, with optional
+accounting help on hover. The bean Notes textarea is 40% taller than its original
+four-row height and retains native vertical resizing. These rules are scoped to
+`.management-form--bean`; other forms retain their existing sizes.

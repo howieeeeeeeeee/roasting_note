@@ -7,11 +7,28 @@
         rows.lastElementChild.querySelector('input[type="date"]').focus();
     });
     rows.addEventListener('click', event => {
-        const button = event.target.closest('.remove-purchase');
-        if (!button) return;
-        const row = button.closest('.purchase-row');
-        row.remove();
-        document.getElementById('addPurchase').focus();
+        const button = event.target.closest('button');
+        const row = button?.closest('.purchase-row');
+        if (!row) return;
+        const panel = row.querySelector('.purchase-removal');
+        const remove = row.querySelector('.remove-purchase');
+        if (button === remove) {
+            const date = row.querySelector('[name="purchase_date"]').value;
+            const weight = row.querySelector('[name="purchase_weight_grams"]').value;
+            row.querySelector('.purchase-removal-summary').textContent =
+                `Remove this purchase${date ? ` dated ${date}` : ''}${weight ? ` (${weight}g)` : ''}?`;
+            panel.hidden = false;
+            remove.setAttribute('aria-expanded', 'true');
+            panel.querySelector('.cancel-purchase-removal').focus();
+        } else if (button.matches('.cancel-purchase-removal')) {
+            panel.hidden = true;
+            remove.setAttribute('aria-expanded', 'false');
+            remove.focus();
+        } else if (button.matches('.confirm-purchase-removal') && !panel.hidden) {
+            const next = row.nextElementSibling || row.previousElementSibling;
+            row.remove();
+            (next?.querySelector('.remove-purchase') || document.getElementById('addPurchase')).focus();
+        }
     });
     form.addEventListener('submit', async event => {
         event.preventDefault();

@@ -6,6 +6,7 @@
 
 | ID | Type | Priority | Area | Title | Parent | Blocked by | Created | Resolved |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RN-0033 | [IMPROVEMENT] | High | ui | [Polish purchase entry and restore readable live-roast metrics](./resolved/RN-0033-purchase-form-and-live-roast-polish.md) | - | - | 2026-09-15 | 2026-09-15 |
 | RN-0032 | [IMPROVEMENT] | High | ui | [Remove blocking browser confirmation popups](./resolved/RN-0032-remove-native-confirmations.md) | - | - | 2026-09-15 | 2026-09-15 |
 | RN-0031 | [FEATURE] | High | beans | [Repeat bean purchases with preserved inventory and local migration](./resolved/RN-0031-bean-purchase-history.md) | - | - | 2026-09-15 | 2026-09-15 |
 | RN-0030 | [IMPROVEMENT] | High | database-sync | [Simplify Settings Sync and Show Exact Change Forecast](./resolved/RN-0030-click-sync-forecast.md) | - | - | 2026-08-20 | 2026-08-20 |

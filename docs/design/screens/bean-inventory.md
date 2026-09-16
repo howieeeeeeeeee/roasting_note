@@ -87,8 +87,9 @@ becomes static for print.
 ### Repeated purchases
 
 Each purchase is a labeled fieldset. **Add purchase** appends a row and focuses
-its date. **Remove purchase** immediately removes the unsaved row and focuses
-Add purchase. The Inventory hint explains that saving subtracts the weight;
+its date. Compact **Remove** opens a row-local confirmation and focuses Cancel.
+Cancel returns focus to Remove; Confirm removal removes only that unsaved row
+and focuses a remaining row’s Remove or Add purchase. The Inventory hint explains that saving subtracts the weight;
 Cancel leaves stored purchases untouched. Every row
 stacks at mobile widths. Blank dates/prices mean unknown; blank new rows can
 remain unused. Price labels explicitly say total price.
@@ -180,3 +181,18 @@ The beans list uses a custom `.beans-table` rather than the generic `.data-table
 - Inline sort buttons in the header (`.sort-btn-inline` with a toggling Material icon for asc/desc/unfold).
 - A fixed `colgroup` and `table-layout: fixed` so Stock, Purchase Date, and Price/kg headers stay aligned with their centered values.
 - Horizontal overflow at narrow widths instead of squeezed columns.
+
+### RN-0033 form refinements
+
+Purchase fields reuse `.form-group` inset controls at 46px. Rows are capped at
+960px and separated from the hint, Add action, and stock area by spacing tokens.
+The 12rem Add purchase action aligns with the list’s bottom-right edge; Remove
+retains its 44px minimum target. Rows stack below 768px without page overflow.
+Stock labels and 10rem inputs share a centered wrapping row. Optional accounting
+help is hover text on the input, without a permanent helper paragraph.
+The Label Color shell matches Supplier’s 46px height, with a native swatch and
+focus-within ring. The resizable bean Notes field starts 40% taller than its
+previous four-row height. All treatments inherit light/dark tokens.
+
+Purchase History keeps a `--space-4` gap before Add or edit purchases for empty,
+single, and multiple rows; the table retains internal horizontal scrolling.

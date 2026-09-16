@@ -119,6 +119,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_datetime_formatting.py` | UTC and operator-timezone formatting |
 | `test_e2e_runtime.py` | Isolated database, run markers, cleanup, and online exclusion |
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
+| `test_live_roast_ui.py` | Node-executed session checks for default/custom naming, queued setup/start, recorded FC restore, fullscreen parity, failed FC, and stopped clocks |
 | `test_management_design_contracts.py` | Compact management hooks, responsive grids, sticky actions, field order, table and RN-0027 preservation, live-roast exclusion, native-popup prohibition, and in-page review deletion |
 | `test_reviews_api.py` | Review CRUD and validation |
 | `test_roasts_api.py` | Roast lifecycle, events, temperature, stock, and weight loss |
@@ -430,3 +431,14 @@ no-op reruns, malformed-record rejection, and conditional-write conflicts.
 Production conversion runs only as an explicit delivery operation after tests;
 it is never a fixture or cleanup step. Browser coverage is the repeat-purchase
 scenario in `tests/e2e/README.md`.
+
+RN-0033 focused checks use an isolated local database and Node (no npm packages):
+
+```bash
+LOCAL_DB_NAME=roastlogger_test_rn0033 uv run pytest tests/test_live_roast_ui.py tests/test_management_design_contracts.py tests/test_api_contracts.py tests/test_beans_api.py tests/test_roasts_api.py
+```
+
+`test_live_roast_ui.py` executes `live_roast_ui_check.mjs` with a small DOM/clock
+fake. Browser scenarios verify actual interaction/rendering. API contracts cover
+raw bean-name bootstrap metadata, recorded FC timings, and linked-bean Origin /
+Processing (including missing values) on roast detail.

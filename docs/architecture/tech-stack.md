@@ -142,3 +142,10 @@ python-dotenv>=0.19
 requests>=2.26
 pytz>=2021.1
 ```
+
+## JavaScript regression checks
+
+Local automated verification also uses Node.js 22+ to execute the browser
+session modules against a small DOM/clock fake (`tests/live_roast_ui_check.mjs`).
+No npm dependencies or frontend build step are introduced. Node is a testing
+tool only; Flask deployment and browser runtime requirements are unchanged.

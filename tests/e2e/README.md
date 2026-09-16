@@ -313,8 +313,8 @@ Use isolated run `rn-0031-purchases-a` and a run-unique bean name.
 3. Correct the second purchase to 600g and backdate it to August 1. Verify
    1400g, latest September 1, and newest-date-first history. Correct counted
    stock to 1350g; verify a -50g correction and retained purchase history.
-4. Remove the erroneous 600g row without a popup. Cancel the form and verify
-   the saved row remains. Remove it again and save; verify 750g. Zero the balance, verify filtering and
+4. Open Remove for the erroneous 600g row and Confirm removal in-page. Cancel the form and verify
+   the saved row remains. Confirm its removal again and save; verify 750g. Zero the balance, verify filtering and
    history, then add a 500g purchase and verify 500g. Archive the started roast
    and verify 700g; a repeated archive must not restore more stock.
 5. Open two edit tabs; save a purchase in one and attempt to save the stale
@@ -440,3 +440,29 @@ Before committing, verify artifacts and E2E data are absent from Git:
 git status --short
 git ls-files tests/e2e/artifacts tests/e2e/runtime db_backup
 ```
+
+### Purchase form, draft naming, and fullscreen readings (Full)
+
+Use isolated run `rn-0033-polish-a`; run Bean, Repeat purchases, and Live Roast
+above with the row-local removal confirmation. Unrelated Settings is excluded.
+
+1. Check empty, single, and multiple purchase rows at desktop and actual 390 CSS
+   pixels in light/dark modes. Verify 46px controls/color alignment, 40% taller
+   Notes, compact stock input and hover help, right-aligned Add, sticky Save,
+   internal table scrolling, and a visible gap before the history edit action.
+2. Add a row and verify date focus. Open Remove, check date/weight and save-only
+   stock text, cancel by keyboard and verify focus/values; confirm removal and
+   cancel the whole form, then repeat and save. Check exact balances, invalid
+   and stale saves retaining values, stock correction, and native color picker.
+3. Select beans with multiword and one-word names from blank/default titles.
+   Verify last-two-word naming excludes availability text; custom and previously
+   filled names survive new selections. Check autosave/reload and immediate Start.
+4. Before FC, fullscreen has no fabricated counter. Record FC normally and in
+   fullscreen; compare Since FC each second, toggle/reload, and rotate tablet
+   portrait/landscape. Failed FC requests must preserve the prior or unset origin.
+5. Exercise healthy, retry, stale, offline, fault, and recovery. Check status
+   beside temperature, stable primary baselines, no overlap at narrow widths,
+   unchanged polling cadence, fan/power/events, end/save, and inventory deduction.
+6. On roast detail, verify Origin/Processing match the bean and responsive
+   missing-value fallbacks. Save screenshots, timestamped FC/stock/title checks,
+   console/network findings, and scoped cleanup in the ignored run summary.

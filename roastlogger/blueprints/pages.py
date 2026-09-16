@@ -162,6 +162,7 @@ def roast_detail(roast_id):
     )
     if not roast:
         return "Roast not found", 404
+    bean = None
     if roast.get("bean_id"):
         bean = get_beans_collection().find_one(
             {"_id": ObjectId(roast["bean_id"])}
@@ -174,7 +175,7 @@ def roast_detail(roast_id):
             roast["roast_end_time"] - roast["roast_start_time"]
         ).total_seconds()
         roast["roast_duration_seconds"] = int(duration)
-    return render_template("roast_detail.html", roast=roast)
+    return render_template("roast_detail.html", roast=roast, bean=bean)
 
 
 def roast_edit_form(roast_id):
