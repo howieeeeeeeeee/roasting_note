@@ -410,6 +410,8 @@ CLI documented in [Database Sync](../features/database-sync.md).
 
 `flavorNotes` may contain `\n`-separated lines; each non-blank line is rendered on its own line on the label.
 
+Optional `fontSizePercent` accepts a JSON number from 50–200. Omitted, null, or empty removes any prior override; other values return `400` without updating the bean.
+
 **Response:** `{ "success": true }` or `404` if bean not found.
 
 ### Get Label Defaults

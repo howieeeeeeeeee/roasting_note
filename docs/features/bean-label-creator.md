@@ -70,3 +70,9 @@ See [docs/architecture/data-models.md](../architecture/data-models.md).
   route that opens the label creator. Both requests include every weight used
   by the canvas renderer before `document.fonts.ready` resolves.
 - **Adding a new template:** [adding-label-templates.md](./adding-label-templates.md).
+
+### Optional text sizing
+
+Font size (%) scales all label text from 50–200%, including line spacing and name wrapping. Blank uses each template’s default (100%). Save Label Info stores an explicit value in the bean’s label; clearing it and saving removes the override. Reopening restores the saved value. It is per bean and does not seed other beans. The preview and both PNG exports use the same sized canvas. Large text can exceed the available layout; use the preview to choose a suitable size.
+
+Database impact: only the optional beans.label.fontSizePercent field changes; no migration or backfill is needed locally or online. Normal timestamp-based document sync carries the field. No applied mirror is part of delivery. Read-only local-to-online preflight on 2026-09-16 succeeded (1 bean update forecast, no conflicts); no database was changed by preflight.

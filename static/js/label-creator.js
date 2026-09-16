@@ -185,8 +185,11 @@ var LabelCreator = (function () {
      * @param {string} imageSrc     - URL or '' (for nova: right panel; for ink/washi: bg)
      * @param {string} fontPreset   - key from FONT_PRESETS
      * @param {string} aspectRatio  - key from ASPECT_RATIOS e.g. '5:4'
+     * @param {number} fontSizePercent - optional text scale, 50–200; blank uses 100
      */
-    function renderLabel(canvas, templateId, fields, accentColor, imageSrc, fontPreset, aspectRatio) {
+    function renderLabel(canvas, templateId, fields, accentColor, imageSrc, fontPreset, aspectRatio, fontSizePercent) {
+        var size = Number(fontSizePercent);
+        var fontScale = Number.isFinite(size) && size >= 50 && size <= 200 ? size / 100 : 1;
         var preset  = fontPreset  || 'modern';
         var ratioKey = aspectRatio || '5:4';
         var ratio    = ASPECT_RATIOS[ratioKey] || [5, 4];
@@ -214,10 +217,10 @@ var LabelCreator = (function () {
             var img = imageSrc ? imageCache[imageSrc] : null;
 
             switch (templateId) {
-                case 'ink':   renderInk(ctx, w, h, fields, accent, img, preset);   break;
-                case 'strip': renderStrip(ctx, w, h, fields, accent, img, preset); break;
-                case 'washi': renderWashi(ctx, w, h, fields, accent, img, preset); break;
-                default:      renderNova(ctx, w, h, fields, accent, img, preset);  break;
+                case 'ink':   renderInk(ctx, w, h, fields, accent, img, preset, fontScale);   break;
+                case 'strip': renderStrip(ctx, w, h, fields, accent, img, preset, fontScale); break;
+                case 'washi': renderWashi(ctx, w, h, fields, accent, img, preset, fontScale); break;
+                default:      renderNova(ctx, w, h, fields, accent, img, preset, fontScale);  break;
             }
         });
     }
@@ -225,7 +228,7 @@ var LabelCreator = (function () {
     // ════════════════════════════════════════════════════
     // T1 - Nova (split left-text / right-image)
     // ════════════════════════════════════════════════════
-    function renderNova(ctx, w, h, f, accent, img, preset) {
+    function renderNova(ctx, w, h, f, accent, img, preset, fontScale) {
         var isPortrait = h > w * 0.9;
 
         // White bg
@@ -272,9 +275,9 @@ var LabelCreator = (function () {
         // Text area - keep name restrained; bump sub & body ~15-20%
         var textW = isPortrait ? w : w * 0.5;
         var tx     = 26 + (barW - 5);
-        var nameSz = Math.max(20, Math.min(40, textW * 0.17));
-        var subSz  = Math.max(12, Math.min(18, textW * 0.056));
-        var bodySz = Math.max(10, Math.min(14, textW * 0.040));
+        var nameSz = (Math.max(20, Math.min(40, textW * 0.17))) * fontScale;
+        var subSz  = (Math.max(12, Math.min(18, textW * 0.056))) * fontScale;
+        var bodySz = (Math.max(10, Math.min(14, textW * 0.040))) * fontScale;
         // Lift the full text block noticeably to avoid crowding the lower divider zone.
         var contentShiftY = -Math.max(16, h * 0.06);
 
@@ -327,7 +330,7 @@ var LabelCreator = (function () {
     // ════════════════════════════════════════════════════
     // T2 - Ink (dark, full-bleed bg or rich gradient)
     // ════════════════════════════════════════════════════
-    function renderInk(ctx, w, h, f, accent, img, preset) {
+    function renderInk(ctx, w, h, f, accent, img, preset, fontScale) {
         // Background - image or dark gradient
         if (img) {
             ctx.save();
@@ -366,9 +369,9 @@ var LabelCreator = (function () {
         ctx.fillStyle = fade; ctx.fillRect(0, h - h * 0.18, w, h * 0.18);
 
         var mx     = w * 0.07;
-        var nameSz = Math.max(24, Math.min(54, w * 0.12));
-        var subSz  = Math.max(9,  Math.min(14, w * 0.030));
-        var bodySz = Math.max(8,  Math.min(12, w * 0.025));
+        var nameSz = (Math.max(24, Math.min(54, w * 0.12))) * fontScale;
+        var subSz  = (Math.max(9,  Math.min(14, w * 0.030))) * fontScale;
+        var bodySz = (Math.max(8,  Math.min(12, w * 0.025))) * fontScale;
 
         var inkNameLines = splitLines(f.name);
         if (!inkNameLines.length) inkNameLines = [''];
@@ -392,7 +395,7 @@ var LabelCreator = (function () {
 
         // Origin ghost stamp bottom-right
         ctx.save(); ctx.globalAlpha = 0.10;
-        txt(ctx, (f.origin||'').toUpperCase(), w - mx, h - 18, nameFontStr(preset, Math.max(14, w * 0.04)), '#C9A87A', 'right');
+        txt(ctx, (f.origin||'').toUpperCase(), w - mx, h - 18, nameFontStr(preset, Math.max(14, w * 0.04) * fontScale), '#C9A87A', 'right');
         ctx.globalAlpha = 1; ctx.restore();
 
         txt(ctx, f.roastDate ? ('Roasted: ' + f.roastDate) : '', mx, h - 18, bodyFontStr(preset, bodySz * 0.9, 500), '#4A4540');
@@ -401,7 +404,7 @@ var LabelCreator = (function () {
     // ════════════════════════════════════════════════════
     // T4 - Strip (minimal Swiss, left accent band)
     // ════════════════════════════════════════════════════
-    function renderStrip(ctx, w, h, f, accent, img, preset) {
+    function renderStrip(ctx, w, h, f, accent, img, preset, fontScale) {
         ctx.fillStyle = '#FDFCFB'; ctx.fillRect(0, 0, w, h);
 
         var bandW = Math.round(w * 0.065);
@@ -411,7 +414,7 @@ var LabelCreator = (function () {
         ctx.save();
         ctx.translate(bandW / 2, h / 2); ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = 'rgba(255,255,255,0.82)';
-        ctx.font = '700 ' + Math.max(8, bandW * 0.28) + "px 'Inter', sans-serif";
+        ctx.font = '700 ' + (Math.max(8, bandW * 0.28) * fontScale) + "px 'Inter', sans-serif";
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText((f.origin || '').toUpperCase(), 0, 0);
         ctx.restore();
@@ -419,13 +422,13 @@ var LabelCreator = (function () {
         var cx2    = bandW + w * 0.05;
         var cw     = w - cx2 - w * 0.04;
         var pillH  = Math.max(14, h * 0.065);
-        var pillSz = Math.max(7, pillH * 0.48);
+        var pillSz = (Math.max(7, pillH * 0.48)) * fontScale;
 
         roundRect(ctx, cx2, h * 0.07, cw * 0.38, pillH, 3, '#F0EDE8');
         txt(ctx, (f.process||'').toUpperCase(), cx2 + 9, h * 0.07 + pillH / 2,
             '600 ' + pillSz + "px 'Inter', sans-serif", '#999590', 'left', 'middle');
 
-        var nameSz = Math.max(20, Math.min(52, w * 0.112));
+        var nameSz = (Math.max(20, Math.min(52, w * 0.112))) * fontScale;
         var stripNameLines = splitLines(f.name);
         if (!stripNameLines.length) stripNameLines = [''];
         var stripNameTop = h * 0.07 + pillH + nameSz * 1.12;
@@ -438,7 +441,7 @@ var LabelCreator = (function () {
         ctx.strokeStyle = '#E0DDD8'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(cx2, ruleY2); ctx.lineTo(w - w * 0.04, ruleY2); ctx.stroke();
 
-        var bodySz = Math.max(8, Math.min(12, w * 0.026));
+        var bodySz = (Math.max(8, Math.min(12, w * 0.026))) * fontScale;
         var col2   = cx2 + cw * 0.5;
         var infoY  = ruleY2 + bodySz * 2.2;
 
@@ -462,7 +465,7 @@ var LabelCreator = (function () {
     // ════════════════════════════════════════════════════
     // T5 - Washi (craft paper, centred, ornamental)
     // ════════════════════════════════════════════════════
-    function renderWashi(ctx, w, h, f, accent, img, preset) {
+    function renderWashi(ctx, w, h, f, accent, img, preset, fontScale) {
         // Background - image or kraft gradient
         if (img) {
             ctx.save();
@@ -504,10 +507,10 @@ var LabelCreator = (function () {
         ctx.beginPath(); ctx.moveTo(bm + 18, topY2); ctx.lineTo(w / 2 - 44, topY2); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(w / 2 + 44, topY2); ctx.lineTo(w - bm - 18, topY2); ctx.stroke();
         txt(ctx, (f.origin||'').toUpperCase(), w / 2, topY2,
-            bodyFontStr(preset, Math.max(9, w * 0.022), 600), '#9A8060', 'center', 'middle');
+            bodyFontStr(preset, Math.max(9, w * 0.022) * fontScale, 600), '#9A8060', 'center', 'middle');
 
         // Name - multi-line breaks honor user newlines, centered around h*0.38
-        var nameSz = Math.max(20, Math.min(52, w * 0.112));
+        var nameSz = (Math.max(20, Math.min(52, w * 0.112))) * fontScale;
         var washiNameLines = splitLines(f.name);
         if (!washiNameLines.length) washiNameLines = [''];
         var washiNameStep   = nameSz * 1.05;
@@ -530,7 +533,7 @@ var LabelCreator = (function () {
         ctx.lineTo(w / 2, midY2 + 5); ctx.lineTo(w / 2 - 5, midY2);
         ctx.closePath(); ctx.fill();
 
-        var bodySz = Math.max(8, Math.min(12, w * 0.026));
+        var bodySz = (Math.max(8, Math.min(12, w * 0.026))) * fontScale;
         txt(ctx, (f.process||'').toUpperCase(), w / 2, midY2 + bodySz * 2.6,
             bodyFontStr(preset, bodySz, 500), '#8A7860', 'center', 'middle');
         txt(ctx, f.roastLevel, w / 2, h * 0.67, bodyFontStr(preset, bodySz, 600), '#5A4830', 'center', 'middle');

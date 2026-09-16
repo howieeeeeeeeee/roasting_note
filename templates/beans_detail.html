@@ -320,6 +320,11 @@
                             </select>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label for="labelFontSizePercent">Font size (%)</label>
+                        <input type="number" id="labelFontSizePercent" class="form-control" min="50" max="200" step="any"
+                            placeholder="Default (100%)" oninput="updatePreview()" title="Scale all label text. Leave blank for the template default.">
+                    </div>
                     <div class="label-form-row-full label-form-grid-row label-form-export-row">
                         <div class="form-group">
                             <label for="labelExportW">Export W (cm)</label>
@@ -584,6 +589,7 @@
     function openLabelModal() {
         var modal = document.getElementById('labelModal');
         var saved = beanData.label;
+        document.getElementById('labelFontSizePercent').value = saved?.fontSizePercent ?? '';
 
         if (saved && (saved.name || saved.imageSrc || saved.templateId)) {
             document.getElementById('labelName').value        = saved.name        || '';
@@ -711,7 +717,7 @@
         var fontPreset  = document.getElementById('labelFontPreset').value;
         var aspectRatio = document.getElementById('labelAspectRatio').value;
         var accentColor = beanData.color || '#9B6A6A';
-        LabelCreator.renderLabel(canvas, templateId, getFieldValues(), accentColor, selectedImageSrc, fontPreset, aspectRatio);
+        LabelCreator.renderLabel(canvas, templateId, getFieldValues(), accentColor, selectedImageSrc, fontPreset, aspectRatio, document.getElementById('labelFontSizePercent').value);
     }
 
     function onLabelStyleChange() { updatePreview(); }
@@ -726,6 +732,8 @@
     });
 
     async function saveLabelInfo() {
+        var sizeInput = document.getElementById('labelFontSizePercent');
+        if (!sizeInput.reportValidity()) return;
         var values      = getFieldValues();
         var templateId  = document.getElementById('labelTemplate').value;
         var fontPreset  = document.getElementById('labelFontPreset').value;
@@ -750,6 +758,8 @@
             exportHeightCm: exportH,
         };
 
+        if (sizeInput.value !== '') payload.fontSizePercent = Number(sizeInput.value);
+
         try {
             var resp = await fetch('/api/beans/' + beanData.id + '/label', {
                 method:  'POST',
@@ -757,6 +767,7 @@
                 body:    JSON.stringify(payload),
             });
             var data = await resp.json();
+            if (!resp.ok || !data.success) throw new Error(data.error || 'Error saving');
             if (data.success) {
                 beanData.label = payload;
                 document.getElementById('labelSaveStatus').textContent = 'Saved!';

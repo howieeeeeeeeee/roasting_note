@@ -454,3 +454,5 @@ checks cover the change.
 
 The label-image listing contract uses a temporary image directory so local
 user-added assets cannot change the test’s expected filenames.
+
+Label typography is checked by `test_label_font_size.py` and its Node canvas fake across all four templates, default/blank sizing, and 50–200% scaling. `TestBeanLabel.test_label_font_size_round_trip` checks persistence, rejected values without mutation, and clearing. Browser verification is omitted at the user’s request.

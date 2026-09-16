@@ -95,3 +95,7 @@ The modal chrome (form fields, buttons, background) adapts automatically via CSS
 
 - [../patterns/label-templates.md](../patterns/label-templates.md) — the four templates, five font presets, five aspect ratios as a design system.
 - [../../features/adding-label-templates.md](../../features/adding-label-templates.md) — how to add a new template (step-by-step).
+
+### Font size control
+
+An optional Font size (%) number input below the style selectors accepts 50–200, with “Default (100%)” as its blank placeholder. Changes redraw all template text immediately. Saving validates the range and preserves the override per bean; clearing restores default sizing. Export dimensions and artwork do not scale with text.
