@@ -22,6 +22,12 @@
         <h1 class="record-title-heading">{{ roast.title }}</h1>
     </div>
     <div class="header-actions">
+        {% if roast.lifecycle_state == 'completed' and bean and not bean.archived %}
+        <a href="{{ url_for('beans_detail', bean_id=bean._id) }}" class="btn btn-secondary" id="viewBeanButton">
+            <span class="material-icons" aria-hidden="true">local_cafe</span>
+            View Bean
+        </a>
+        {% endif %}
         <a href="{{ url_for('roast_edit_form', roast_id=roast._id) }}" class="btn btn-secondary">
             <span class="material-icons">edit</span>
             Edit

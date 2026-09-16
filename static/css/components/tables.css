@@ -119,18 +119,19 @@
 }
 .beans-table {
   width: 100%;
-  min-width: 1040px;
+  min-width: 1240px;
   table-layout: fixed;
   border-collapse: collapse;
   font-size: var(--text-base);
 }
-.beans-col-name { width: 32%; }
-.beans-col-origin { width: 12%; }
-.beans-col-process { width: 12%; }
-.beans-col-supplier { width: 13%; }
+.beans-col-name { width: 25%; }
+.beans-col-origin { width: 10%; }
+.beans-col-process { width: 10%; }
+.beans-col-supplier { width: 10%; }
 .beans-col-stock { width: 9%; }
 .beans-col-date { width: 13%; }
 .beans-col-price { width: 9%; }
+.beans-col-last-roast { width: 14%; }
 .beans-table thead th {
   text-align: left;
   padding: 0.7rem 1.1rem;
@@ -146,9 +147,11 @@
 .beans-table thead th:nth-child(5),
 .beans-table thead th:nth-child(6),
 .beans-table thead th:nth-child(7),
+.beans-table thead th:nth-child(8),
 .beans-table tbody td:nth-child(5),
 .beans-table tbody td:nth-child(6),
-.beans-table tbody td:nth-child(7) {
+.beans-table tbody td:nth-child(7),
+.beans-table tbody td:nth-child(8) {
   text-align: center;
 }
 .beans-table tbody tr {
@@ -193,10 +196,11 @@
 }
 
 /* Mono-styled data columns in the beans table — match the roast table look.
-   Columns: 5 Stock (badge), 6 Purchase Date, 7 Price/kg. */
+   Columns: 5 Stock (badge), 6 Purchase Date, 7 Price/kg, 8 Last Roast. */
 .beans-table td:nth-child(5),
 .beans-table td:nth-child(6),
-.beans-table td:nth-child(7) {
+.beans-table td:nth-child(7),
+.beans-table td:nth-child(8) {
   font-family: var(--font-mono);
   font-size: 0.82rem;
   color: var(--txt2);

@@ -94,3 +94,8 @@ controls inherit the existing responsive and dark-mode button/modal styles.
 Basic Information shows Bean, Origin, and Processing together, using the linked
 bean’s current fields. Missing metadata or a missing bean reads “Not specified”.
 These facts use the existing responsive grid and light/dark typography.
+
+Completed roasts with an available linked bean include a **View Bean** secondary
+link-button before Edit in the existing wrapping header action group. It uses
+native navigation to bean detail and is omitted for draft/in-progress roasts or
+missing/archived beans. This also applies to legacy timestamp-based completion.

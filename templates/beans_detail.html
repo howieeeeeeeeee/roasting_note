@@ -63,6 +63,7 @@
             <div class="detail-item"><strong>Origin:</strong> {{ bean.origin or 'Not specified' }}</div>
             <div class="detail-item"><strong>Process:</strong> {{ bean.process or 'Not specified' }}</div>
             <div class="detail-item"><strong>Supplier:</strong> {{ bean.supplier or 'Not specified' }}</div>
+            <div class="detail-item"><strong>Last Roast:</strong> <span id="lastRoastDate">{{ last_roast_date | format_date if last_roast_date else 'Not roasted yet' }}</span></div>
             <div class="detail-item"><strong>Latest Purchase:</strong> {{ bean.purchase_date.strftime('%Y-%m-%d') if bean.purchase_date else 'Not specified' }}</div>
         </div>
     </section>

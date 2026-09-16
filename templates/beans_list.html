@@ -32,6 +32,7 @@
             <col class="beans-col-stock">
             <col class="beans-col-date">
             <col class="beans-col-price">
+            <col class="beans-col-last-roast">
         </colgroup>
         <thead>
             <tr>
@@ -57,6 +58,7 @@
                         <span class="material-icons">{% if sort_by == 'price' %}{% if sort_order == 'asc' %}arrow_upward{% else %}arrow_downward{% endif %}{% else %}unfold_more{% endif %}</span>
                     </button>
                 </th>
+                <th>Last Roast</th>
             </tr>
         </thead>
         <tbody>
@@ -144,6 +146,9 @@
                     {% else %}
                         -
                     {% endif %}
+                </td>
+                <td class="date-cell bean-last-roast">
+                    {{ last_roast_dates[bean._id] | format_date if bean._id in last_roast_dates else 'Not roasted yet' }}
                 </td>
             </tr>
             {% endfor %}

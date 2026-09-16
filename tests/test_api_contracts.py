@@ -49,7 +49,12 @@ def test_guarded_settings_sync_markup_uses_click_only_safe_phase_controls():
     assert "focusVisibleSyncControl(focusTarget)" in script
 
 
-def test_label_image_and_recent_preferences_contract(client, beans_collection):
+def test_label_image_and_recent_preferences_contract(client, app, beans_collection, tmp_path, monkeypatch):
+    image_directory = tmp_path / "img"
+    image_directory.mkdir()
+    for filename in ("nova.png", "favicon.svg", "ignored.txt"):
+        (image_directory / filename).touch()
+    monkeypatch.setattr(app, "static_folder", str(tmp_path))
     marker = f"api-contract-{uuid4().hex[:10]}"
     bean_id = beans_collection.insert_one(
         {
@@ -415,3 +420,74 @@ def test_roast_detail_uses_linked_bean_origin_and_processing(client, created_tes
     html = client.get(route).get_data(as_text=True)
     assert '<strong>Origin:</strong> Not specified' in html
     assert '<strong>Processing:</strong> Not specified' in html
+
+
+def test_completed_roast_links_to_available_bean(client, created_test_roast, roasts_collection, beans_collection):
+    from datetime import datetime
+    from bson import ObjectId
+
+    roast_id = ObjectId(created_test_roast["roast_id"])
+    bean_id = ObjectId(created_test_roast["bean_id"])
+    route = f"/roast/detail/{roast_id}"
+    for status in ("draft", "started", "completed"):
+        roasts_collection.update_one({"_id": roast_id}, {"$set": {"lifecycle_status": status}})
+        html = client.get(route).get_data(as_text=True)
+        assert ('id="viewBeanButton"' in html) == (status == "completed")
+    assert f'href="/beans/detail/{bean_id}" class="btn btn-secondary" id="viewBeanButton"' in html
+    assert client.get(f"/beans/detail/{bean_id}").status_code == 200
+
+    # Legacy completion timestamps also expose the navigation action.
+    roasts_collection.update_one({"_id": roast_id}, {
+        "$unset": {"lifecycle_status": ""}, "$set": {"roast_end_time": datetime(2026, 9, 15)}})
+    assert 'id="viewBeanButton"' in client.get(route).get_data(as_text=True)
+    beans_collection.update_one({"_id": bean_id}, {"$set": {"archived": True}})
+    assert 'id="viewBeanButton"' not in client.get(route).get_data(as_text=True)
+    roasts_collection.update_one({"_id": roast_id}, {"$set": {"bean_id": ObjectId()}})
+    assert 'id="viewBeanButton"' not in client.get(route).get_data(as_text=True)
+    roasts_collection.update_one({"_id": roast_id}, {"$unset": {"bean_id": ""}})
+    assert 'id="viewBeanButton"' not in client.get(route).get_data(as_text=True)
+
+
+def test_last_roast_dates_match_in_list_and_detail(client, app, created_test_bean, roasts_collection, monkeypatch):
+    from datetime import datetime
+    from bson import ObjectId
+    import re
+
+    monkeypatch.setitem(app.config, "TIMEZONE", "America/New_York")
+    bean_id = ObjectId(created_test_bean)
+    inserted = []
+
+    def add(**values):
+        inserted.append(roasts_collection.insert_one({
+            "bean_id": bean_id, "title": "Last roast regression", "test_data": True,
+            "roast_date": datetime(2026, 9, 15), "key_timings": [], "temp_curve": [],
+            **values,
+        }).inserted_id)
+
+    def assert_date(expected):
+        detail = client.get(f"/beans/detail/{bean_id}").get_data(as_text=True)
+        assert f'id="lastRoastDate">{expected}</span>' in detail
+        listing = client.get("/beans").get_data(as_text=True)
+        row = next(row for row in re.findall(r'<tr class="bean-row.*?</tr>', listing, re.S)
+                   if f'/beans/detail/{bean_id}' in row)
+        assert re.search(r'class="date-cell bean-last-roast">\s*' + re.escape(expected), row)
+
+    try:
+        assert_date("Not roasted yet")
+        add(lifecycle_status="draft")
+        add(lifecycle_status="started", roast_start_time=datetime(2026, 9, 15, 2))
+        add(lifecycle_status="completed", archived=True, roast_start_time=datetime(2026, 9, 16))
+        assert_date("Not roasted yet")
+        # Start time wins over a later setup date; UTC crossing midnight renders locally.
+        add(lifecycle_status="completed", roast_start_time=datetime(2026, 9, 12, 1, 30))
+        assert_date("2026-09-11 21:30")
+        # Manually completed records have no start time, and use roast_date.
+        add(lifecycle_status="completed", roast_date=datetime(2026, 9, 13, 2))
+        assert_date("2026-09-12 22:00")
+        # Legacy completed roasts are eligible; unrelated beans and missing dates are not.
+        add(roast_start_time=datetime(2026, 9, 14, 3), roast_end_time=datetime(2026, 9, 14, 3, 10))
+        add(lifecycle_status="completed", bean_id=ObjectId(), roast_date=datetime(2026, 9, 20))
+        add(lifecycle_status="completed", roast_date=None)
+        assert_date("2026-09-13 23:00")
+    finally:
+        roasts_collection.delete_many({"_id": {"$in": inserted}, "test_data": True})

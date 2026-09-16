@@ -149,3 +149,18 @@ Removing purchases only persists when the bean form is saved.
 Roast detail also displays the linked bean’s current Origin and Processing in
 Basic Information, with “Not specified” for missing values or a missing bean.
 These are read from the bean, not copied into historical roast documents.
+
+## Last Roast and linked-bean navigation
+
+The Beans list and Bean Information panel show **Last Roast** in the operator’s
+configured timezone. It is the latest non-archived completed roast, using
+`roast_start_time`, or `roast_date` for manual completion without a start time.
+Drafts, in-progress roasts, archived roasts, and undated records do not contribute.
+Beans without an eligible date show **Not roasted yet**. Dates are calculated
+from existing roast records at render time, without saved summaries or backfills.
+The list reads the relevant roast metadata in one query for all displayed beans.
+
+Completed roast detail offers **View Bean** beside Edit, opening the linked bean
+detail page. Drafts/in-progress roasts and missing/archived beans omit the button
+so it cannot point at an unavailable bean page. Legacy completion timestamps
+follow the existing lifecycle rules.

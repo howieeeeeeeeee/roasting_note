@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from flask import url_for
 
 from roastlogger.config import (
@@ -44,3 +46,20 @@ def annotate_roast_lifecycle(roast):
         roast["lifecycle_url"] = url_for("roast_live", roast_id=roast["_id"])
 
     return roast
+
+
+def latest_roast_dates(roasts):
+    """Latest completed, non-archived roast per bean, without storing summaries."""
+    dates = {}
+    for roast in roasts:
+        if roast.get("archived") or get_roast_lifecycle_status(roast) != ROAST_LIFECYCLE_COMPLETED:
+            continue
+        bean_id = roast.get("bean_id")
+        date = roast.get("roast_start_time") or roast.get("roast_date")
+        if bean_id is None or not isinstance(date, datetime):
+            continue
+        if date.tzinfo is None:
+            date = date.replace(tzinfo=timezone.utc)
+        if bean_id not in dates or date > dates[bean_id]:
+            dates[bean_id] = date
+    return dates

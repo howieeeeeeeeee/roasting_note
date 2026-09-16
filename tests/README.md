@@ -442,3 +442,15 @@ LOCAL_DB_NAME=roastlogger_test_rn0033 uv run pytest tests/test_live_roast_ui.py 
 fake. Browser scenarios verify actual interaction/rendering. API contracts cover
 raw bean-name bootstrap metadata, recorded FC timings, and linked-bean Origin /
 Processing (including missing values) on roast detail.
+
+### Bean roast recency and return navigation
+
+`test_api_contracts.py` verifies matching Last Roast values in Beans list/detail,
+completed/manual/legacy eligibility, exclusion of drafts/in-progress/archived or
+undated records, timezone rendering, and completed-roast View Bean links with
+missing/archived-bean fallbacks. Browser verification for this follow-up was
+explicitly omitted at the user’s request; automated rendered-page and full-suite
+checks cover the change.
+
+The label-image listing contract uses a temporary image directory so local
+user-added assets cannot change the test’s expected filenames.

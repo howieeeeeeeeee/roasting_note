@@ -12,7 +12,7 @@ from models.bean_purchases import bean_version, purchase_view
 from roastlogger.database import get_beans_collection, get_roasts_collection
 from roastlogger.e2e import document_markers
 from roastlogger.routing import register_unprefixed_routes
-from roastlogger.services.lifecycle import annotate_roast_lifecycle
+from roastlogger.services.lifecycle import annotate_roast_lifecycle, latest_roast_dates
 
 
 blueprint = Blueprint("pages", __name__)
@@ -80,8 +80,14 @@ def beans_list():
             1 if sort_order == "asc" else -1,
         )
     )
+    last_roast_dates = latest_roast_dates(get_roasts_collection().find(
+        {"bean_id": {"$in": [bean["_id"] for bean in beans]}, "archived": {"$ne": True}},
+        {"bean_id": 1, "lifecycle_status": 1, "roast_start_time": 1,
+         "roast_end_time": 1, "roast_date": 1},
+    )) if beans else {}
     return render_template(
         "beans_list.html",
+        last_roast_dates=last_roast_dates,
         beans=beans,
         filter_out_of_stock=filter_out_of_stock,
         sort_by=sort_by,
@@ -122,7 +128,9 @@ def beans_detail(bean_id):
                 roast["time_after_fc"] = (
                     roast["total_duration_seconds"] - fc_start
                 )
-    return render_template("beans_detail.html", bean=bean, roasts=roasts, purchases=purchase_view(bean))
+    return render_template("beans_detail.html", bean=bean, roasts=roasts,
+                           purchases=purchase_view(bean),
+                           last_roast_date=latest_roast_dates(roasts).get(bean["_id"]))
 
 
 def beans_edit_form(bean_id):
@@ -162,6 +170,7 @@ def roast_detail(roast_id):
     )
     if not roast:
         return "Roast not found", 404
+    annotate_roast_lifecycle(roast)
     bean = None
     if roast.get("bean_id"):
         bean = get_beans_collection().find_one(

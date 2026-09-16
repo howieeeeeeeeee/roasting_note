@@ -56,8 +56,8 @@ value, and remaining/cumulative-purchased context in `aria-valuetext`. Invalid o
 purchase-weight baselines omit the progressbar entirely, so the pill remains a
 complete readable fallback.
 
-The fixed colgroup, 9% Stock allocation, 1040px table minimum, and horizontal
-overflow behavior remain unchanged. The stock cell reduces only its own
+The fixed colgroup retains its 9% Stock allocation and internal horizontal
+overflow; a 1240px table minimum accommodates Last Roast. The stock cell reduces only its own
 horizontal padding so the wider pill and thin meter fit without overlapping
 adjacent columns at the table minimum. Color tokens supply equivalent contrast
 in light and dark modes.
@@ -196,3 +196,12 @@ previous four-row height. All treatments inherit light/dark tokens.
 
 Purchase History keeps a `--space-4` gap before Add or edit purchases for empty,
 single, and multiple rows; the table retains internal horizontal scrolling.
+
+### Last Roast
+
+The list adds a centered monospace Last Roast column after Avg. Price/kg.
+Its 14% width and the 1240px table minimum keep date/time readable while narrow
+screens scroll within the table container. Stock retains its 9% column and meter.
+Bean Information also includes Last Roast in the existing responsive fact grid.
+Both show operator-local date/time, or “Not roasted yet”; see
+[the eligibility rules](../../features/beans-management.md#last-roast-and-linked-bean-navigation).
