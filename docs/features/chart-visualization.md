@@ -31,6 +31,7 @@ Used by:
 
 ### Event Markers
 - Vertical annotations for key events (FC, SC, etc.)
+- Live, resumed, edit and detail charts show one First Crack Start line at the last recorded FC. The event log keeps all presses. FC End and other event types keep their own markers, including events recorded in the same second.
 - Labels positioned inside chart (yAdjust: 15)
 - Events: Yellowing, First Crack, Second Crack
 
@@ -78,12 +79,12 @@ RoastChart.addDataPoint({
 });
 ```
 
-### RoastChart.addEventMarker(name, timeSeconds)
+### RoastChart.addEventMarker(timeSeconds, name)
 
 Add event annotation.
 
 ```javascript
-RoastChart.addEventMarker('First Crack Start', 542);
+RoastChart.addEventMarker(542, 'First Crack Start');
 ```
 
 ## Chart Configuration

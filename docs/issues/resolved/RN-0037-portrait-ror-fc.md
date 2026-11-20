@@ -2,10 +2,10 @@
 id: RN-0037
 title: Keep End Roast steady on portrait iPads and show the latest FC marker
 type: bug
-status: in_progress
+status: resolved
 priority: medium
 created: 2026-11-19
-resolved:
+resolved: 2026-11-19
 area: live-roasting
 parent:
 decisions: []
@@ -22,10 +22,10 @@ the chart. Operators need a steady control and one marker at the corrected time.
 
 ## Acceptance Criteria
 
-- [ ] End Roast stays in place as RoR alternates between 9.9 and 10.0 on portrait iPads, before and after FC.
-- [ ] Only the last saved First Crack Start appears on the live, reloaded live, edit and detail charts. Other event types and the underlying event log are preserved.
-- [ ] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
-- [ ] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
+- [x] End Roast stays in place as RoR alternates between 9.9 and 10.0 on portrait iPads, before and after FC.
+- [x] Only the last saved First Crack Start appears on the live, reloaded live, edit and detail charts. Other event types and the underlying event log are preserved.
+- [x] Testing Impact reviewed against the implementation diff; declared automated and browser coverage is complete.
+- [x] Documentation Impact reviewed against the implementation diff; every affected document below is updated in this branch.
 
 ## Testing Impact
 
@@ -46,3 +46,23 @@ the chart. Operators need a steady control and one marker at the corrected time.
 ## Database Operations Impact
 
 None. Both changes affect presentation of existing readings and recorded events.
+
+## Resolution
+
+Portrait readings reserve space for a signed RoR and fit beside End Roast.
+One shared annotation rule moves the FC line to its latest recorded time in
+the live, resumed, edit and detail charts.
+
+- Focused Node-backed regressions passed. Full pytest passed all 252 tests on
+  the isolated `roastlogger_test_rn0037` database.
+- Browser run `rn-0037-portrait-a` checked 744, 768, 810, 820, 834, 1024 and
+  1032 CSS pixels, before and after FC in normal and fullscreen. End Roast had
+  identical bounds at 9.9, 10.0, 9.9 and −10.0 at each width and in each mode.
+- Live and resumed charts moved FC from 00:44 to 00:54. A fullscreen correction
+  at 03:06 survived reload, ending and saving. Both history charts showed one
+  FC at 03:06, alongside Yellowing, FC End and Drop. The Data tab retained all
+  three FC presses.
+- The ignored run directory contains `geometry.json`, `markers.json`,
+  screenshots, service logs and `summary.md`. App console and HTTP checks
+  passed. The virtual sensor recovered after the injected failures. Scoped
+  cleanup removed two roasts, one bean and four CSVs with zero records remaining.

@@ -683,7 +683,7 @@ export function createSession(config, chart) {
         }
         updateFcDisplay();
         startSyncLoop();
-        chart.init();
+        chart.init(config.keyTimings);
         notifyDisplayChange();
     }
 

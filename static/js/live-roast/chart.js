@@ -1,12 +1,3 @@
-const EVENT_COLORS = {
-    Yellowing: "#f0ad4e",
-    "First Crack Start": "#d9534f",
-    "First Crack End": "#c9302c",
-    "Second Crack Start": "#5bc0de",
-    "Second Crack End": "#31b0d5",
-    Drop: "#8B4513",
-};
-
 export function createChartController(formatTime) {
     let chart = null;
     let currentMaxMinutes = 8;
@@ -17,12 +8,16 @@ export function createChartController(formatTime) {
         rorData: [],
         fanData: [],
         powerData: [],
-        events: [],
     };
 
-    function init() {
+    function init(keyTimings = []) {
         const canvas = document.getElementById("roastCurveChart");
         if (!canvas) return;
+        const annotations = {};
+        for (const { time_seconds, event_name } of keyTimings) {
+            RoastChart.setEventAnnotation(annotations, time_seconds, event_name);
+            extendTimeAxis(time_seconds);
+        }
         chart = new Chart(canvas.getContext("2d"), {
             type: "line",
             data: {
@@ -150,7 +145,7 @@ export function createChartController(formatTime) {
                             },
                         },
                     },
-                    annotation: { annotations: {} },
+                    annotation: { annotations },
                     tooltip: {
                         callbacks: {
                             title(context) {
@@ -185,6 +180,14 @@ export function createChartController(formatTime) {
                 layout: { padding: { top: 30 } },
             },
         });
+    }
+
+    function extendTimeAxis(timeSeconds) {
+        const currentMinutes = timeSeconds / 60;
+        if (currentMinutes > currentMaxMinutes - 1) {
+            currentMaxMinutes = Math.ceil(currentMinutes / 2) * 2 + 2;
+            if (chart) chart.options.scales.x.max = currentMaxMinutes * 60;
+        }
     }
 
     function updateScales(temperature) {
@@ -222,42 +225,14 @@ export function createChartController(formatTime) {
         chart.data.datasets[3].data.push({ x: timeSeconds, y: currentFan });
         updateScales(temperature);
 
-        const currentMinutes = timeSeconds / 60;
-        if (currentMinutes > currentMaxMinutes - 1) {
-            currentMaxMinutes = Math.ceil(currentMinutes / 2) * 2 + 2;
-            chart.options.scales.x.max = currentMaxMinutes * 60;
-        }
+        extendTimeAxis(timeSeconds);
         chart.update("none");
     }
 
     function addEventMarker(timeSeconds, eventName) {
         if (!chart) return;
-        const color = EVENT_COLORS[eventName] || "#6B5B4D";
-        const annotationId = `event-${timeSeconds}`;
-        chart.options.plugins.annotation.annotations[annotationId] = {
-            type: "line",
-            scaleID: "x",
-            value: timeSeconds,
-            borderColor: color,
-            borderWidth: 2,
-            borderDash: [5, 5],
-            label: {
-                display: true,
-                content: eventName,
-                position: "start",
-                backgroundColor: color,
-                color: "white",
-                font: { size: 10, weight: "bold" },
-                padding: 4,
-                yAdjust: 15,
-            },
-        };
-        chartData.events.push({
-            time: timeSeconds,
-            label: formatTime(timeSeconds),
-            name: eventName,
-            color,
-        });
+        extendTimeAxis(timeSeconds);
+        RoastChart.setEventAnnotation(chart.options.plugins.annotation.annotations, timeSeconds, eventName);
         chart.update();
     }
 

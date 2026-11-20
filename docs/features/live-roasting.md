@@ -155,8 +155,8 @@ whole; availability text is excluded. Custom or already-filled titles survive
 later bean selections. Setup writes run in order, and Start/Set to Completed
 wait for the latest successful setup save before advancing the lifecycle.
 
-Since FC uses the saved First Crack Start time and the same session clock in
-normal/fullscreen views, including reloads. Naive stored UTC start timestamps
+Recording FC again moves the chart marker and restarts Since FC at the newly
+saved time. Normal and fullscreen views share that clock, including after reloads. Naive stored UTC start timestamps
 are explicitly marked UTC in the browser bootstrap. FC is committed to the
 counter only after the event request succeeds; pending duplicates are disabled.
 Fullscreen mirrors the existing counter without adding timers or polling.

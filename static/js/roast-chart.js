@@ -412,15 +412,21 @@ const RoastChart = {
     addEventMarker(timeSeconds, eventName) {
         if (!this.chart) return;
 
-        const timeLabel = this.formatTime(timeSeconds);
+        const annotations = this.chart.options.plugins.annotation.annotations ??= {};
+        const marker = this.setEventAnnotation(annotations, timeSeconds, eventName);
+        this.chartData.events.push({
+            time: timeSeconds,
+            label: this.formatTime(timeSeconds),
+            name: eventName,
+            color: marker.borderColor
+        });
+        this.chart.update('none');
+    },
+
+    setEventAnnotation(annotations, timeSeconds, eventName) {
         const color = this.eventColors[eventName] || '#6B5B4D';
-        const annotationId = 'event-' + timeSeconds;
-
-        if (!this.chart.options.plugins.annotation.annotations) {
-            this.chart.options.plugins.annotation.annotations = {};
-        }
-
-        this.chart.options.plugins.annotation.annotations[annotationId] = {
+        const id = eventName === 'First Crack Start' ? 'fc-start' : `event-${timeSeconds}-${eventName}`;
+        annotations[id] = {
             type: 'line',
             scaleID: 'x',
             value: timeSeconds,  // Use numeric seconds for linear x-axis
@@ -439,15 +445,7 @@ const RoastChart = {
             }
         };
 
-        // Store event for reference
-        this.chartData.events.push({
-            time: timeSeconds,
-            label: timeLabel,
-            name: eventName,
-            color: color
-        });
-
-        this.chart.update('none');
+        return annotations[id];
     },
 
     /**

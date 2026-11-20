@@ -392,14 +392,40 @@ Inherited `E2E_CLEANUP_FAKE` is cleared unless the flag is passed.
 3. Set `healthy-ramp`. Confirm temperature, RoR, and chart points update.
    Inspect network timing long enough to confirm at most one
    `/api/roast/sync_state/` request is pending.
-4. Change fan and power. Log Yellowing, First Crack, and one note event.
-   Confirm timeline entries and chart annotations.
+4. At portrait iPad widths (744, 768, 820, 1024 and 1032 CSS pixels), compare
+   End Roast’s position in normal and fullscreen using the check below. Change
+   fan and power. Log Yellowing, FC and a note. Repeat the position check. The
+   button must stay on its row and the readings must remain legible.
+   Record FC again at a different second, then log FC End. Verify the timeline
+   entries and one FC Start line at the latest saved time, alongside Yellowing
+   and FC End. Reload and verify the marker and
+   Since FC counter still agree.
 5. Exercise `rate-limited`, `timeout` or `offline`, recovery through
    `healthy-ramp`, and `fault`. Confirm the state labels in the table above,
    continued polling, and recovery.
 6. End the roast, verify redirect to Edit, add roasted weight and notes, save,
-   and inspect Detail for curve/events and weight-loss data.
+   and inspect Detail for curve/events and weight-loss data. Verify both Edit and
+   Detail charts keep the corrected FC line. The Data tab retains both FC presses.
 7. Optionally smoke-test review create/update/delete; it is not a release gate.
+
+For deterministic RoR readings, run this in the isolated live page’s browser
+console in each view. It samples the rendered button synchronously between
+sensor polls. All three rows should have identical coordinates.
+
+```javascript
+{
+  const fullscreen = document.body.classList.contains('fullscreen-mode');
+  const ror = document.getElementById(fullscreen ? 'fsRorValue' : 'rorValue');
+  const end = document.getElementById(fullscreen ? 'fsEndBtn' : 'endBtn');
+  const previous = ror.textContent;
+  console.table(['9.9', '10.0', '9.9'].map(reading => {
+    ror.textContent = reading;
+    const { x, y } = end.getBoundingClientRect();
+    return { reading, x, y };
+  }));
+  ror.textContent = previous;
+}
+```
 
 ## Evidence
 

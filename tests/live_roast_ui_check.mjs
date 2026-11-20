@@ -49,13 +49,15 @@ function environment() {
         return {ok:response.ok, json:async()=>({...response, temperature:null})};
     };
 }
-const chart = {init(){}, updateData(){}, addEventMarker(){}, resize(){}};
+let restoredTimings;
+const chart = {init(timings){restoredTimings = timings;}, updateData(){}, addEventMarker(){}, resize(){}};
 // Resuming uses persisted timing and the same clock for normal/fullscreen.
 environment();
 let session = createSession({roastId:'r', roastStarted:true,
     roastStartTime:new Date(Date.now()-90000).toISOString(),
-    keyTimings:[{event_name:'First Crack Start',time_seconds:60}]}, chart);
+    keyTimings:[{event_name:'First Crack Start',time_seconds:45}, {event_name:'First Crack Start',time_seconds:60}]}, chart);
 session.boot();
+assert.deepEqual(restoredTimings.map(t => t.time_seconds), [45, 60]);
 assert.equal(session.state.fcStartTime,60);
 assert.equal(ids.get('fcElapsedValue').textContent,'00:30');
 let fullscreen = createFullscreenController(session,chart); fullscreen.init(); fullscreen.toggleFullscreen();

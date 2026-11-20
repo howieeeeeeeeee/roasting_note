@@ -119,7 +119,7 @@ uv run pytest -k "create or delete"  # Tests with "create" or "delete"
 | `test_datetime_formatting.py` | UTC and operator-timezone formatting |
 | `test_e2e_runtime.py` | Isolated database, run markers, cleanup, and online exclusion |
 | `test_file_size_policy.py` | Tracked-file 1,000-line policy |
-| `test_live_roast_ui.py` | Node-executed session checks for default/custom naming, queued setup/start, recorded FC restore, fullscreen parity, failed FC, and stopped clocks |
+| `test_live_roast_ui.py` | Node-executed session checks for default/custom naming, queued setup/start, recorded FC restore, fullscreen parity, failed FC, stopped clocks, and corrected FC chart markers on live, reload, edit and detail |
 | `test_management_design_contracts.py` | Compact management hooks, responsive grids, sticky actions, field order, table and RN-0027 preservation, live-roast exclusion, native-popup prohibition, and in-page review deletion |
 | `test_reviews_api.py` | Review CRUD and validation |
 | `test_roasts_api.py` | Roast lifecycle, events, temperature, stock, and weight loss |

@@ -118,5 +118,8 @@ Normal and fullscreen metric groups align labels and numeric baselines from the
 top. Temperature keeps its unit and a reserved 12ch status badge alongside it;
 status changes do not change the group height. At widths below 768px the
 Temperature group gets its own row. Controls/readings wrap and narrow fullscreen
-can scroll. Since FC appears below fullscreen Time only after a saved FC event,
-and remains in sync across orientation changes and fullscreen toggles.
+can scroll. On portrait tablets, the normal and fullscreen readouts reserve enough
+width for a signed two-digit RoR with one decimal place. End Roast stays in place
+when the reading crosses 10.0, including after FC. In fullscreen, Since FC
+appears below Time after a saved FC event and remains in sync across orientation
+changes and fullscreen toggles.
